@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Line } from 'react-chartjs-2';
-
+import { Layout } from 'antd';
 type PriceData = { time: number; price: number };
 type AssetData = Record<string, PriceData[]>;
+
+const { Content } = Layout;
 
 const ChartComponent: React.FC = () => {
     const [chartData, setChartData] = useState<any>();
@@ -91,9 +93,12 @@ const ChartComponent: React.FC = () => {
 
     return (
         <div>
-            <h2>Asset Price Comparison</h2>
+            <Content style={{ padding: '0 50px' }} >
 
-            {chartData && <Line data={chartData} />}
+                <h2>Asset Price Comparison</h2>
+
+                {chartData && <Line data={chartData} />}
+            </Content>
         </div>
     );
 };

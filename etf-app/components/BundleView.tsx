@@ -221,7 +221,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
             className="badge"
             {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
         >
-            && <Card
+            <Card
                 className="card"
                 style={{
                     width: "100%",
@@ -538,7 +538,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     etfAddress={config.sideChainContracts[
                         networkToSelectorId[selectedChain]
                     ]['SidechainDeposit'][0].address}
-                    bundle={bundle}
+                    bundleId={bundleId}
                     requiredTokenStruct={getRequiredAsset(address)}
                     chainSelectorId={getRequiredAsset(address)?.chainSelector}
                 />}

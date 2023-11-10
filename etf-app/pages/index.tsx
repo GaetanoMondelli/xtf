@@ -6,7 +6,7 @@ import {
 import styles from '../styles/page.module.css'
 import { NextPage } from "next";
 import ChainContext from "../context/chain";
-import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert } from 'antd';
+import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert, Tabs, Divider } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
@@ -17,6 +17,8 @@ import { useState, useEffect, useContext } from 'react';
 import { Sepolia } from "@thirdweb-dev/chains";
 import PriceChartComponent from "../components/PriceDiagram";
 
+const { TabPane } = Tabs;
+
 const minimiseAddress = (address: string) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
@@ -24,6 +26,7 @@ const minimiseAddress = (address: string) => {
 const Home: NextPage = () => {
 
   const [bundleId, setBundleId] = useState<number>(0);
+  const [selectedTab, setSelectedTab] = useState<string>('1');
   const [localTest, setLocalTest] = useState<boolean>(false)
   const [config, setConfig] = useState<any>(
     configs.find((c: any) => c.chainId === Sepolia.chainId)
@@ -115,8 +118,7 @@ const Home: NextPage = () => {
 
       </div>
       <div>
-
-        <div className="card"
+        <div
           style={{
             width: "70%",
             flexDirection: "row",
@@ -129,11 +131,11 @@ const Home: NextPage = () => {
           <span>&nbsp;&nbsp;{"Select Index"}</span>
           <Select
             style={{
-              border: "3px solid black",
+              border: "2px solid black",
               borderRadius: "0.6rem",
-
+              marginLeft: 20,
               width: "40%",
-              marginLeft: 20
+              // marginLeft: 20
             }}
             value={config.name}
             onChange={(value) => {
@@ -149,24 +151,58 @@ const Home: NextPage = () => {
           ></Select>
 
         </div>
-        {config && <Card className="card"
+        <Divider></Divider>
+        <Tabs defaultActiveKey="1"
+          onChange={(key) => setSelectedTab(key)}
+          renderTabBar={
+            (props, DefaultTabBar) =>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginBottom: 20,
+                  gap: 20,
+                }}
+              >
+                {
+                  ['ETF STATS', 'PRICE CHART', 'BUNDLE VIEW'].map((tab, index) => (
+                    <div
+                      className="customcard"
+                      key={index}
+                      onClick={() => setSelectedTab((index + 1).toString())}
+                      style={{
+                        backgroundColor: selectedTab === (index + 1).toString() ? "gray" : "white",
+                        color: selectedTab === (index + 1).toString() ? "white" : "black",
+                        border: "2px solid black",
+                        borderRadius: "0.25rem",
+                        boxShadow: "2px 2px 0px 0px #000",
+                        padding: 10,
+                        width: "33%"
+                      }}
+                    >
+                      {tab}
+                    </div>))
+                }
+              </div>
+          }
+        >
+        </Tabs>
+
+        {selectedTab === '1' && chainId === config.chainId && <Card className="card"
           style={{
             width: "100%",
           }}
         >
-          <div>
-            {/* <p>ETF Address</p>
-            <p>{config.contracts['ETFv2'][0].address}</p> */}
-          </div>
-          { chainId === config.chainId && <>
-            <ETFStatsView tokenAddress={config.contracts['ETFToken'][0].address} address={config.contracts['ETFv2'][0].address} />
-            <PriceValueStats address={config.contracts['ETFv2'][0].address} />
-          </>}
+          <ETFStatsView tokenAddress={config.contracts['ETFToken'][0].address} address={config.contracts['ETFv2'][0].address} />
+          <PriceValueStats address={config.contracts['ETFv2'][0].address} />
           {/* <Prices address={config.contracts['ETFv2'][0].address} /> */}
           <br></br>
+
+        </Card>
+        }
+
+        {selectedTab === '3' && chainId === config.chainId &&
           <div className={styles.description}>
-
-
             <span>Vault Viewer {selectedChain}</span>
             <InputNumber
               style={{
@@ -181,7 +217,7 @@ const Home: NextPage = () => {
               onChange={(value) => setBundleId(Number(value))}
             />
             &nbsp;&nbsp;&nbsp;<span>Hardhat local test</span> &nbsp;&nbsp;
-            <Switch checkedChildren="Hardhat" unCheckedChildren="Sepolia"
+            <Switch checkedChildren="Hardhat" unCheckedChildren="Prod"
               className="nb-input"
 
               style={{
@@ -193,19 +229,18 @@ const Home: NextPage = () => {
               }}
               checked={localTest} onChange={(checked) => setLocalTest(checked)} />
 
-          </div>
-        </Card>
-        }
+          </div>}
         <br></br>
-        <PriceChartComponent></PriceChartComponent>
 
-        <BundleView address={config.contracts['ETFv2'][0].address} bundleId={bundleId}
+        {selectedTab === '2' && <PriceChartComponent></PriceChartComponent>}
+        {selectedTab === '3' && <BundleView address={config.contracts['ETFv2'][0].address} bundleId={bundleId}
           setBundleId={setBundleId}
           tokenToBeWrapped1Address={config.contracts['FungibleToken'][0].address}
           tokenToBeWrapped2Address={config.contracts['FungibleToken'][1].address}
           config={config}
 
         ></BundleView>
+        }
       </div>
       <br></br>
       <br></br>
@@ -265,62 +300,63 @@ const Home: NextPage = () => {
 
     </>}
 
-    {!(connectionStatus === 'connected' && !isMismatched) && <>
-      <div className={styles.description}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 20
-          }}
-        >
-          <img width={120} src="/images/lg.png" alt="logo" />
-          {/* <Prices address={config?.contracts['ETFv2'][0].address} /> */}
-          <Skeleton
+    {
+      !(connectionStatus === 'connected' && !isMismatched) && <>
+        <div className={styles.description}>
+          <div
             style={{
-              marginLeft: 20,
-              marginRight: 20
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 20
             }}
-
-
-            active />
-          <div>
-            <ConnectWallet
-              theme={'light'}
-              btnTitle="Connect"
+          >
+            <img width={120} src="/images/lg.png" alt="logo" />
+            {/* <Prices address={config?.contracts['ETFv2'][0].address} /> */}
+            <Skeleton
               style={{
-                backgroundColor: "White",
-                color: "black",
-                colorScheme: "light",
-                border: "2px solid black",
-                borderRadius: "0.25rem",
-                boxShadow: "2px 2px 0px 0px #000",
+                marginLeft: 20,
+                marginRight: 20
               }}
-            />
+
+
+              active />
+            <div>
+              <ConnectWallet
+                theme={'light'}
+                btnTitle="Connect"
+                style={{
+                  backgroundColor: "White",
+                  color: "black",
+                  colorScheme: "light",
+                  border: "2px solid black",
+                  borderRadius: "0.25rem",
+                  boxShadow: "2px 2px 0px 0px #000",
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <Alert
+        <Alert
 
-        style={{
-          marginTop: "10%",
-          marginLeft: "15%",
-          marginRight: "15%",
-        }}
+          style={{
+            marginTop: "10%",
+            marginLeft: "15%",
+            marginRight: "15%",
+          }}
 
-        message={`Change network`}
-        description={`Please connect to the ${selectedChain} network`}
-        type="warning"
-      />
-      {/* <Spin tip="Loading..."> */}
-    </>
+          message={`Change network`}
+          description={`Please connect to the ${selectedChain} network`}
+          type="warning"
+        />
+        {/* <Spin tip="Loading..."> */}
+      </>
 
 
     }
-  </div>
+  </div >
 
   );
 };

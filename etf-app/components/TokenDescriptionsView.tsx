@@ -138,6 +138,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                         renderItem={(item: any) => (
                             <List.Item>
                                 <Card
+                                    className="customcard"
                                     size="small"
                                     title={`Sender: ${minimiseAddress(item.sender)}`}>
                                     <p>MessageId:</p> <a href={`https://ccip.chain.link/msg/${item?.messageId

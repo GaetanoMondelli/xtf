@@ -3,6 +3,7 @@ import { ThirdwebProvider } from "@thirdweb-dev/react";
 import { ConfigProvider, Typography } from "antd";
 import ChainContext from "../context/chain";
 import "../node_modules/neobrutalismcss/dist/index.css";
+import "../styles/custom.css";
 import { useEffect, useState } from "react";
 import { Chain } from "../components/utils";
 import { Sepolia } from "@thirdweb-dev/chains";

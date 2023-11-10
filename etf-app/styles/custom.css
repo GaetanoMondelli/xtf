@@ -1,0 +1,11 @@
+.customcard {
+    border-radius: 8px;
+    border: 2px solid #000;
+    box-shadow: -2px 2px 0px #000000;
+    padding-left: 8px;
+    padding-right: 8px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease; }
+    .customcard:hover {
+      box-shadow: 0px 0px 0px #000000;
+      transform: translate(-6px, 6px); }
+  
