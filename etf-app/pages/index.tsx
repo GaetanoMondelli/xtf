@@ -1,13 +1,14 @@
 import { ConnectWallet, useContract } from "@thirdweb-dev/react";
-// import styles from "../styles/Home.module.css";
 import styles from '../styles/page.module.css'
-import Image from "next/image";
 import { NextPage } from "next";
 import CONTRACTS from '../../CONTRACTS.json'
-const FungibleTokenABI = require("../.././artifacts/contracts/TokenWrapped.sol/FungibleToken.json").abi;
 import TokenView from '../components/TokenView'
 import ETFView from '../components/ETFView'
 import OpenETFView from "../components/OpenETF";
+import CloseETF from "../components/CloseETF";
+import { useState } from 'react'
+import { InputNumber } from 'antd';
+import BundleView from "../components/BundleView";
 
 
 const minimiseAddress = (address: string) => {
@@ -15,6 +16,9 @@ const minimiseAddress = (address: string) => {
 }
 
 const Home: NextPage = () => {
+
+  const [bundleId, setBundleId] = useState<number>(0);
+
   return (
     <main className={styles.main}>
       <div className={styles.description}>
@@ -29,7 +33,7 @@ const Home: NextPage = () => {
       <div>
         <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['FungibleToken'][0].address} />
         <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['FungibleToken'][1].address} />
-        <TokenView className={styles.tokenView} address={CONTRACTS['ETFToken'][0].address} />
+        <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['ETFToken'][0].address} />
 
         <ETFView address={CONTRACTS['ETFv2'][0].address} />
 
@@ -39,16 +43,20 @@ const Home: NextPage = () => {
             tokenToBeWrapped1Address={CONTRACTS['FungibleToken'][0].address}
             tokenToBeWrapped2Address={CONTRACTS['FungibleToken'][1].address}
           ></OpenETFView>
-          <span
-            className={styles.card}
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Close <span>-&gt;</span>
-            </h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </span>
+          <CloseETF address={CONTRACTS['ETFv2'][0].address}></CloseETF>
         </div>
+        <div className={styles.description}>
+
+          <span>Bundle Viewer {bundleId}</span>
+          <InputNumber
+            style={{
+              marginLeft: 20
+            }}
+            defaultValue={0}
+            onChange={(value) => setBundleId(Number(value))}
+          />
+        </div>
+        <BundleView address={CONTRACTS['ETFv2'][0].address} bundleId={bundleId}></BundleView>
       </div>
 
 
