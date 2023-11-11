@@ -1,16 +1,42 @@
-import { ConnectWallet, Web3Button, useContract, useContractRead, useContractWrite, useNFTs, useTotalCount } from "@thirdweb-dev/react";
+import { useContract, useContractRead, useContractWrite, useBalance, useAddress } from "@thirdweb-dev/react";
 import styles from '../styles/page.module.css'
-import CONTRACTS from '../../CONTRACTS.json'
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
-// const ABI = require("../.././artifacts/contracts/TokenWrapped.sol/FungibleToken.json").abi;
+const TokenABI = require("../.././artifacts/contracts/TokenWrapped.sol/FungibleToken.json").abi;
 
+import { Avatar } from 'antd';
 const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-import { Tag } from 'antd';
-import { ContractInterface, ethers } from "ethers";
-
+import { ethers } from "ethers";
+import { useEffect, useState } from "react";
+import { use } from "chai";
 
 const minimiseAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+
+
+function TokenBalance({ address, quantity }: { address: string, quantity: string }) {
+    const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
+        address
+    );
+
+    return <span>
+        {/* <code className={styles.code}>{minimiseAddress(address)}</code>| */}
+        {/* <Avatar style={{ backgroundColor: '#fde3cf', color: '#f56a00' }}>U</Avatar> */}
+        &nbsp;
+        {balanceLoading && <span color="processing">Loading...</span>}
+        {!balanceError && !balanceLoading && balance && <Avatar
+            style={
+                {
+                    backgroundColor: `#${address.slice(2, 8)}`,
+                    color: 'black',
+                    borderRadius: '50%',
+                    fontWeight: 'bold',
+                }
+            }
+
+        >{balance.symbol}</Avatar>}
+    </span>
 }
 
 
@@ -19,6 +45,22 @@ export default function OpenETFView({ address, tokenToBeWrapped1Address, tokenTo
     tokenToBeWrapped1Address: string,
     tokenToBeWrapped2Address: string
 }) {
+
+    const [addresses, setAddresses] = useState<string[]>([]);
+    const [quantities, setQuantities] = useState<string[]>([]);
+    const userAddress = useAddress();
+
+    const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address, ABI);
+    const { data: requiredAssets, isLoading: requiredAssetsLoading, error: requiredAssetsError } = useContractRead(
+        contract,
+        "getRequiredAssets"
+    );
+
+    useEffect(() => {
+        if (!requiredAssets) return;
+        setQuantities(requiredAssets[0]);
+        setAddresses(requiredAssets[1]);
+    }, [requiredAssets]);
 
 
     const amountToWrapToken1 = 10;
@@ -46,12 +88,20 @@ export default function OpenETFView({ address, tokenToBeWrapped1Address, tokenTo
         totalAmount: amountToWrapToken2,
     };
 
-    const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address, ABI);
+
+    // const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
+    //     ,
+    // );
+
 
     const { mutateAsync: mint, isLoading, error } = useContractWrite(
         contract,
         "mint"
     );
+
+    // use contract read to see what is needed to mint
+
+
 
     return <span
         className={styles.card}
@@ -60,7 +110,7 @@ export default function OpenETFView({ address, tokenToBeWrapped1Address, tokenTo
             () =>
                 mint({
                     args: [
-                        address,
+                        userAddress,
                         [nativeTokenStruct, tokenStruct1, tokenStruct2],
                     ],
                     overrides: {
@@ -72,8 +122,11 @@ export default function OpenETFView({ address, tokenToBeWrapped1Address, tokenTo
         <h2>
             Open<span>-&gt;</span>
         </h2>
-        {address}
-        <p>Find in-depth information about Next.js features and API.</p>
+        <p>
+            Open an ETF position with 0.5 ETH, 10 Token1, 20 Token2
+        </p>
+        <div>
+        </div>
     </span >
 
 }

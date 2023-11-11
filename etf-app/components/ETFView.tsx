@@ -17,8 +17,9 @@ export default function ETFView({ address }: { address: string }) {
 
     const { contract, isLoading, error } = useContract(address, ABI);
     const { data: name, isLoading: isNameLoading, error: nameError } = useContractRead(contract, "symbol");
-    const { data: count, isLoading: countLoading, error: countError } = useTotalCount(
-        contract
+    const { data: count, isLoading: countLoading, error: countError } = useContractRead(
+        contract,
+        "totalSupply"
     );
 
 
@@ -30,7 +31,7 @@ export default function ETFView({ address }: { address: string }) {
         >
             Send Transaction
         </Web3Button> */}
-        <code className={styles.code}>{minimiseAddress(address)}</code>
+        ETF OPEN POSITIONS |<code className={styles.code}>{minimiseAddress(address)}</code>|
         &nbsp;
         {countLoading && <Tag color="processing">Loading...</Tag>}
         {!countError && !countLoading && count && <Tag color="success">Total Count: {count.toNumber()}</Tag>}
@@ -40,7 +41,7 @@ export default function ETFView({ address }: { address: string }) {
         {/* {isNameLoading && <Tag color="processing">Loading...</Tag>} */}
         {/* {!error && !isNameLoading && name && <Tag color="success">{name}</Tag>} */}
         {/* {nameError && <Tag color="error">Error {JSON.stringify(nameError)}</Tag>} */}
-        {!nameError && !isNameLoading && name && <Tag color="success">Name: {name}</Tag>}
+        {!nameError && !isNameLoading && name && <Tag color="success">symbol: {name}</Tag>}
 
 
         {/* 
