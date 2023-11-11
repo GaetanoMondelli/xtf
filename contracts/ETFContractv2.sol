@@ -492,7 +492,7 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
     // reedem ETF function
     function reedemETF() public returns (uint256 tokenId) {
         require(
-            ETFToken(etfTokenAddress).balanceOf(msg.sender) == etfTokenPerWrap,
+            ETFToken(etfTokenAddress).balanceOf(msg.sender) >= etfTokenPerWrap,
             "ETFContract: msg.sender does not have enough ETF Tokens"
         );
 
@@ -503,6 +503,40 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
 
         lastETFReedemed += 1;
         return lastETFReedemed - 1;
+    }
+
+    //  get all required tokens for a bundle
+    function getRequiredAssets()
+        public
+        view
+        returns (uint256[] memory quantities, address[] memory addresses)
+    {
+        // store the count of each token in the bundle and store in an array
+        quantities = new uint256[](tokensToWrapQuantity);
+        addresses = new address[](tokensToWrapQuantity);
+        for (uint256 i = 0; i < tokensToWrapQuantity; i += 1) {
+            quantities[i] = tokenQuantities[whitelistedTokens[i]];
+            addresses[i] = whitelistedTokens[i];
+        }
+    }
+
+    // get the number of tokens in a bundle
+    function getTokensBundle(
+        uint256 _bundleId
+    )
+        public
+        view
+        returns (uint256[] memory quantities, address[] memory addresses)
+    {
+        // get the number of tokens in the bundle
+        uint256 tokenCount = getTokenCountOfBundle(_bundleId);
+        // store the count of each token in the bundle and store in an array
+        quantities = new uint256[](tokenCount);
+        addresses = new address[](tokenCount);
+        for (uint256 i = 0; i < tokenCount; i += 1) {
+            quantities[i] = getTokenOfBundle(_bundleId, i).totalAmount;
+            addresses[i] = getTokenOfBundle(_bundleId, i).assetContract;
+        }
     }
 
     // Event to log the received Ether
