@@ -283,6 +283,9 @@ describe("ETFContract", () => {
                 token2Balance = await tokenToBeWrapped2.balanceOf(etfOwner.address);
                 expect(token2Balance).toEqual(BigNumber.from(amountToWrapToken2));
 
+                const etFSupply = await etfTokenContract.totalSupply();
+                expect(etFSupply).toEqual(BigNumber.from(0));
+
             });
 
             it("should be able to deposit", async () => {
