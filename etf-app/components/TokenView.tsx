@@ -24,10 +24,10 @@ export default function TokenView({ address, className, etfAddress }: { address:
 
     return <div className={`${style.description} ${className}`}>
         {balance?.name.toUpperCase()}&nbsp;  |
-        <code className={styles.code}>{minimiseAddress(address)}</code>|
+        <code className={styles.code}>{minimiseAddress(address)}</code>| 
         &nbsp;
         {balanceLoading && <Tag color="processing">Loading...</Tag>}
-        {!balanceError && !balanceLoading && balance && <Tag color="success">{balance.displayValue}</Tag>}
+        {!balanceError && !balanceLoading && balance && <Tag color="success">{balance.displayValue} {balance.symbol}</Tag>}
         {/* web3 button to `approve` erc20 tokens */}
 
         {!!etfAddress && <>
