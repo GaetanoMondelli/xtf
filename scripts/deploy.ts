@@ -5,7 +5,7 @@ async function main() {
   const accounts = await ethers.getSigners();
   const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
   const etfTokenPerWrap = 100;
-  const fee = 100;
+  const fee = 0;
   const etfTokenContractName = "ETFToken";
   const nativeWrapperContractName = "NativeTokenWrapper";
   const etfContractName = "ETFv2";
@@ -81,6 +81,8 @@ async function main() {
     }
   }
   await contracts[etfTokenContractName][0].setOwner(contracts[etfContractName][0].address);
+
+
   await accounts[0].sendTransaction({
     to: DEMO_USER_ADDRESS,
     value: ethers.utils.parseEther("10.0"),
