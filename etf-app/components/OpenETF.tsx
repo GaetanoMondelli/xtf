@@ -1,18 +1,9 @@
 import { useContract, useContractRead, useContractWrite, useBalance, useAddress } from "@thirdweb-dev/react";
 import styles from '../styles/page.module.css'
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
-const TokenABI = require("../.././artifacts/contracts/TokenWrapped.sol/FungibleToken.json").abi;
-
 import { Avatar } from 'antd';
-const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-import { ethers } from "ethers";
 import { useEffect, useState } from "react";
-import { use } from "chai";
-
-const minimiseAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
-
+import { ethersToWrap, requiredTokenStructs } from "./utils";
 
 
 function TokenBalance({ address, quantity }: { address: string, quantity: string }) {
@@ -45,16 +36,16 @@ export default function OpenETFView({ address, tokenToBeWrapped1Address, tokenTo
     tokenToBeWrapped1Address: string,
     tokenToBeWrapped2Address: string
 }) {
-
+    const [nativeTokenStruct, tokenStruct1, tokenStruct2] = requiredTokenStructs;
     const [addresses, setAddresses] = useState<string[]>([]);
     const [quantities, setQuantities] = useState<string[]>([]);
     const userAddress = useAddress();
-
     const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address, ABI);
     const { data: requiredAssets, isLoading: requiredAssetsLoading, error: requiredAssetsError } = useContractRead(
         contract,
         "getRequiredAssets"
     );
+
 
     useEffect(() => {
         if (!requiredAssets) return;
@@ -63,45 +54,12 @@ export default function OpenETFView({ address, tokenToBeWrapped1Address, tokenTo
     }, [requiredAssets]);
 
 
-    const amountToWrapToken1 = 10;
-    const amountToWrapToken2 = 20;
-    const ethersToWrap = ethers.utils.parseEther("0.5");
-
-    const nativeTokenStruct = {
-        assetContract: nativeAddress,
-        tokenType: 0,
-        tokenId: 0,
-        totalAmount: ethersToWrap,
-    };
-
-    const tokenStruct1 = {
-        assetContract: tokenToBeWrapped1Address,
-        tokenType: 0,
-        tokenId: 0,
-        totalAmount: amountToWrapToken1,
-    };
-
-    const tokenStruct2 = {
-        assetContract: tokenToBeWrapped2Address,
-        tokenType: 0,
-        tokenId: 0,
-        totalAmount: amountToWrapToken2,
-    };
-
-
-    // const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
-    //     ,
-    // );
 
 
     const { mutateAsync: mint, isLoading, error } = useContractWrite(
         contract,
         "mint"
     );
-
-    // use contract read to see what is needed to mint
-
-
 
     return <span
         className={styles.card}

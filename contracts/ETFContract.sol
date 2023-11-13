@@ -247,11 +247,8 @@ contract ETF is Ownable, ERC721Multiwrap {
             "ETFContract: msg.sender does not have enough ETF Tokens"
         );
 
-        // burn the ETF Token
         ETFToken(etfTokenAddress).burn(msg.sender, etfTokenPerWrap);
-        // transfer the ETF to msg.sender
         _unwrap(lastETFReedemed, msg.sender);
-
         lastETFReedemed += 1;
         return lastETFReedemed - 1;
     }

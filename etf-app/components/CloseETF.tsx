@@ -1,13 +1,7 @@
 import { useContract, useContractRead, useContractWrite, useBalance, useTotalCount } from "@thirdweb-dev/react";
 import styles from '../styles/page.module.css'
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
-const TokenABI = require("../.././artifacts/contracts/TokenWrapped.sol/FungibleToken.json").abi;
 
-import { Avatar } from 'antd';
-const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-import { ethers } from "ethers";
-import { useEffect, useState } from "react";
-import { use } from "chai";
 
 const minimiseAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
