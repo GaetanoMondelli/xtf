@@ -56,8 +56,17 @@ const Home: NextPage = () => {
             onChange={(value) => setBundleId(Number(value))}
           />
         </div>
-        <BundleView address={CONTRACTS['ETFv2'][0].address} bundleId={bundleId}></BundleView>
+        <br></br>
+        <br></br>
+
+        <BundleView address={CONTRACTS['ETFv2'][0].address} bundleId={bundleId}
+          tokenToBeWrapped1Address={CONTRACTS['FungibleToken'][0].address}
+          tokenToBeWrapped2Address={CONTRACTS['FungibleToken'][1].address}
+
+        ></BundleView>
       </div>
+      <br></br>
+      <br></br>
 
 
       <div className={styles.grid}>
