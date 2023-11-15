@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {LinkTokenInterface} from "./LinkTokenInterface.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import "hardhat/console.sol";
 
 /**
  * THIS IS AN EXAMPLE CONTRACT THAT USES HARDCODED VALUES FOR CLARITY.
@@ -48,8 +49,9 @@ contract BasicMessageSender {
             message
         );
 
-        bytes32 messageId;
+        fee = 0;
 
+        bytes32 messageId;
         if (payFeesIn == PayFeesIn.LINK) {
             // LinkTokenInterface(i_link).approve(i_router, fee);
             messageId = IRouterClient(i_router).ccipSend(

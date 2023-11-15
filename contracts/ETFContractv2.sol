@@ -87,8 +87,6 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
         TokenAmounts[] memory _whitelistedTokenAmounts,
         string memory _uriETFToken
     )
-        // TO-DO Remove this map and replace with Oracle
-        // TokenAmounts[] memory _tokenPrices
         ERC721Multiwrap(
             msg.sender,
             _name,
@@ -131,10 +129,12 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
                 _whitelistedTokenAmounts[i].oracleAddress
             );
         }
-        require(
-            containNativeTokenAmount,
-            "ETFContract: native currency must be listed in _whitelistedTokenAmounts"
-        );
+
+        // require(
+        //     containNativeTokenAmount,
+        //     "ETFContract: native currency must be listed in _whitelistedTokenAmounts"
+        // );
+        
         _setupRole(ASSET_ROLE, NATIVE_TOKEN);
         uriETFToken = _uriETFToken;
         etfTokenAddress = _etfTokenAddress;
@@ -268,7 +268,6 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
             }
         }
 
-        console.log("canBeClosed1: %s", canBeClosed);
 
         if (canBeClosed) {
             console.log("canBeClosed: %s", canBeClosed);

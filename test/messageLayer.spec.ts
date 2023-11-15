@@ -1,9 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
-import {
-    MultiWrapBase,
-    ITokenBundle,
-} from "../typechain-types/contracts/MultiWrapBase";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 describe("ChainLink CCIP Message layer", () => {
@@ -15,12 +11,17 @@ describe("ChainLink CCIP Message layer", () => {
     let MessageReceiverContractFactory: any;
     let MessageSenderContractFactory: any;
     let MockRouterContractFactory: any;
-    let router: any;
     let linkToken: any;
     let messageReceiver: any;
     let messageSender: any;
+    let router: any;
     let sender: SignerWithAddress;
     let receiver: SignerWithAddress;
+
+    const enum PayFeesIn {
+        Native = 0,
+        LINK = 1,
+    }
 
     beforeEach(async () => {
         [sender, receiver] = await ethers.getSigners();
@@ -50,6 +51,13 @@ describe("ChainLink CCIP Message layer", () => {
             linkToken.address
         );
 
+        // mint 1000 mLINK to sender
+        await linkToken.mint(sender.address, BigNumber.from("1000000000000000000000"));
+        const balance = await linkToken.balanceOf(sender.address);
+        expect(balance).toEqual(BigNumber.from("1000000000000000000000"));
+
+        await router.setOnlyRouteTo(messageReceiver.address);
+
     });
 
 
@@ -61,7 +69,87 @@ describe("ChainLink CCIP Message layer", () => {
             expect(messageSender.address).toBeDefined();
         });
 
+        it("should send a message to the receiver contract", async () => {
+            const message = "Hello World";
+            const destinationAddress = 1234;
+            const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+            // Create a promise that resolves when the event is emitted
+            const eventPromise = new Promise<void>((resolve, reject) => {
+                router.on("RouterMessageSent", (address: string, data: any) => {
+                    try {
+                        const dataString = ethers.utils.toUtf8String(data);
+                        console.log("RouterMessageSent", address, dataString);
+                        expect(address).toEqual(messageReceiver.address);
+                        expect(dataString).toContain(message);
+
+                        // struct Any2EVMMessage {
+                        //     bytes32 messageId; // MessageId corresponding to ccipSend on source.
+                        //     uint64 sourceChainSelector; // Source chain selector.
+                        //     bytes sender; // abi.decode(sender) if coming from an EVM chain.
+                        //     bytes data; // payload sent in original message.
+                        //     EVMTokenAmount[] destTokenAmounts; // Tokens and their amounts in their destination chain representation.
+                        //   }
+                        resolve(); // Resolve the promise after assertions
+                    } catch (error) {
+                        reject(error); // Reject the promise if assertions fail
+                    }
+                    finally {
+                        router.removeAllListeners("RouterMessageSent");
+                    }
+                });
+            });
+
+            const tx = await messageSender.send(destinationAddress, messageReceiver.address, message, PayFeesIn.Native);
+            const receipt = await tx.wait();
+
+            const eventSender = receipt.events?.find((e: any) => e.event === "MessageSent");
+            expect(eventSender).toBeDefined();
+            expect(eventSender.args).toBeDefined();
+            expect(eventSender.args[0]).toEqual(mockMessageId);
+
+            // Wait for the event promise to resolve
+            await eventPromise;
+        });
+
+
+
+        it("should send a message to the receiver contract ", async () => {
+            const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+            const message = "Hello World";
+            const bytes32Message = ethers.utils.formatBytes32String(message);
+            const fakeChainSelector = 0;
+
+            const tx = await router.ccipReceive(
+                {
+                    messageId: mockMessageId,
+                    sourceChainSelector: fakeChainSelector,
+                    sender: sender.address,
+                    data: bytes32Message,
+                    destTokenAmounts: []
+                }
+            );
+
+            const receipt = await tx.wait();
+            // event named RouterMessageSent
+            const eventSender = receipt.events?.find((e: any) => e.event === "RouterReceivedMessage");
+            expect(eventSender).toBeDefined();
+            expect(eventSender.args).toBeDefined();
+            expect(eventSender.args[0]).toEqual(mockMessageId);
+            expect(eventSender.args[1]).toEqual(sender.address);
+            expect(eventSender.args[2]).toEqual(bytes32Message);
+
+            // check the last message
+
+            const lastMessage = await messageReceiver.getLatestMessageDetails();
+            console.log("lastMessage", lastMessage);
+            expect(lastMessage[0]).toEqual(mockMessageId);
+            expect(lastMessage[1]).toEqual(BigNumber.from(fakeChainSelector));
+            expect(lastMessage[2]).toEqual(sender.address);
+            expect(lastMessage[3]).toContain(message);
+        });
     });
 });
+
 
 

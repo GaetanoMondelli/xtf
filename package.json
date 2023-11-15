@@ -7,7 +7,7 @@
     "release": "npx thirdweb@latest release",
     "build:contracts": "npx hardhat compile",
     "clean": "npx hardhat clean",
-    "test": "npm run build:contracts && jest test",
+    "test": "npm run build:contracts && jest test --detectOpenHandles",
     "start:node": "hardhat node",
     "stop:node": "kill-port 8545",
     "deploy:local": "sleep 5 && hardhat run scripts/deploy.ts --network localhost",
