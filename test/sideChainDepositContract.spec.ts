@@ -6,22 +6,38 @@ describe("ChainLink CCIP Message layer", () => {
     const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const fungibleTokenName = "FungibleToken";
     const nativeWrapperContractName = "NativeTokenWrapper";
-
+    const etfContractName = "ETFv2";
+    const royaltyBps = 1000;
+    const etfTokenContractName = "ETFToken";
+    const etfTokenPerWrap = 100;
+    const fee = 0;
+    const priceLinkToken = 5;
+    const mockMessgaeId = "0x0000000000000000000000000000000000000000000000000000000000000000";
     const messageSideChainDepositName = "SidechainDeposit";
     // const messageReceiverContractName = "BasicMessageReceiver";
     const mockRouterContractName = "MockRouterClient";
+    const priceAggregatorContractName = "MockAggregator";
+
+    const primaryChainSelectorId = 0;
     let FungibleTokenFactory: any;
     // let MessageReceiverContractFactory: any;
     let MessageSideChainContractFactory: any;
     let MockRouterContractFactory: any;
     let NativeTokenWrapperFactory: any;
+    let PriceAggregatorContractFactory: any;
+    let EtfTokenContractFactory: any;
+    let EtfContractFactory: any;
+    let priceAggregatorLinkToken: any;
     let linkToken: any;
-    // let messageReceiver: any;
-    let messageSideChainDepositContract: any;
+    const ETFURI = "https://example.com";
+    let sideChainDepositContract: any;
     let router: any;
+    let owner: SignerWithAddress;
     let sender: SignerWithAddress;
     let receiver: SignerWithAddress;
     let nativeTokenWrapper: any;
+    let etfTokenContract: any;
+    let etfPrimaryContract: any;
 
 
     const enum PayFeesIn {
@@ -30,11 +46,16 @@ describe("ChainLink CCIP Message layer", () => {
     }
 
     beforeEach(async () => {
-        [sender, receiver] = await ethers.getSigners();
+        [owner, sender, receiver] = await ethers.getSigners();
         // MessageReceiverContractFactory = await ethers.getContractFactory(
         //     messageReceiverContractName
         // );
         NativeTokenWrapperFactory = await ethers.getContractFactory(nativeWrapperContractName);
+        EtfContractFactory = await ethers.getContractFactory(etfContractName);
+        EtfTokenContractFactory = await ethers.getContractFactory(etfTokenContractName);
+        PriceAggregatorContractFactory = await ethers.getContractFactory(priceAggregatorContractName);
+        etfTokenContract = await EtfTokenContractFactory.deploy();
+
         MessageSideChainContractFactory = await ethers.getContractFactory(
             messageSideChainDepositName
         );
@@ -55,30 +76,48 @@ describe("ChainLink CCIP Message layer", () => {
             'mLINK', 'mLINK'
         );
         router = await MockRouterContractFactory.deploy();
-        // messageReceiver = await MessageReceiverContractFactory.deploy(
-        //     router.address
-        // );
 
-        // address _primaryEtfContract,
-        // address router,
-        // address link,
-        // address _nativeTokenWrapper,
-        // TokenAmounts[] memory _whitelistedTokenAmounts
 
-        const sideChainTokenAmounts = [
-            {
-                assetContract: nativeAddress,
-                amount: ethers.utils.parseEther("0.2"),
-            },
+        priceAggregatorLinkToken = await PriceAggregatorContractFactory.deploy(
+            priceLinkToken
+        );
+
+        const tokenAmounts = [
             {
                 assetContract: linkToken.address,
-                amount: 50,
+                amount: 10,
+                oracleAddress: priceAggregatorLinkToken.address,
+            },
+        ];
+
+        etfPrimaryContract = await EtfContractFactory.deploy(
+            "ETF-v0.0.1",
+            "ETF",
+            owner.address,
+            royaltyBps,
+            nativeTokenWrapper.address,
+            etfTokenContract.address,
+            etfTokenPerWrap,
+            fee,
+            tokenAmounts,
+            ETFURI,
+        );
+
+
+        const sideChainTokenAmounts = [
+            // {
+            //     assetContract: nativeAddress,
+            //     amount: ethers.utils.parseEther("0.2"),
+            // },
+            {
+                assetContract: linkToken.address,
+                amount: 10,
             }
         ];
 
-
-        messageSideChainDepositContract = await MessageSideChainContractFactory.deploy(
-            router.address,
+        sideChainDepositContract = await MessageSideChainContractFactory.deploy(
+            primaryChainSelectorId,
+            etfPrimaryContract.address,
             router.address,
             linkToken.address,
             nativeTokenWrapper.address,
@@ -89,9 +128,8 @@ describe("ChainLink CCIP Message layer", () => {
         await linkToken.mint(sender.address, BigNumber.from("1000000000000000000000"));
         const balance = await linkToken.balanceOf(sender.address);
         expect(balance).toEqual(BigNumber.from("1000000000000000000000"));
-
-        // await router.setOnlyRouteTo(messageReceiver.address);
-
+        await etfTokenContract.connect(owner).setOwner(etfPrimaryContract.address);
+        await router.setOnlyRouteTo(etfPrimaryContract.address);
     });
 
 
@@ -99,12 +137,61 @@ describe("ChainLink CCIP Message layer", () => {
         it("should deploy a ETF and partner contracts", async () => {
             expect(linkToken.address).toBeDefined();
             expect(router.address).toBeDefined();
-            // expect(messageSideChainDepositContract).toBeDefined();
+        });
 
+        it("should send a message to the primary contract on primary chain when deposit funds", async () => {
+
+            const tokenStruct = {
+                assetContract: linkToken.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: 10,
+            };
+
+            const checkRouterTestPromise = new Promise<void>((resolve, reject) => {
+                router.on("RouterMessageSent", (address: string, data: any) => {
+                    try {
+
+                        const tokensType = ['tuple(address,uint8,uint256,uint256)[]'];
+                        const decoded = ethers.utils.defaultAbiCoder.decode(tokensType, data);
+                        const token = decoded[0][0];
+                        expect(decoded).toBeDefined();
+                        expect(decoded.length).toEqual(1);
+
+                        console.log(token);
+                        const decodedTokenStruct = {
+                            assetContract: token[0],
+                            tokenType: token[1],
+                            tokenId: BigNumber.from(token[2]).toNumber(),
+                            totalAmount: BigNumber.from(token[3]).toNumber(),
+                        };
+                        expect(decodedTokenStruct).toEqual(tokenStruct);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                    finally {
+                        router.removeAllListeners("RouterMessageSent");
+                    }
+                });
+            });
+
+            await linkToken.connect(sender).approve(sideChainDepositContract.address, BigNumber.from(100));
+
+            const tx = await sideChainDepositContract.connect(sender).depositFundsAndNotify(
+                0,
+                [tokenStruct],
+            );
+
+            const receipt = await tx.wait();
+
+            const event = receipt.events?.find(
+                (e: any) => e.event === "MessageSent"
+            );
+
+            expect(event).toBeDefined();
+            expect(event.args?.[0]).toEqual(mockMessgaeId);
+            await checkRouterTestPromise;
         });
     });
 });
-
-
-
-

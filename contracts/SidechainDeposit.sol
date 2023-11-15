@@ -38,6 +38,7 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
     address immutable i_router;
     address immutable i_link;
     address[] public whitelistedTokens;
+    uint64 public primaryChainSelectorId;
     mapping(address => uint256) public tokenQuantities;
     mapping(uint256 => mapping(address => bool)) public addressInBundleId;
     mapping(uint256 => address[]) public bundleIdToAddress;
@@ -47,6 +48,7 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
     event MessageSent(bytes32 messageId);
 
     constructor(
+        uint64 _primaryChainSelectorId,
         address _primaryEtfContract,
         address router,
         address link,
@@ -56,10 +58,6 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
         i_router = router;
         i_link = link;
         LinkTokenInterface(i_link).approve(i_router, type(uint256).max);
-        // _revokeRole(ASSET_ROLE, address(0));
-        // remove the msg.sender from the MINTER_ROLE and add the 0 address to the MINTER_ROLE
-        //  for disable MINTER_ROLE
-        // _revokeRole(MINTER_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, address(0));
         _setupOwner(msg.sender);
 
@@ -68,11 +66,11 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
             tokenQuantities[
                 _whitelistedTokenAmounts[i].assetContract
             ] = _whitelistedTokenAmounts[i].amount;
-            // push the token address to the whitelistedTokens array
             whitelistedTokens.push(_whitelistedTokenAmounts[i].assetContract);
         }
 
         _setupRole(ASSET_ROLE, NATIVE_TOKEN);
+        primaryChainSelectorId = _primaryChainSelectorId;
         primaryEtfContract = _primaryEtfContract;
     }
 
@@ -169,7 +167,7 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
         }
 
         _transferTokenBatch(msg.sender, address(this), _tokensToWrap);
-        return send(1, primaryEtfContract, abi.encode(_tokensToWrap), PayFeesIn.Native);
+        return send(primaryChainSelectorId, primaryEtfContract, abi.encode(_tokensToWrap), PayFeesIn.Native);
     }
 
     function send(
@@ -177,7 +175,7 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
         address receiver,
         bytes memory data,
         PayFeesIn payFeesIn
-    ) public returns (bytes32 messageId) {
+    ) internal returns (bytes32 messageId) {
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(receiver),
             data: data,
