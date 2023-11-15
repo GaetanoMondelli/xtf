@@ -79,7 +79,7 @@ describe("ChainLink CCIP Message layer", () => {
                 router.on("RouterMessageSent", (address: string, data: any) => {
                     try {
                         const dataString = ethers.utils.toUtf8String(data);
-                        console.log("RouterMessageSent", address, dataString);
+                        // console.log("RouterMessageSent", address, dataString);
                         expect(address).toEqual(messageReceiver.address);
                         expect(dataString).toContain(message);
 
@@ -142,7 +142,7 @@ describe("ChainLink CCIP Message layer", () => {
             // check the last message
 
             const lastMessage = await messageReceiver.getLatestMessageDetails();
-            console.log("lastMessage", lastMessage);
+            // console.log("lastMessage", lastMessage);
             expect(lastMessage[0]).toEqual(mockMessageId);
             expect(lastMessage[1]).toEqual(BigNumber.from(fakeChainSelector));
             expect(lastMessage[2]).toEqual(sender.address);
