@@ -39,3 +39,12 @@ TO-DO
             "ETFContract: bundleId was already closed for an ETF"
         );
 ```
+
+- we need to add virtual to the CCIPReceiver.sol
+
+  /// @notice IERC165 supports an interfaceId
+  /// @param interfaceId The interfaceId to check
+  /// @return true if the interfaceId is supported
+  function supportsInterface(bytes4 interfaceId) public pure virtual override returns (bool) {
+    return interfaceId == type(IAny2EVMMessageReceiver).interfaceId || interfaceId == type(IERC165).interfaceId;
+  }
