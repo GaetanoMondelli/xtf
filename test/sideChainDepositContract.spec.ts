@@ -2,6 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
+
 describe("ChainLink CCIP Message layer", () => {
     const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const fungibleTokenName = "FungibleToken";
@@ -17,13 +18,11 @@ describe("ChainLink CCIP Message layer", () => {
 
     const mockMessgaeId = "0x0000000000000000000000000000000000000000000000000000000000000000";
     const messageSideChainDepositName = "SidechainDeposit";
-    // const messageReceiverContractName = "BasicMessageReceiver";
     const mockRouterContractName = "MockRouterClient";
     const priceAggregatorContractName = "MockAggregator";
 
     const primaryChainSelectorId = 0;
     let FungibleTokenFactory: any;
-    // let MessageReceiverContractFactory: any;
     let MessageSideChainContractFactory: any;
     let MockRouterContractFactory: any;
     let NativeTokenWrapperFactory: any;
@@ -92,12 +91,6 @@ describe("ChainLink CCIP Message layer", () => {
                 amount: 10,
                 oracleAddress: priceAggregatorLinkToken.address,
             },
-            // {
-            //     chainIdSelector: mockPrimaryChainSelectorId,
-            //     assetContract: nativeAddress,
-            //     amount: ethers.utils.parseEther("0.5"),
-            //     oracleAddress: priceAggregatorLinkToken.address,
-            // },
         ];
 
         const royaltyInfo = {
@@ -133,6 +126,7 @@ describe("ChainLink CCIP Message layer", () => {
 
         sideChainDepositContract = await MessageSideChainContractFactory.deploy(
             primaryChainSelectorId,
+            mockSecondaryChainSelectorId,
             etfPrimaryContract.address,
             router.address,
             linkToken.address,
@@ -151,28 +145,31 @@ describe("ChainLink CCIP Message layer", () => {
 
     describe("deploy contracts", () => {
         it("should deploy a ETF and partner contracts", async () => {
+            expect(etfPrimaryContract.address).toBeDefined();
+            expect(sideChainDepositContract.address).toBeDefined();
             expect(linkToken.address).toBeDefined();
             expect(router.address).toBeDefined();
         });
 
         it("should send a message to the primary contract on primary chain when deposit funds", async () => {
-
             const tokenStruct = {
                 assetContract: linkToken.address,
                 tokenType: 0,
                 tokenId: 0,
                 totalAmount: 10,
             };
+            const bundleId = 12;
 
             const checkRouterTestPromise = new Promise<void>((resolve, reject) => {
                 router.on("RouterMessageSent", (address: string, data: any) => {
                     try {
-
-                        const tokensType = ['tuple(address,uint8,uint256,uint256)[]'];
-                        const decoded = ethers.utils.defaultAbiCoder.decode(tokensType, data);
-                        const token = decoded[0][0];
+                        const depositFundMessageType = ['tuple(uint256,tuple(address,uint8,uint256,uint256)[])'];
+                        const decoded = ethers.utils.defaultAbiCoder.decode(depositFundMessageType, data);
+                        expect(decoded).toBeDefined();
                         expect(decoded).toBeDefined();
                         expect(decoded.length).toEqual(1);
+                        expect(decoded[0][0]).toEqual(BigNumber.from(bundleId));
+                        const token = decoded[0][1][0];
                         const decodedTokenStruct = {
                             assetContract: token[0],
                             tokenType: token[1],
@@ -193,7 +190,7 @@ describe("ChainLink CCIP Message layer", () => {
             await linkToken.connect(sender).approve(sideChainDepositContract.address, BigNumber.from(100));
 
             const tx = await sideChainDepositContract.connect(sender).depositFundsAndNotify(
-                0,
+                bundleId,
                 [tokenStruct],
             );
 
@@ -207,8 +204,5 @@ describe("ChainLink CCIP Message layer", () => {
             expect(event.args?.[0]).toEqual(mockMessgaeId);
             await checkRouterTestPromise;
         });
-
-
-
     });
 });
