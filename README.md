@@ -1,10 +1,9 @@
 DEMO HACKHATON CHLINK
 
 
-
 TO-DO
 
-we need to check what happens with the excess of ethers (native tokens)
+- we need to check what happens with the excess of ethers (native tokens)
 
 ```
 
@@ -30,4 +29,13 @@ we need to check what happens with the excess of ethers (native tokens)
                             ] -
                             getTokenOfBundle(_bundleId, j).totalAmount;
                     }
+```
+
+- we check bundleId was not already closed in an ETF need to make sure etf id starts from 1
+
+```
+        require(
+            bundleIdToETFId[_bundleId] == 0,
+            "ETFContract: bundleId was already closed for an ETF"
+        );
 ```

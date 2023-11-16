@@ -28,7 +28,6 @@ struct TokenAmounts {
     uint64 chainIdSelector;
 }
 
-
 contract ETFv2 is Ownable, ERC721Multiwrap {
     /*//////////////////////////////////////////////////////////////
                     Permission control roles
@@ -83,7 +82,8 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
     constructor(
         string memory _name,
         string memory _symbol,
-        RoyaltyInfo memory _royalty,
+        address _royaltyRecipient,
+        uint128 _royaltyBps,
         address _nativeTokenWrapper,
         address _etfTokenAddress,
         uint256 _etfTokenPerWrap,
@@ -97,8 +97,8 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
             msg.sender,
             _name,
             _symbol,
-            _royalty.recipient,
-            uint128(_royalty.bps),
+            _royaltyRecipient,
+            _royaltyBps,
             _nativeTokenWrapper
         )
     {
@@ -383,12 +383,6 @@ contract ETFv2 is Ownable, ERC721Multiwrap {
         address _to,
         Token[] calldata _tokensToWrap
     ) external payable returns (uint256 tokenId) {
-
-        require(
-            chainSelectorIds.length == 1 && chainSelectorIds[0] == currentChainSelectorId,
-            "ETFContract: chainSelectorIds must be equal to 1"
-        );
-
         uint256 nativeCurrencyIndex = _tokensToWrap.length;
 
         // check length of _tokenToWrap ot be maxTokenTypeQuantity

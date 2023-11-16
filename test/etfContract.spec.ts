@@ -9,6 +9,7 @@ describe("ETFContract", () => {
     const etfContractName = "ETFv2";
     const fungibleTokenName = "FungibleToken";
     const priceAggregatorContractName = "MockAggregator";
+    const mockRouterContractName = "MockRouterClient";
     const ETFURI = "https://example.com";
     const royaltyBps = 1000;
     const fee = 0;
@@ -16,12 +17,14 @@ describe("ETFContract", () => {
     const priceTokenToBeWrapped1 = 5;
     const priceTokenToBeWrapped2 = 10;
     const priceNativeToken = 0;
+    const mockChainSelectorId = 0;
 
     let etfTokenContract: any;
     let etfContract: any;
     let owner: SignerWithAddress;
     let etfOwner: SignerWithAddress;
     let etfOwner2: SignerWithAddress;
+    let MockRouterContractFactory: any;
     let FungibleTokenFactory: any;
     let NativeTokenWrapperFactory: any;
     let PriceAggregatorContractFactory: any;
@@ -33,6 +36,7 @@ describe("ETFContract", () => {
     let priceAggregatortokenToBeWrapped1: any;
     let tokenToBeWrapped2: any;
     let priceAggregatortokenToBeWrapped2: any;
+    let router: any;
     let totalValue: any;
     let tokenPrices: any;
 
@@ -43,6 +47,7 @@ describe("ETFContract", () => {
         EtfTokenContractFactory = await ethers.getContractFactory(etfTokenContractName);
         EtfContractFactory = await ethers.getContractFactory(etfContractName);
         PriceAggregatorContractFactory = await ethers.getContractFactory(priceAggregatorContractName);
+        MockRouterContractFactory = await ethers.getContractFactory(mockRouterContractName);
 
         tokenToBeWrapped1 = await FungibleTokenFactory.deploy(
             "TokenToWrapped1",
@@ -73,18 +78,24 @@ describe("ETFContract", () => {
 
         etfTokenContract = await EtfTokenContractFactory.deploy();
 
+        router = await MockRouterContractFactory.deploy();
+
+
         const tokenAmounts = [
             {
+                chainIdSelector: mockChainSelectorId,
                 assetContract: nativeAddress,
                 amount: ethers.utils.parseEther("0.5"),
                 oracleAddress: priceAggregatorNativeTokenWrapper.address,
             },
             {
+                chainIdSelector: mockChainSelectorId,
                 assetContract: tokenToBeWrapped1.address,
                 amount: 10,
                 oracleAddress: priceAggregatortokenToBeWrapped1.address,
             },
             {
+                chainIdSelector: mockChainSelectorId,
                 assetContract: tokenToBeWrapped2.address,
                 amount: 20,
                 oracleAddress: priceAggregatortokenToBeWrapped2.address,
@@ -120,21 +131,27 @@ describe("ETFContract", () => {
             else {
                 totalValue = totalValue.add(BigNumber.from(tokenAmount.amount).mul(tokenPrice.amount));
             }
-            console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
+            // console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
+        }
+
+        const royaltyInfo = {
+            recipient: owner.address,
+            bps: royaltyBps,
         }
 
 
         etfContract = await EtfContractFactory.deploy(
-            "ETF-v0.0.1",
+            "ETF-v0.0.3",
             "ETF",
-            owner.address,
-            royaltyBps,
+            royaltyInfo,
             nativeTokenWrapper.address,
             etfTokenContract.address,
             etfTokenPerWrap,
             fee,
             tokenAmounts,
             ETFURI,
+            mockChainSelectorId,
+            router.address
         );
 
         await etfTokenContract.connect(owner).setOwner(etfContract.address);

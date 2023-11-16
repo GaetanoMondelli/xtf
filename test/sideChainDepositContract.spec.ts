@@ -12,6 +12,9 @@ describe("ChainLink CCIP Message layer", () => {
     const etfTokenPerWrap = 100;
     const fee = 0;
     const priceLinkToken = 5;
+    const mockPrimaryChainSelectorId = 0;
+    const mockSecondaryChainSelectorId = 1;
+
     const mockMessgaeId = "0x0000000000000000000000000000000000000000000000000000000000000000";
     const messageSideChainDepositName = "SidechainDeposit";
     // const messageReceiverContractName = "BasicMessageReceiver";
@@ -84,23 +87,36 @@ describe("ChainLink CCIP Message layer", () => {
 
         const tokenAmounts = [
             {
+                chainIdSelector: mockPrimaryChainSelectorId,
                 assetContract: linkToken.address,
                 amount: 10,
                 oracleAddress: priceAggregatorLinkToken.address,
             },
+            // {
+            //     chainIdSelector: mockPrimaryChainSelectorId,
+            //     assetContract: nativeAddress,
+            //     amount: ethers.utils.parseEther("0.5"),
+            //     oracleAddress: priceAggregatorLinkToken.address,
+            // },
         ];
 
+        const royaltyInfo = {
+            recipient: owner.address,
+            bps: royaltyBps,
+        }
+
         etfPrimaryContract = await EtfContractFactory.deploy(
-            "ETF-v0.0.1",
+            "ETF-v0.0.3",
             "ETF",
-            owner.address,
-            royaltyBps,
+            royaltyInfo,
             nativeTokenWrapper.address,
             etfTokenContract.address,
             etfTokenPerWrap,
             fee,
             tokenAmounts,
             ETFURI,
+            mockPrimaryChainSelectorId,
+            router.address
         );
 
 
@@ -157,8 +173,6 @@ describe("ChainLink CCIP Message layer", () => {
                         const token = decoded[0][0];
                         expect(decoded).toBeDefined();
                         expect(decoded.length).toEqual(1);
-
-                        console.log(token);
                         const decodedTokenStruct = {
                             assetContract: token[0],
                             tokenType: token[1],
@@ -193,5 +207,8 @@ describe("ChainLink CCIP Message layer", () => {
             expect(event.args?.[0]).toEqual(mockMessgaeId);
             await checkRouterTestPromise;
         });
+
+
+
     });
 });
