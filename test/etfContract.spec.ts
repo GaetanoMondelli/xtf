@@ -16,6 +16,7 @@ describe("ETFContract", () => {
     const etfTokenPerWrap = 100;
     const priceTokenToBeWrapped1 = 5;
     const priceTokenToBeWrapped2 = 10;
+    const sideChainTokenToBeWrapped1 = 15;
     const priceNativeToken = 0;
     const mockChainSelectorId = 0;
 
@@ -36,6 +37,7 @@ describe("ETFContract", () => {
     let priceAggregatortokenToBeWrapped1: any;
     let tokenToBeWrapped2: any;
     let priceAggregatortokenToBeWrapped2: any;
+    let royaltyInfo: any;
     let router: any;
     let totalValue: any;
     let tokenPrices: any;
@@ -134,7 +136,7 @@ describe("ETFContract", () => {
             // console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
         }
 
-        const royaltyInfo = {
+        royaltyInfo = {
             recipient: owner.address,
             bps: royaltyBps,
         }
@@ -155,6 +157,7 @@ describe("ETFContract", () => {
         );
 
         await etfTokenContract.connect(owner).setOwner(etfContract.address);
+        await router.setOnlyRouteTo(etfContract.address);
     });
 
     describe("deploy contracts", () => {
@@ -377,10 +380,126 @@ describe("ETFContract", () => {
                 expect(await tokenToBeWrapped2.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
                 expect(await tokenToBeWrapped1.balanceOf(etfContract.address)).toEqual(BigNumber.from(10));
                 expect(await tokenToBeWrapped2.balanceOf(etfContract.address)).toEqual(BigNumber.from(20));
-
             });
 
         });
-    });
 
+        describe("gets notification from side chain deposits", () => {
+            const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+            const mockSecondaryChainSelectorId = 2;
+            let sideChainTokenWrapped: any;
+            let priceAggregatorSideChainTokenWrapped: any;
+            let message;
+
+            beforeEach(async () => {
+
+                sideChainTokenWrapped = await FungibleTokenFactory.deploy(
+                    "SideChainTokenToWrapped1",
+                    "SIDE1"
+                );
+
+                priceAggregatorSideChainTokenWrapped = await PriceAggregatorContractFactory.deploy(
+                    sideChainTokenToBeWrapped1
+                );
+
+                // await sideChainTokenWrapped.connect(owner).mint(etfOwner.address, sideChainTokenToBeWrapped1);
+                // await sideChainTokenWrapped.connect(etfOwner).approve(
+                //     etfContract.address,
+                //     BigNumber.from(sideChainTokenToBeWrapped1)
+                // );
+
+                const tokenAmounts = [
+                    {
+                        chainIdSelector: mockChainSelectorId,
+                        assetContract: tokenToBeWrapped1.address,
+                        amount: 10,
+                        oracleAddress: priceAggregatortokenToBeWrapped1.address,
+                    },
+                    {
+                        chainIdSelector: mockSecondaryChainSelectorId,  // On the SIDE CHAIN!!
+                        assetContract: sideChainTokenWrapped.address,
+                        amount: 20,
+                        oracleAddress: priceAggregatortokenToBeWrapped2.address,
+                    },
+                ];
+
+
+                etfContract = await EtfContractFactory.deploy(
+                    "ETF-v0.0.3",
+                    "ETF",
+                    royaltyInfo,
+                    nativeTokenWrapper.address,
+                    etfTokenContract.address,
+                    etfTokenPerWrap,
+                    fee,
+                    tokenAmounts,
+                    ETFURI,
+                    mockChainSelectorId,
+                    router.address
+                );
+
+                etfTokenContract = await EtfTokenContractFactory.deploy();
+                await etfTokenContract.connect(owner).setOwner(etfContract.address);
+                await router.connect(owner).setOnlyRouteTo(etfContract.address);
+            });
+
+
+
+            it("should be able to receive notification", async () => {
+                const tokenStruct1 = {
+                    assetContract: sideChainTokenWrapped.address,
+                    tokenType: 0,
+                    tokenId: 20,
+                    totalAmount: 10,
+                };
+
+
+                const depositFundMessage = {
+                    bundleId: 0,
+                    tokensToWrap: [tokenStruct1],
+                }
+
+                const encodedData = ethers.utils.defaultAbiCoder.encode(
+                    ['tuple(uint256,tuple(address,uint256,uint256,uint256)[])'],
+                    [[depositFundMessage.bundleId, depositFundMessage.tokensToWrap.map(token => [
+                        token.assetContract,
+                        token.tokenType,
+                        token.tokenId,
+                        token.totalAmount
+                    ])]]
+                );
+
+                const tx = await router.ccipReceive(
+                    {
+                        messageId: mockMessageId,
+                        sourceChainSelector: mockSecondaryChainSelectorId,
+                        sender: etfOwner2.address,
+                        data: encodedData,
+                        destTokenAmounts: []
+                    }
+                );
+
+                const checkMessageReceivedETFContractPromise = new Promise<void>((resolve, reject) => {
+                    etfContract.on("MessageReceived", (messageId: string, chainIdSelector: any, sender: any, data: any) => {
+                        try {
+                            // console.log('etf message received', messageId, sender, chainIdSelector, data)
+                            expect(messageId).toEqual(mockMessageId);
+                            expect(sender).toEqual(etfOwner2.address);
+                            expect(chainIdSelector).toEqual(BigNumber.from(mockSecondaryChainSelectorId));
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                        finally {
+                            etfContract.removeAllListeners("MessageReceived");
+                        }
+                    });
+                });
+
+                const receipt = await tx.wait();
+                await checkMessageReceivedETFContractPromise;
+
+            });
+        });
+    });
 });
