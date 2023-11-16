@@ -10,7 +10,6 @@ import "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import "@thirdweb-dev/contracts/lib/CurrencyTransferLib.sol";
 import "@thirdweb-dev/contracts/base/ERC721Base.sol";
 import "@thirdweb-dev/contracts/extension/TokenStore.sol";
-
 import "hardhat/console.sol";
 
 /**
@@ -39,6 +38,7 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
     address immutable i_link;
     address[] public whitelistedTokens;
     uint64 public primaryChainSelectorId;
+    uint64 immutable chainSelectorId;
     mapping(address => uint256) public tokenQuantities;
     mapping(uint256 => mapping(address => bool)) public addressInBundleId;
     mapping(uint256 => address[]) public bundleIdToAddress;
@@ -47,8 +47,14 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
 
     event MessageSent(bytes32 messageId);
 
+    struct DepositFundMessage {
+        uint256 bundleId;
+        Token[] tokensToWrap;
+    }
+
     constructor(
         uint64 _primaryChainSelectorId,
+        uint64 _chainSelectorId,
         address _primaryEtfContract,
         address router,
         address link,
@@ -72,6 +78,7 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
         _setupRole(ASSET_ROLE, NATIVE_TOKEN);
         primaryChainSelectorId = _primaryChainSelectorId;
         primaryEtfContract = _primaryEtfContract;
+        chainSelectorId = _chainSelectorId;
     }
 
     receive() external payable {
@@ -114,8 +121,6 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
                     _tokensToWrap[i].assetContract
                 ) {
                     tokenAlreadyInBundle = true;
-
-                    // check if the token quantity + current quantity is not greater than the quantity required
                     if (
                         getTokenOfBundle(_bundleId, j).totalAmount +
                             _tokensToWrap[i].totalAmount >
@@ -130,7 +135,6 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
                             getTokenOfBundle(_bundleId, j).totalAmount;
                     }
 
-                    // update the token quantity
                     _updateTokenInBundle(
                         Token(
                             _tokensToWrap[i].assetContract,
@@ -167,18 +171,22 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
         }
 
         _transferTokenBatch(msg.sender, address(this), _tokensToWrap);
-        return send(primaryChainSelectorId, primaryEtfContract, abi.encode(_tokensToWrap), PayFeesIn.Native);
+        DepositFundMessage memory message = DepositFundMessage({
+            bundleId: _bundleId,
+            tokensToWrap: _tokensToWrap
+        });
+        return send(primaryChainSelectorId, primaryEtfContract, message, PayFeesIn.Native);
     }
 
     function send(
         uint64 destinationChainSelector,
         address receiver,
-        bytes memory data,
+        DepositFundMessage memory data,
         PayFeesIn payFeesIn
     ) internal returns (bytes32 messageId) {
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(receiver),
-            data: data,
+            data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: "",
             feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
