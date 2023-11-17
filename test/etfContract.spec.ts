@@ -446,13 +446,13 @@ describe("ETFContract", () => {
 
 
             it("should be able to receive notification", async () => {
+                const amountOfSideChainTokenToWrap = 10;
                 const tokenStruct1 = {
                     assetContract: sideChainTokenWrapped.address,
                     tokenType: 0,
-                    tokenId: 20,
-                    totalAmount: 10,
+                    tokenId: 0,
+                    totalAmount: amountOfSideChainTokenToWrap,
                 };
-
 
                 const depositFundMessage = {
                     bundleId: 0,
@@ -496,9 +496,12 @@ describe("ETFContract", () => {
                     });
                 });
 
-                const receipt = await tx.wait();
+                await tx.wait();
                 await checkMessageReceivedETFContractPromise;
-
+                const tokens = await etfContract.getTokensBundle(0);
+                expect(tokens[0][0]).toEqual(BigNumber.from(amountOfSideChainTokenToWrap));
+                expect(tokens[1][0]).toEqual(sideChainTokenWrapped.address);
+                expect(tokens[2][0]).toEqual(BigNumber.from(mockSecondaryChainSelectorId));
             });
         });
     });

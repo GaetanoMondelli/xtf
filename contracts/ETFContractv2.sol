@@ -7,7 +7,6 @@ import "@thirdweb-dev/contracts/base/ERC721Multiwrap.sol";
 import "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import "@thirdweb-dev/contracts/lib/CurrencyTransferLib.sol";
 import "@thirdweb-dev/contracts/base/ERC721Base.sol";
-import "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -78,6 +77,9 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
     mapping(address => AggregatorV3Interface) tokenIdToDataFeed;
     // mapping of token address to price
     mapping(address => uint256) public addressToAmount;
+    // mapping bundleId to mapping of index to chainIdSelector
+    mapping(uint256 => mapping(uint256 => uint64))
+        public bundleIdToChainIdSelector;
 
     struct DepositFundMessage {
         uint256 bundleId;
@@ -251,6 +253,9 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     _bundleId
                 );
 
+                bundleIdToChainIdSelector[_bundleId][
+                    getTokenCountOfBundle(_bundleId) - 1
+                ] = currentChainSelectorId;
                 bundleIdToAddressToTokenAmount[currentChainSelectorId][
                     _bundleId
                 ][msg.sender][
@@ -548,6 +553,10 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     _bundleId
                 );
 
+                bundleIdToChainIdSelector[_bundleId][
+                    getTokenCountOfBundle(_bundleId) - 1
+                ] = _chainIdSelector;
+
                 bundleIdToAddressToTokenAmount[_chainIdSelector][_bundleId][
                     _sender
                 ][getTokenCountOfBundle(_bundleId) - 1] += _tokensWrapped[i]
@@ -663,16 +672,22 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
     )
         public
         view
-        returns (uint256[] memory quantities, address[] memory addresses)
+        returns (
+            uint256[] memory quantities,
+            address[] memory addresses,
+            uint64[] memory chainSelectorIds
+        )
     {
         // get the number of tokens in the bundle
         uint256 tokenCount = getTokenCountOfBundle(_bundleId);
         // store the count of each token in the bundle and store in an array
         quantities = new uint256[](tokenCount);
         addresses = new address[](tokenCount);
+        chainSelectorIds = new uint64[](tokenCount);
         for (uint256 i = 0; i < tokenCount; i += 1) {
             quantities[i] = getTokenOfBundle(_bundleId, i).totalAmount;
             addresses[i] = getTokenOfBundle(_bundleId, i).assetContract;
+            chainSelectorIds[i] = bundleIdToChainIdSelector[_bundleId][i];
         }
     }
 
@@ -851,6 +866,10 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     depositFundMessage.bundleId
                 );
 
+                bundleIdToChainIdSelector[depositFundMessage.bundleId][
+                    getTokenCountOfBundle(depositFundMessage.bundleId) - 1
+                ] = message.sourceChainSelector;
+
                 bundleIdToAddressToTokenAmount[message.sourceChainSelector][
                     depositFundMessage.bundleId
                 ][address(bytes20(message.sender))][
@@ -1020,6 +1039,8 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     depositFundMessage.tokensToWrap
                 );
             }
+
+            console.log("here222233");
         }
     }
 }
