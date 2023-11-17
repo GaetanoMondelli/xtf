@@ -148,7 +148,7 @@ describe("ETFContract", () => {
             royaltyInfo,
             nativeTokenWrapper.address,
             etfTokenContract.address,
-            etfTokenPerWrap,
+            BigNumber.from(etfTokenPerWrap).mul(BigNumber.from(10).pow(18)),
             fee,
             tokenAmounts,
             ETFURI,
@@ -233,7 +233,7 @@ describe("ETFContract", () => {
                     });
 
                 const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                expect(etfTokensBalance).toEqual(BigNumber.from(etfTokenPerWrap));
+                expect(etfTokensBalance).toEqual(BigNumber.from(etfTokenPerWrap).mul(BigNumber.from(10).pow(18)));
             });
 
 
@@ -325,20 +325,20 @@ describe("ETFContract", () => {
                     assetContract: tokenToBeWrapped1.address,
                     tokenType: 0,
                     tokenId: 0,
-                    totalAmount: amountToWrapToken1,
+                    totalAmount: BigNumber.from(amountToWrapToken1).mul(BigNumber.from(10).pow(18))
                 };
 
                 const tokenStruct2 = {
                     assetContract: tokenToBeWrapped2.address,
                     tokenType: 0,
                     tokenId: 0,
-                    totalAmount: amountToWrapToken2,
+                    totalAmount: BigNumber.from(amountToWrapToken2).mul(BigNumber.from(10).pow(18)),
                 };
 
-                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1);
+                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
                 await tokenToBeWrapped1.connect(etfOwner).approve(
                     etfContract.address,
-                    BigNumber.from(amountToWrapToken1)
+                    tokenStruct1.totalAmount
                 );
 
                 let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
@@ -358,10 +358,10 @@ describe("ETFContract", () => {
                 etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
                 expect(etfTokensBalance).toEqual(BigNumber.from(0));
 
-                await tokenToBeWrapped2.connect(owner).mint(etfOwner2.address, amountToWrapToken2);
+                await tokenToBeWrapped2.connect(owner).mint(etfOwner2.address, tokenStruct2.totalAmount);
                 await tokenToBeWrapped2.connect(etfOwner2).approve(
                     etfContract.address,
-                    BigNumber.from(amountToWrapToken2)
+                    tokenStruct2.totalAmount
                 );
                 await etfContract.connect(etfOwner2).depositFunds(
                     0,
@@ -373,13 +373,14 @@ describe("ETFContract", () => {
                 expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner1.mul(etfTokenPerWrap).div(totalValue));
 
                 etfTokensBalance = await etfTokenContract.balanceOf(etfOwner2.address);
-                const valueDepositedByEtfOwner2 = tokenStruct2.totalAmount * tokenPrices[2].amount;
-                expect(etfTokensBalance).toEqual(BigNumber.from(valueDepositedByEtfOwner2 / totalValue * etfTokenPerWrap));
+                const valueDepositedByEtfOwner2 = BigNumber.from(tokenStruct2.totalAmount).mul(tokenPrices[2].amount);
+                expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner2.mul(etfTokenPerWrap).div(totalValue));
+                // expect(etfTokensBalance).toEqual(BigNumber.from(valueDepositedByEtfOwner2 / totalValue * etfTokenPerWrap));
 
                 expect(await tokenToBeWrapped1.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
                 expect(await tokenToBeWrapped2.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
-                expect(await tokenToBeWrapped1.balanceOf(etfContract.address)).toEqual(BigNumber.from(10));
-                expect(await tokenToBeWrapped2.balanceOf(etfContract.address)).toEqual(BigNumber.from(20));
+                expect(await tokenToBeWrapped1.balanceOf(etfContract.address)).toEqual(tokenStruct1.totalAmount);
+                expect(await tokenToBeWrapped2.balanceOf(etfContract.address)).toEqual(tokenStruct2.totalAmount);
             });
 
         });
@@ -430,7 +431,7 @@ describe("ETFContract", () => {
                     royaltyInfo,
                     nativeTokenWrapper.address,
                     etfTokenContract.address,
-                    etfTokenPerWrap,
+                    BigNumber.from(etfTokenPerWrap).mul(BigNumber.from(10).pow(18)),
                     fee,
                     tokenAmounts,
                     ETFURI,

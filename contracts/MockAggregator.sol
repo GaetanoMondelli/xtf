@@ -9,7 +9,7 @@ contract MockAggregator is AggregatorV3Interface {
         _price = price;
     }
 
-    function decimals() external pure override returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 18;
     }
 
@@ -21,7 +21,9 @@ contract MockAggregator is AggregatorV3Interface {
         return 0;
     }
 
-    function getRoundData(uint80 _roundId)
+    function getRoundData(
+        uint80 _roundId
+    )
         external
         pure
         override
@@ -48,6 +50,7 @@ contract MockAggregator is AggregatorV3Interface {
             uint80 answeredInRound
         )
     {
-        return (0, _price, 0, 0, 0);
+        int256 unitprice = _price;
+        return (0, int256(unitprice), 0, 0, 0);
     }
 }
