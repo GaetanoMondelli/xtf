@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 describe("ETFContract", () => {
+    // THERE MAY BE AN ERROR ON THE LAST DIGIT OF THE PRICE OF THE NATIVE TOKEN TRY WITH 1 OR 20
     const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const etfTokenContractName = "ETFToken";
     const nativeWrapperContractName = "NativeTokenWrapper";
@@ -13,11 +14,12 @@ describe("ETFContract", () => {
     const ETFURI = "https://example.com";
     const royaltyBps = 1000;
     const fee = 0;
-    const etfTokenPerWrap = 100;
-    const priceTokenToBeWrapped1 = 5;
-    const priceTokenToBeWrapped2 = 10;
+    const etfTokenPerWrap = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
+    const priceDecimals = 8; 
+    const priceTokenToBeWrapped1 = 1345612360;
+    const priceTokenToBeWrapped2 = 299528477;
     const sideChainTokenToBeWrapped1 = 15;
-    const priceNativeToken = 0;
+    const priceNativeToken = 196741624297; 
     const mockChainSelectorId = 0;
 
     let etfTokenContract: any;
@@ -57,7 +59,7 @@ describe("ETFContract", () => {
         );
 
         priceAggregatortokenToBeWrapped1 = await PriceAggregatorContractFactory.deploy(
-            priceTokenToBeWrapped1
+            priceTokenToBeWrapped1, priceDecimals
         );
 
         tokenToBeWrapped2 = await FungibleTokenFactory.deploy(
@@ -66,7 +68,7 @@ describe("ETFContract", () => {
         );
 
         priceAggregatortokenToBeWrapped2 = await PriceAggregatorContractFactory.deploy(
-            priceTokenToBeWrapped2
+            priceTokenToBeWrapped2, priceDecimals
         );
 
         nativeTokenWrapper = await NativeTokenWrapperFactory.deploy(
@@ -75,7 +77,7 @@ describe("ETFContract", () => {
         );
 
         priceAggregatorNativeTokenWrapper = await PriceAggregatorContractFactory.deploy(
-            priceNativeToken
+            priceNativeToken, priceDecimals
         );
 
         etfTokenContract = await EtfTokenContractFactory.deploy();
@@ -93,32 +95,29 @@ describe("ETFContract", () => {
             {
                 chainIdSelector: mockChainSelectorId,
                 assetContract: tokenToBeWrapped1.address,
-                amount: 10,
+                amount: BigNumber.from(10).mul(BigNumber.from(10).pow(18)),
                 oracleAddress: priceAggregatortokenToBeWrapped1.address,
             },
             {
                 chainIdSelector: mockChainSelectorId,
                 assetContract: tokenToBeWrapped2.address,
-                amount: 20,
+                amount: BigNumber.from(20).mul(BigNumber.from(10).pow(18)),
                 oracleAddress: priceAggregatortokenToBeWrapped2.address,
             },
         ];
 
-
-
-        // TO-DO: Pass the data strucuture as a parameter in v1.1
         tokenPrices = [
             {
                 assetContract: nativeAddress,
-                amount: 0,
+                amount: priceNativeToken,
             },
             {
                 assetContract: tokenToBeWrapped1.address,
-                amount: 5,
+                amount: priceTokenToBeWrapped1,
             },
             {
                 assetContract: tokenToBeWrapped2.address,
-                amount: 10,
+                amount: priceTokenToBeWrapped2,
             },
         ];
 
@@ -127,13 +126,8 @@ describe("ETFContract", () => {
         for (let i = 0; i < tokenAmounts.length; i++) {
             const tokenAmount = tokenAmounts[i];
             const tokenPrice = tokenPrices[i];
-            if (tokenAmount.amount instanceof BigNumber) {
-                totalValue = totalValue.add(tokenAmount.amount.mul(tokenPrice.amount));
-            }
-            else {
-                totalValue = totalValue.add(BigNumber.from(tokenAmount.amount).mul(tokenPrice.amount));
-            }
-            // console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
+            totalValue = totalValue.add(tokenAmount.amount.mul(tokenPrice.amount));
+            console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
         }
 
         royaltyInfo = {
@@ -148,7 +142,7 @@ describe("ETFContract", () => {
             royaltyInfo,
             nativeTokenWrapper.address,
             etfTokenContract.address,
-            BigNumber.from(etfTokenPerWrap).mul(BigNumber.from(10).pow(18)),
+            etfTokenPerWrap,
             fee,
             tokenAmounts,
             ETFURI,
@@ -189,8 +183,8 @@ describe("ETFContract", () => {
             });
 
             it("should mint an ETF", async () => {
-                const amountToWrapToken1 = 10;
-                const amountToWrapToken2 = 20;
+                const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+                const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
                 const ethersToWrap = ethers.utils.parseEther("0.5");
 
                 const nativeTokenStruct = {
@@ -218,11 +212,11 @@ describe("ETFContract", () => {
                 await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2);
                 await tokenToBeWrapped1.connect(etfOwner).approve(
                     etfContract.address,
-                    BigNumber.from(amountToWrapToken1)
+                    amountToWrapToken1
                 );
                 await tokenToBeWrapped2.connect(etfOwner).approve(
                     etfContract.address,
-                    BigNumber.from(amountToWrapToken2)
+                    amountToWrapToken2
                 );
 
 
@@ -233,13 +227,13 @@ describe("ETFContract", () => {
                     });
 
                 const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                expect(etfTokensBalance).toEqual(BigNumber.from(etfTokenPerWrap).mul(BigNumber.from(10).pow(18)));
+                expect(etfTokensBalance).toEqual(etfTokenPerWrap);
             });
 
 
             it("should reedem and burn an ETF", async () => {
-                const amountToWrapToken1 = 10;
-                const amountToWrapToken2 = 20;
+                const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+                const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));;
                 const ethersToWrap = ethers.utils.parseEther("0.5");
 
                 const nativeTokenStruct = {
@@ -298,10 +292,10 @@ describe("ETFContract", () => {
                 expect(etfTokensBalance).toEqual(BigNumber.from(0));
 
                 token1Balance = await tokenToBeWrapped1.balanceOf(etfOwner.address);
-                expect(token1Balance).toEqual(BigNumber.from(amountToWrapToken1));
+                expect(token1Balance).toEqual(amountToWrapToken1);
 
                 token2Balance = await tokenToBeWrapped2.balanceOf(etfOwner.address);
-                expect(token2Balance).toEqual(BigNumber.from(amountToWrapToken2));
+                expect(token2Balance).toEqual(amountToWrapToken2);
 
                 const etFSupply = await etfTokenContract.totalSupply();
                 expect(etFSupply).toEqual(BigNumber.from(0));
@@ -310,8 +304,8 @@ describe("ETFContract", () => {
 
             it("should be able to deposit", async () => {
 
-                const amountToWrapToken1 = 10;
-                const amountToWrapToken2 = 20;
+                const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+                const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
                 const ethersToWrap = ethers.utils.parseEther("0.5");
 
                 const nativeTokenStruct = {
@@ -325,14 +319,14 @@ describe("ETFContract", () => {
                     assetContract: tokenToBeWrapped1.address,
                     tokenType: 0,
                     tokenId: 0,
-                    totalAmount: BigNumber.from(amountToWrapToken1).mul(BigNumber.from(10).pow(18))
+                    totalAmount: amountToWrapToken1
                 };
 
                 const tokenStruct2 = {
                     assetContract: tokenToBeWrapped2.address,
                     tokenType: 0,
                     tokenId: 0,
-                    totalAmount: BigNumber.from(amountToWrapToken2).mul(BigNumber.from(10).pow(18)),
+                    totalAmount: amountToWrapToken2,
                 };
 
                 await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
@@ -369,13 +363,13 @@ describe("ETFContract", () => {
                 )
 
                 etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                const valueDepositedByEtfOwner1 = BigNumber.from(tokenStruct1.totalAmount).mul(tokenPrices[1].amount);
+                let valueDepositedByEtfOwner1 = BigNumber.from(tokenStruct1.totalAmount).mul(tokenPrices[1].amount);
+                valueDepositedByEtfOwner1 = valueDepositedByEtfOwner1.add(ethersToWrap.mul(tokenPrices[0].amount));
                 expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner1.mul(etfTokenPerWrap).div(totalValue));
 
                 etfTokensBalance = await etfTokenContract.balanceOf(etfOwner2.address);
                 const valueDepositedByEtfOwner2 = BigNumber.from(tokenStruct2.totalAmount).mul(tokenPrices[2].amount);
                 expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner2.mul(etfTokenPerWrap).div(totalValue));
-                // expect(etfTokensBalance).toEqual(BigNumber.from(valueDepositedByEtfOwner2 / totalValue * etfTokenPerWrap));
 
                 expect(await tokenToBeWrapped1.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
                 expect(await tokenToBeWrapped2.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
@@ -400,7 +394,7 @@ describe("ETFContract", () => {
                 );
 
                 priceAggregatorSideChainTokenWrapped = await PriceAggregatorContractFactory.deploy(
-                    sideChainTokenToBeWrapped1
+                    sideChainTokenToBeWrapped1, priceDecimals
                 );
 
                 // await sideChainTokenWrapped.connect(owner).mint(etfOwner.address, sideChainTokenToBeWrapped1);
