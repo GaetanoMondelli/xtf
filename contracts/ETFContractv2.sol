@@ -7,6 +7,9 @@ import "@thirdweb-dev/contracts/base/ERC721Multiwrap.sol";
 import "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import "@thirdweb-dev/contracts/lib/CurrencyTransferLib.sol";
 import "@thirdweb-dev/contracts/base/ERC721Base.sol";
+import "@thirdweb-dev/contracts/base/ERC20Base.sol";
+
+
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -654,6 +657,7 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
         // store the count of each token in the bundle and store in an array
         quantities = new uint256[](tokensToWrapQuantity);
         addresses = new address[](tokensToWrapQuantity);
+        selectorsIds = new uint64[](tokensToWrapQuantity);
         for (uint256 c = 0; c < chainSelectorIds.length; c++) {
             uint64 chainSelectorId = chainSelectorIds[c];
             for (uint256 i = 0; i < tokensToWrapQuantity; i += 1) {
@@ -747,7 +751,6 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
             "ETFContract: bundleId was already closed for an ETF"
         );
 
-        console.log("here2222");
         // check that the token sent are whitelisted
         for (
             uint256 i = 0;
@@ -937,6 +940,18 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     i < getTokenCountOfBundle(depositFundMessage.bundleId);
                     i += 1
                 ) {
+
+                    uint256 priceAggrDecimals = tokenIdToDataFeed[
+                        getTokenOfBundle(depositFundMessage.bundleId, i)
+                            .assetContract
+                    ].decimals();
+
+                    uint256 tokenDecimals = ERC20Base(
+                        getTokenOfBundle(depositFundMessage.bundleId, i)
+                            .assetContract
+                    ).decimals();
+
+
                     (
                         ,
                         /* uint80 roundID */ int answer,
@@ -949,7 +964,7 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                         ].latestRoundData();
 
                     totalValue +=
-                        uint256(answer) *
+                        uint256(answer) *  10**(priceAggrDecimals - tokenDecimals) * // scale the price to the token decimals
                         getTokenOfBundle(depositFundMessage.bundleId, i)
                             .totalAmount;
                 }
@@ -1040,7 +1055,6 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                 );
             }
 
-            console.log("here222233");
         }
     }
 }

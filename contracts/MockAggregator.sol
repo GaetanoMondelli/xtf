@@ -3,14 +3,16 @@ pragma solidity ^0.8.0;
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract MockAggregator is AggregatorV3Interface {
-    int256 private _price;
+    int256 private price;
+    uint8 private dec;
 
-    constructor(int256 price) {
-        _price = price;
+    constructor(int256 _price, uint8 _decimals) {
+        price = _price;
+        dec = _decimals;
     }
 
-    function decimals() public pure override returns (uint8) {
-        return 18;
+    function decimals() public view override returns (uint8) {
+        return dec;
     }
 
     function description() external pure override returns (string memory) {
@@ -50,7 +52,6 @@ contract MockAggregator is AggregatorV3Interface {
             uint80 answeredInRound
         )
     {
-        int256 unitprice = _price;
-        return (0, int256(unitprice), 0, 0, 0);
+        return (0, price, 0, 0, 0);
     }
 }
