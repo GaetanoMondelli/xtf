@@ -81,7 +81,7 @@ describe("ChainLink CCIP Message layer", () => {
 
 
         priceAggregatorLinkToken = await PriceAggregatorContractFactory.deploy(
-            priceLinkToken
+            priceLinkToken, 8
         );
 
         const tokenAmounts = [
