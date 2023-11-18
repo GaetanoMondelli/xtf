@@ -3,7 +3,6 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 describe("ETFContract", () => {
-    // THERE MAY BE AN ERROR ON THE LAST DIGIT OF THE PRICE OF THE NATIVE TOKEN TRY WITH 1 OR 20
     const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const etfTokenContractName = "ETFToken";
     const nativeWrapperContractName = "NativeTokenWrapper";

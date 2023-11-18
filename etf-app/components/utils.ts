@@ -1,6 +1,8 @@
 import { BigNumber, ethers } from "ethers";
 import CONTRACTS from '../../CONTRACTS.json'
 const MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
+const ETFContractv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+
 
 
 import { useContract, useContractRead } from "@thirdweb-dev/react";
@@ -51,8 +53,9 @@ export const getTotalQuantites = async () => {
 }
 
 export const getPriceAggregatorAddress = async () => {
-    let prices = [];
     const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    let prices = [];
 
     for (const contractObject of CONTRACTS['MockAggregator']) {
         const { address } = contractObject;
@@ -82,4 +85,40 @@ export const minimiseAddress = (address: string) => {
     if (!address) return '';
     if (address === nativeAddress) return 'ETH';
     return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+export const getInvestorAddressesForBundle = async (bundleId: number) => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const addressTokensMap = new Map<string, any>();
+    const contractObject = CONTRACTS['ETFv2'][0];
+    const { address } = contractObject;
+    const contract = new ethers.Contract(address, ETFContractv2ABI, provider);
+    const investorAddresses = await contract.getAllAddressesForBundleId(bundleId);
+
+    for (const investorAddress of investorAddresses) {
+        console.log('add', investorAddress);
+        const record = await contract.getAddressQuantityPerBundle(bundleId, investorAddress);
+        addressTokensMap.set(investorAddress, record);
+    }
+
+    return addressTokensMap;
+}
+
+export const getTokensByAddres = async (bundleId: number, address: string) => {
+    const values = [];
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const prices: any[] = await getPriceAggregatorAddress();
+
+    const contractObject = CONTRACTS['ETFv2'][0];
+    const { address: contractAddress } = contractObject;
+    const contract = new ethers.Contract(contractAddress, ETFContractv2ABI, provider);
+    const recordArray = await contract.getAddressQuantityPerBundle(bundleId, address);
+    for (const record of recordArray) {
+        console.log('record22', address, record);
+
+        // values.push(BigNumber.from(value).mul(BigNumber.from(record.amount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
+    }
+    // console.log('values', values);
+    // return values;
+    return recordArray;
 }

@@ -9,7 +9,6 @@ import "@thirdweb-dev/contracts/lib/CurrencyTransferLib.sol";
 import "@thirdweb-dev/contracts/base/ERC721Base.sol";
 import "@thirdweb-dev/contracts/base/ERC20Base.sol";
 
-
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -940,7 +939,6 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     i < getTokenCountOfBundle(depositFundMessage.bundleId);
                     i += 1
                 ) {
-
                     uint256 priceAggrDecimals = tokenIdToDataFeed[
                         getTokenOfBundle(depositFundMessage.bundleId, i)
                             .assetContract
@@ -950,7 +948,6 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                         getTokenOfBundle(depositFundMessage.bundleId, i)
                             .assetContract
                     ).decimals();
-
 
                     (
                         ,
@@ -964,7 +961,7 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                         ].latestRoundData();
 
                     totalValue +=
-                        uint256(answer) *  10**(priceAggrDecimals - tokenDecimals) * // scale the price to the token decimals
+                        uint256(answer) * 10 ** (priceAggrDecimals - tokenDecimals) * // scale the price to the token decimals
                         getTokenOfBundle(depositFundMessage.bundleId, i)
                             .totalAmount;
                 }
@@ -974,8 +971,9 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     "ETFContract: totalValue of the bundle must be greater than 0"
                 );
 
-                //  different account have contributed to the bundle in proportion to the value of the tokens they sent, they can have different amount of tokens
-                // for each address, calculate the amount of tokens to send
+                //  different account have contributed to the bundle in proportion to the value of the tokens they sent,
+                //  they can have different amount of tokens
+                //  for each address, we calculate the amount of tokens to send
                 //  populate the addressToAmount mapping
                 // first let's iterate over bundleIdToAddress
 
@@ -1054,7 +1052,39 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     depositFundMessage.tokensToWrap
                 );
             }
-
         }
     }
-}
+
+    function getAllAddressesForBundleId(
+        uint256 bundleId
+    ) public view returns (address[] memory) {
+        return bundleIdToAddress[bundleId];
+    }
+
+        // this could be too much to maintain if many addresses are in the bundle
+        function getAddressQuantityPerBundle(
+            uint256 _bundleId,
+            address _address
+        )
+            public
+            view
+            returns (
+                uint256[] memory quantities,
+                address[] memory contractAddresses
+            )
+        {
+            // get the number of tokens in the bundle
+            uint256 tokenCount = getTokenCountOfBundle(_bundleId);
+            // store the count of each token in the bundle and store in an array
+            quantities = new uint256[](tokenCount);
+            contractAddresses = new address[](tokenCount);
+            for (uint256 i = 0; i < tokenCount; i += 1) {
+                address assetContract = getTokenOfBundle(_bundleId, i)
+                    .assetContract;
+                quantities[i] = bundleIdToAddressToTokenAmount[
+                    bundleIdToChainIdSelector[_bundleId][i]
+                ][_bundleId][_address][i];
+                contractAddresses[i] = assetContract;
+            }
+        }
+    }
