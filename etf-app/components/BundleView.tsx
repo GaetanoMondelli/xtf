@@ -1,13 +1,13 @@
 import { useAddress, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
 import styles from '../styles/page.module.css'
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
-const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-import { Button, Card, InputNumber, Progress } from 'antd';
+import TokenDescriptions from "./TokenDescriptionsView";
+import { Badge, Button, Card, Descriptions, Form, InputNumber, Progress, Divider } from 'antd';
 import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { minimiseAddress, getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggregatorAddress, getTokensByAddres } from "./utils";
+import { minimiseAddress, getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggregatorAddress, nativeAddress } from "./utils";
 import { ChartDataset } from "chart.js/auto";
 
 
@@ -58,10 +58,31 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     );
 
 
-    // bundleIdToETFId
-    // bundleIdToETFId
+    const getRibbonProps = (etfIdLoading: any, etfId: any, isETFBurnedLoading: any, isETFBurned: any) => {
 
-    // use effect with async await
+        if (etfIdLoading || isETFBurnedLoading) {
+            return {
+                color: 'grey',
+                text: 'Loading...',
+            }
+        } else if (etfId == 0 && !isETFBurned) {
+            return {
+                color: 'blue',
+                text: 'ETF Vault Open',
+            }
+        } else if (isETFBurned) {
+            return {
+                color: 'red',
+                text: 'ETF Burned',
+            }
+        } else {
+            return {
+                color: 'green',
+                text: 'ETF Vault Locked - Minted',
+            }
+        }
+
+    }
 
     useEffect(() => {
         async function fetchData() {
@@ -109,129 +130,151 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         }
     ];
 
-    return <Card>
+    return <Badge.Ribbon
+        {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
+    >
+
+        <Card>
 
 
-        <div className={styles.description}>
-            <h3>Bundle {bundleId}</h3>
-            {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 && <p>ETF {BigNumber.from(etfId).toString()}</p>}
-            {!etfIdLoading && isETFBurned && <p>ETF {isETFBurned.toString()}</p>}
+            <div className={styles.description}>
+                <h3>Bundle {bundleId}</h3>
+                {/* {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 && <p>ETF {BigNumber.from(etfId).toString()}</p>} */}
+                {/* {!etfIdLoading && isETFBurned && <p>ETF {isETFBurned.toString()}</p>} */}
 
-            <br></br>
+                <br></br>
 
-            {/* <p>Required Asset</p> */}
-            {/* {JSON.stringify(userDeposit)} */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center', // Center horizontally
-                alignItems: 'center', // Center vertically
-            }}>
-                <div style={{ width: '300px', height: '300px', marginBottom: '20px' }}>
-                    {values && <Pie
-                        data={
-                            userDeposit == undefined || userDeposit[0].length == 0 ?
-                                {
-                                    labels: values[0] || [],
-                                    datasets: [
-                                        {
-                                            data: values[1],
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'center', // Center horizontally
+                    alignItems: 'center', // Center vertically
+                }}>
+                    <div style={{ width: '300px', height: '300px', marginBottom: '20px' }}>
+                        {values && <Pie
+                            data={
+                                userDeposit == undefined || userDeposit[0].length == 0 ?
+                                    {
+                                        labels: values[0] || [],
+                                        datasets: [
+                                            {
+                                                data: values[1],
 
-                                        },
-                                    ]
-                                } :
-                                {
-                                    labels: values[0] || [],
-                                    datasets: datasets(),
-                                }
-                        }
-                    />}
+                                            },
+                                        ]
+                                    } :
+                                    {
+                                        labels: values[0] || [],
+                                        datasets: datasets(),
+                                    }
+                            }
+                        />}
+                    </div>
                 </div>
+
+                <Card>
+
+                    {bundle && requiredTokenStructs.map((asset: any) => {
+                        const tokenAddress = asset.assetContract;
+                        const index = bundle[1].indexOf(tokenAddress);
+                        return <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'center', // Center horizontally
+                                alignItems: 'center', // Center vertically
+                            }}
+                        >
+                            <div
+                                style={
+                                    {
+                                        width: '90%',
+                                        marginBottom: '20px'
+                                    }
+                                }
+                            >
+                                <TokenDescriptions
+                                    address={tokenAddress}
+                                    etfAddress={address}
+                                    bundle={bundle}
+                                    index={index}
+                                    setQuantities={setQuantities}
+                                ></TokenDescriptions>
+
+                                <Progress
+                                    percent={
+                                        Number(BigNumber.from(bundle[0][index] || 0).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 0)))
+                                    } success={
+                                        {
+                                            percent:
+                                                userDeposit != undefined && userDeposit[0].length > 0 ?
+                                                    Number(BigNumber.from(userDeposit[0][index]).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 0)))
+                                                    : 0
+                                        }
+                                    }
+                                ></Progress>
+                            </div >
+                            <br></br>
+                            <br></br>
+                        </div>
+                    })}
+                    <Divider />
+                    <div
+
+                        style={{
+                            // align at the right side
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
+                            marginRight: '30px'
+                        }}
+                    >
+
+                        {!etfIdLoading && BigNumber.from(etfId).toNumber() == 0 && <Button
+                            type="primary"
+                            disabled={
+                                requiredTokenStructs.every((asset: any) => {
+                                    const tokenAddress = asset.assetContract;
+                                    return quantities.get(tokenAddress) === undefined || quantities.get(tokenAddress) === 0;
+                                })
+                            }
+                            onClick={() => {
+                                const structArray = requiredTokenStructs.map((asset: any) => {
+                                    const tokenAddress = asset.assetContract;
+                                    let quantity = tokenAddress === nativeAddress ?
+                                        ethers.utils.parseEther(quantities.get(tokenAddress)?.toString() || "0") :
+                                        BigNumber.from(quantities.get(tokenAddress) || 0).mul(BigNumber.from(10).pow(18));
+                                    return {
+                                        assetContract: tokenAddress,
+                                        tokenType: 0,
+                                        tokenId: 0,
+                                        totalAmount: quantity,
+                                    };
+                                });
+                                depositFunds({
+                                    args: [bundleId, structArray],
+                                    overrides: {
+                                        value: ethers.utils.parseEther(quantities.get(nativeAddress)?.toString() || "0"),
+                                    }
+                                })
+                            }}
+
+                        >Deposit</Button>
+                        }
+                        &nbsp;
+                        {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 &&
+                            <Button type="primary" onClick={() => {
+
+                                reedem({
+                                    args: [etfId],
+                                })
+
+                            }}>Reedem</Button>
+                        }
+                    </div >
+                </Card>
+
             </div>
 
-
-            {bundle && requiredTokenStructs.map((asset: any) => {
-                const tokenAddress = asset.assetContract;
-                const index = bundle[1].indexOf(tokenAddress);
-                return <div>
-                    <span>
-                        | {minimiseAddress(asset.assetContract)} | {BigNumber.from(bundle[0][index] || 0).toString()} <Progress percent={
-                            Number(BigNumber.from(bundle[0][index] || 0).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 0)))
-                        } success={
-                            {
-                                percent:
-                                    userDeposit != undefined && userDeposit[0].length > 0 ?
-                                        Number(BigNumber.from(userDeposit[0][index]).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 0)))
-                                        : 0
-                            }
-                        }
-                        ></Progress> |   &nbsp;
-                    </span>
-                    <InputNumber
-                        style={{
-                            marginLeft: 20
-                        }}
-                        defaultValue={0}
-                        min={0}
-                        max={
-                            tokenAddress === nativeAddress ?
-                                Number(ethers.utils.formatEther(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 0).sub(BigNumber.from(bundle[0][index] || 0))))
-                                // : Number(getRequiredAsset(tokenAddress)?.totalAmount) - (bundle[0][index]?.toNumber() || 0)
-                                : Number(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 0).sub(BigNumber.from(bundle[0][index] || 0)).div(BigNumber.from(10).pow(18)))
-
-                        }
-                        onChange={(value) => {
-                            setQuantities((prev) => {
-                                prev.set(tokenAddress, Number(value));
-                                return new Map(prev);
-                            });
-                        }}
-                    />
-                    <br></br>
-                    <br></br>
-                </div>
-            })}
-            {!etfIdLoading && BigNumber.from(etfId).toNumber() == 0 && <Button
-                type="primary"
-                disabled={
-                    requiredTokenStructs.every((asset: any) => {
-                        const tokenAddress = asset.assetContract;
-                        return quantities.get(tokenAddress) === undefined || quantities.get(tokenAddress) === 0;
-                    })
-                }
-                onClick={() => {
-                    const structArray = requiredTokenStructs.map((asset: any) => {
-                        const tokenAddress = asset.assetContract;
-                        let quantity = tokenAddress === nativeAddress ?
-                            ethers.utils.parseEther(quantities.get(tokenAddress)?.toString() || "0") :
-                            BigNumber.from(quantities.get(tokenAddress) || 0).mul(BigNumber.from(10).pow(18));
-                        return {
-                            assetContract: tokenAddress,
-                            tokenType: 0,
-                            tokenId: 0,
-                            totalAmount: quantity,
-                        };
-                    });
-                    depositFunds({
-                        args: [bundleId, structArray],
-                        overrides: {
-                            value: ethers.utils.parseEther(quantities.get(nativeAddress)?.toString() || "0"),
-                        }
-                    })
-                }}
-
-            >Deposit</Button>
-            }
-            &nbsp;
-            {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 &&
-                <Button type="primary" onClick={() => {
-
-                    reedem({
-                        args: [etfId],
-                    })
-
-                 }}>Reedem</Button>
-            }
-        </div >
-    </Card>
+        </Card>
+    </Badge.Ribbon>
 
 }

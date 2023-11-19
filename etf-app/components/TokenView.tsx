@@ -3,7 +3,6 @@ import styles from '../styles/page.module.css'
 import { Tag } from 'antd';
 import style from '../styles/page.module.css';
 import { BigNumber, utils } from "ethers";
-const ABI = require("../.././artifacts/contracts/TokenWrapped.sol/FungibleToken.json").abi;
 
 
 const minimiseAddress = (address: string) => {
@@ -24,7 +23,7 @@ export default function TokenView({ address, className, etfAddress }: { address:
 
     return <div className={`${style.description} ${className}`}>
         {balance?.name.toUpperCase()}&nbsp;  |
-        <code className={styles.code}>{address}</code>| 
+        <code className={styles.code}>{address}</code>|
         &nbsp;
         {balanceLoading && <Tag color="processing">Loading...</Tag>}
         {!balanceError && !balanceLoading && balance && <Tag color="success">{balance.displayValue} {balance.symbol}</Tag>}
@@ -47,6 +46,7 @@ export default function TokenView({ address, className, etfAddress }: { address:
 
             {isAllowanceLoading && <Tag color="processing">Loading...</Tag>}
             {!nameError && !isAllowanceLoading && allowance && <Tag color="blue">Allowance: {utils.formatUnits(allowance, 18)}</Tag>}
+
         </>
         }
 

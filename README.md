@@ -3,6 +3,8 @@ DEMO HACKHATON CHLINK
 
 TO-DO
 
+- bug in mint, does not reflect the contribution
+
 - need to add minumum quantities depending on the price oracles!
 
 - we need to check what happens with the excess of ethers (native tokens)

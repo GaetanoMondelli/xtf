@@ -9,6 +9,7 @@ import CloseETF from "../components/CloseETF";
 import { useState } from 'react'
 import { InputNumber } from 'antd';
 import BundleView from "../components/BundleView";
+import MatrixView from "../components/MatrixView";
 
 
 const minimiseAddress = (address: string) => {
@@ -37,6 +38,9 @@ const Home: NextPage = () => {
 
         <ETFView address={CONTRACTS['ETFv2'][0].address} />
 
+        <MatrixView></MatrixView>
+
+
         <div className={styles.center}>
           <OpenETFView
             address={CONTRACTS['ETFv2'][0].address}
@@ -53,6 +57,7 @@ const Home: NextPage = () => {
               marginLeft: 20
             }}
             defaultValue={0}
+            min={0}
             onChange={(value) => setBundleId(Number(value))}
           />
         </div>

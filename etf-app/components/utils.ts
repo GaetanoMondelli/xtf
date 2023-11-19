@@ -2,17 +2,14 @@ import { BigNumber, ethers } from "ethers";
 import CONTRACTS from '../../CONTRACTS.json'
 const MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
 const ETFContractv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
-
-
-
-import { useContract, useContractRead } from "@thirdweb-dev/react";
-const addresses = new Map<string, string>();
-const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+export const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
 const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
 const tokenToBeWrapped1Address = CONTRACTS['FungibleToken'][0].address
 const tokenToBeWrapped2Address = CONTRACTS['FungibleToken'][1].address
 const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
+
+
 
 export const ethersToWrap = ethers.utils.parseEther("0.5");
 
@@ -76,6 +73,10 @@ export const getValueChartData = async () => {
         labels.push(asset.assetContract);
     });
     return [labels, values];
+}
+
+export const showOnlyTwoDecimals = (value: string) => {
+    return Number(value).toFixed(2).toString();
 }
 
 
