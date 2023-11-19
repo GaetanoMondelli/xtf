@@ -52,6 +52,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         "bundleIdToETFId", [bundleId]
     );
 
+    const { data: isETFBurned, isLoading: isETFBurnedLoading, error: isETFBurnedError } = useContractRead(
+        contract,
+        "isETFBurned", [etfId]
+    );
+
 
     // bundleIdToETFId
     // bundleIdToETFId
@@ -110,6 +115,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         <div className={styles.description}>
             <h3>Bundle {bundleId}</h3>
             {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 && <p>ETF {BigNumber.from(etfId).toString()}</p>}
+            {!etfIdLoading && isETFBurned && <p>ETF {isETFBurned.toString()}</p>}
+
             <br></br>
 
             {/* <p>Required Asset</p> */}
@@ -219,7 +226,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                 <Button type="primary" onClick={() => {
 
                     reedem({
-                        args: [bundleId],
+                        args: [etfId],
                     })
 
                  }}>Reedem</Button>
