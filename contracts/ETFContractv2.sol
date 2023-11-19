@@ -628,7 +628,7 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
     }
 
     // reedem ETF function
-    function reedemETF() public returns (uint256 tokenId) {
+    function reedemETF(uint256 etfId) public returns (uint256 tokenId) {
         require(
             ETFToken(etfTokenAddress).balanceOf(msg.sender) >= etfTokenPerWrap,
             "ETFContract: msg.sender does not have enough ETF Tokens"
@@ -637,7 +637,10 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
         // burn the ETF Token
         ETFToken(etfTokenAddress).burn(msg.sender, etfTokenPerWrap);
         // transfer the ETF to msg.sender
-        _unwrap(lastETFReedemed, msg.sender);
+        if (etfId == 0) {
+            etfId = lastETFReedemed;
+        }
+        _unwrap(etfId, msg.sender);
 
         lastETFReedemed += 1;
         return lastETFReedemed - 1;
@@ -961,7 +964,8 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                         ].latestRoundData();
 
                     totalValue +=
-                        uint256(answer) * 10 ** (priceAggrDecimals - tokenDecimals) * // scale the price to the token decimals
+                        uint256(answer) *
+                        10 ** (priceAggrDecimals - tokenDecimals) * // scale the price to the token decimals
                         getTokenOfBundle(depositFundMessage.bundleId, i)
                             .totalAmount;
                 }
@@ -1061,30 +1065,38 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
         return bundleIdToAddress[bundleId];
     }
 
-        // this could be too much to maintain if many addresses are in the bundle
-        function getAddressQuantityPerBundle(
-            uint256 _bundleId,
-            address _address
+    // this could be too much to maintain if many addresses are in the bundle
+    function getAddressQuantityPerBundle(
+        uint256 _bundleId,
+        address _address
+    )
+        public
+        view
+        returns (
+            uint256[] memory quantities,
+            address[] memory contractAddresses
         )
-            public
-            view
-            returns (
-                uint256[] memory quantities,
-                address[] memory contractAddresses
-            )
-        {
-            // get the number of tokens in the bundle
-            uint256 tokenCount = getTokenCountOfBundle(_bundleId);
-            // store the count of each token in the bundle and store in an array
-            quantities = new uint256[](tokenCount);
-            contractAddresses = new address[](tokenCount);
-            for (uint256 i = 0; i < tokenCount; i += 1) {
-                address assetContract = getTokenOfBundle(_bundleId, i)
-                    .assetContract;
-                quantities[i] = bundleIdToAddressToTokenAmount[
-                    bundleIdToChainIdSelector[_bundleId][i]
-                ][_bundleId][_address][i];
-                contractAddresses[i] = assetContract;
-            }
+    {
+        // get the number of tokens in the bundle
+        uint256 tokenCount = getTokenCountOfBundle(_bundleId);
+        // store the count of each token in the bundle and store in an array
+        quantities = new uint256[](tokenCount);
+        contractAddresses = new address[](tokenCount);
+        for (uint256 i = 0; i < tokenCount; i += 1) {
+            address assetContract = getTokenOfBundle(_bundleId, i)
+                .assetContract;
+            quantities[i] = bundleIdToAddressToTokenAmount[
+                bundleIdToChainIdSelector[_bundleId][i]
+            ][_bundleId][_address][i];
+            contractAddresses[i] = assetContract;
         }
     }
+
+    function isETFBurned(uint256 tokenId) public view returns (bool) {
+        // Ensure the token ID is valid.
+        require(tokenId < _currentIndex, "Token ID does not exist.");
+
+        // Check the burned flag in the ownership struct of the token.
+        return _ownerships[tokenId].burned;
+    }
+}

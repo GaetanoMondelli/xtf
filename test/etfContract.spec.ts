@@ -284,8 +284,9 @@ describe("ETFContract", () => {
 
                 const etfOwnerAddress = await etfContract.ownerOf(0);
                 expect(etfOwnerAddress).toEqual(etfContract.address);
-
-                await etfContract.connect(etfOwner).reedemETF();
+                
+                // if 0 is passed should reedem the last ETF minted
+                await etfContract.connect(etfOwner).reedemETF(0);
 
                 const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
                 expect(etfTokensBalance).toEqual(BigNumber.from(0));

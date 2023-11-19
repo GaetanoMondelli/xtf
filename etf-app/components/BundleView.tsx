@@ -37,11 +37,24 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         "depositFunds"
     );
 
+    const { mutateAsync: reedem, isLoading: isReedemLoadinf, error: errorReedem } = useContractWrite(
+        contract,
+        "reedemETF"
+    );
+
     const { data: userDeposit, isLoading: userDepositLoading, error: userDepositError } = useContractRead(
         contract,
         "getAddressQuantityPerBundle", [bundleId, userAddress]
     );
 
+    const { data: etfId, isLoading: etfIdLoading, error: etfIdError } = useContractRead(
+        contract,
+        "bundleIdToETFId", [bundleId]
+    );
+
+
+    // bundleIdToETFId
+    // bundleIdToETFId
 
     // use effect with async await
 
@@ -96,6 +109,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
         <div className={styles.description}>
             <h3>Bundle {bundleId}</h3>
+            {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 && <p>ETF {BigNumber.from(etfId).toString()}</p>}
             <br></br>
 
             {/* <p>Required Asset</p> */}
@@ -119,7 +133,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     ]
                                 } :
                                 {
-                                    labels:  values[0] || [],
+                                    labels: values[0] || [],
                                     datasets: datasets(),
                                 }
                         }
@@ -169,7 +183,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     <br></br>
                 </div>
             })}
-            <Button
+            {!etfIdLoading && BigNumber.from(etfId).toNumber() == 0 && <Button
                 type="primary"
                 disabled={
                     requiredTokenStructs.every((asset: any) => {
@@ -197,7 +211,19 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         }
                     })
                 }}
+
             >Deposit</Button>
+            }
+            &nbsp;
+            {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 &&
+                <Button type="primary" onClick={() => {
+
+                    reedem({
+                        args: [bundleId],
+                    })
+
+                 }}>Reedem</Button>
+            }
         </div >
     </Card>
 

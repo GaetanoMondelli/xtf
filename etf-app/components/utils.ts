@@ -16,8 +16,6 @@ const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
 
 export const ethersToWrap = ethers.utils.parseEther("0.5");
 
-
-
 const nativeTokenStruct = {
     assetContract: nativeAddress,
     tokenType: 0,
