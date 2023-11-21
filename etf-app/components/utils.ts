@@ -55,8 +55,14 @@ export const getPriceAggregatorAddress = async () => {
     for (const contractObject of CONTRACTS['MockAggregator']) {
         const { address } = contractObject;
         const contract = new ethers.Contract(address, MockAggregatorABI, provider);
-        const price = await contract.latestRoundData();
-        prices.push(BigNumber.from(price.answer));
+        try {
+            const price = await contract.latestRoundData();
+            prices.push(BigNumber.from(price.answer));
+        }
+        catch (err) {
+            console.log('err', err);
+            prices.push(BigNumber.from(0));
+        }
     }
 
     return prices;
@@ -120,4 +126,22 @@ export const getTokensByAddres = async (bundleId: number, address: string) => {
     // console.log('values', values);
     // return values;
     return recordArray;
+}
+
+export const calculateTLV = async (bundleIdQuantities: any) => {
+    const prices = await getPriceAggregatorAddress();
+    let total = BigNumber.from(0);
+    if (!bundleIdQuantities) return 0;
+    const quantities = bundleIdQuantities[2]
+    const areBurned = bundleIdQuantities[4]
+
+    for (let i = 0; i < quantities.length; i++) {
+        for (let j = 0; j < quantities[i].length; j++) {
+            if (!areBurned[i]) {
+                total = total.add(BigNumber.from(quantities[i][j]).mul(prices[j]));
+            }
+        }
+    }
+    // div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100
+    return total.div(BigNumber.from(10).pow(16)).div(BigNumber.from(10).pow(8)).toNumber() / 100;
 }
