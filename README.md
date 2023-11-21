@@ -3,7 +3,11 @@ DEMO HACKHATON CHLINK
 
 TO-DO
 
-- bug in mint, does not reflect the contribution
+- **major** subsequent reedem gets more etfTokens
+
+- minor bug (depositsfunds) never return tokenPerwrap
+
+- bug in mint, does not reflect the contribution ()
 
 - need to add minumum quantities depending on the price oracles!
 
