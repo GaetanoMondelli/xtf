@@ -1,8 +1,146 @@
 import dynamic from 'next/dynamic'
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
+const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+import { requiredTokenStructs } from "./utils";
+import { useAddress, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
+import { BigNumber } from 'ethers';
 
-export default function MatrixView() {
+async function fetchBundleInfo(bundleId: string) {
+    //  return a color based on bundleId randomly
+    const colors = ["#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0"];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    return color;
+}
+
+
+
+export default function MatrixView({ address, bundleState, bundleStateLoading, bundleStateError }: {
+    address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any
+}) {
+    const [selectedBundle, setSelectedBundle] = useState<string>();
+    const numberOfColumns = 16; // Previously numberOfRows
+    const numberOfRows = 6;     // Previously numberOfColumns
+    const series = [];
+
+    // returnStateOfBundles
+
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    function getColor(quantities: any, isBurned: any, requiredAmounts: any) {
+        let allZero = true;
+        let allEqual = true;
+        let atLeastOneNotZero = false;
+
+        for (let i = 0; i < Math.min(quantities.length, requiredAmounts.length); i++) {
+            if (!BigNumber.from(quantities[i]).eq(BigNumber.from(0))) {
+                allZero = false;
+                atLeastOneNotZero = true;
+            }
+            if (!BigNumber.from(quantities[i]).eq(BigNumber.from(requiredAmounts[i]))) {
+                allEqual = false;
+            }
+        }
+
+        if (quantities.length !== requiredAmounts.length) {
+            allEqual = false;
+        }
+
+        if (isBurned) {
+            // red
+            return "#FF4560";
+        }
+        if (allZero) {
+            console.log("allZero", allZero);
+            return "#D3D3D3";
+        }
+        else if (allEqual) {
+            console.log("allEqual", allEqual);
+            return "#00E396";
+        }
+        else if (atLeastOneNotZero) {
+            console.log("atLeastOneNotZero", atLeastOneNotZero);
+            return "#008FFB";
+        }
+        else {
+            console.log("else", atLeastOneNotZero);
+            return "#FF4560";
+        }
+    }
+
+    let bundleIds: any = [];
+    let addresses: any = [];
+    let quantities: any = [];
+    let areBurned: any = [];
+
+
+    if (bundleState && bundleState.length > 0) {
+        bundleIds = [...bundleState[0]]
+        addresses = [...bundleState[1]] // Assuming these are already in the correct format
+        quantities = [...bundleState[2]]
+        areBurned = [...bundleState[4]]
+    }
+    for (let rowIndex = 0; rowIndex < numberOfRows; rowIndex++) {
+        const rowData: {
+            name: string;
+            data: any[];
+        } = { name: `Bundle`, data: [] };
+
+        for (let colIndex = 0; colIndex < numberOfColumns; colIndex++) {
+            // Invert the row index to start from the bottom
+
+            if (bundleIds && bundleIds.length > 0) {
+                console.log("bundleIds", bundleIds)
+                const bundleId = bundleIds.shift();
+                const quantity = quantities.shift();
+                const isBurned = areBurned.shift();
+                const cellValue = rowIndex * numberOfColumns + colIndex;;
+                console.log("bundleId", bundleId, quantity, requiredTokenStructs.map((token: any) => token.totalAmount));
+                const cellColor = getColor(quantity, isBurned, requiredTokenStructs.map((token: any) => token.totalAmount));
+                rowData.data.push({
+                    x: `Col ${colIndex + 1}`,
+                    y: cellValue,
+                    fillColor: cellColor // Add the random color here
+                });
+            }
+            else {
+                const cellValue = rowIndex * numberOfColumns + colIndex;
+                // #008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0
+                const cellColor = getRandomColor(); // Assign a random color
+                rowData.data.push({
+                    x: `Col ${colIndex + 1}`,
+                    y: cellValue,
+                    fillColor: '#D3D3D3' // Add the random color here
+                });
+            }
+        }
+        series.push(rowData);
+
+
+    }
+
+
+    const handleCellClick = (event: any, chartContext: any, { seriesIndex, dataPointIndex }: any) => {
+        // const bundleId = `Bundle ${seriesIndex}, ${dataPointIndex}`;
+        // // Fetch bundle information based on bundleId (seriesIndex, dataPointIndex)
+        // // For example, using a function fetchBundleInfo(bundleId)
+        // fetchBundleInfo(bundleId).then(data => {
+        //     return setSelectedBundle(data);
+        // });
+
+
+
+    };
+
+
+
     const state = {
         options: {
             chart: {
@@ -11,25 +149,30 @@ export default function MatrixView() {
                 },
                 width: "100%"
             },
+            tooltip: {
+                x: {
+                    show: false
+                }
+            },
+            events: {
+                dataPointSelection: handleCellClick,
+            },
             stroke: {
                 width: 1
             },
+            legend: {
+                show: false
+            },
             plotOptions: {
                 heatmap: {
-                    enableShades: false,
+                    distributed: true, // Ensure colors are applied per-cell
                     colorScale: {
-                        ranges: [
-                            {
-                                from: 0,
-                                to: 200,
-                                color: "#e7f2fe"
-                            },
-                            {
-                                from: 201,
-                                to: 400,
-                                color: "#b7d9fb"
-                            }
-                        ]
+                        inverse: true,
+                        ranges: series.flatMap(row => row.data.map(cell => ({
+                            from: cell.y,
+                            to: cell.y,
+                            color: cell.fillColor
+                        })))
                     }
                 }
             },
@@ -38,21 +181,14 @@ export default function MatrixView() {
             },
             xaxis: {
                 type: "category",
-                //categories: ['10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20', '10.20'],
+                categories: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'],
                 labels: {
-                    hideOverlappingLabels: true,
-                    offsetY: -4,
-                    style: {
-                        fontSize: "10px",
-                        fontFamily: "Roboto"
-                    }
+                    show: false
                 },
                 axisTicks: {
-                    height: 4,
-                    show: true
+                    show: false
                 },
-                tickAmount: 5,
-                range: 2
+
             },
             yaxis: {
                 labels: {
@@ -60,132 +196,14 @@ export default function MatrixView() {
                 }
             }
         },
-        series: [
-            {
-                name: "0-99",
-                data: [
-                    { x: "10.20", y: 11 },
-                    { x: "10.21", y: 0 },
-                    { x: "10.22", y: 0 },
-                    { x: "10.23", y: 0 },
-                    { x: "10.24", y: 0 },
-                    { x: "10.25", y: 0 },
-                    { x: "10.26", y: 0 },
-                    { x: "10.27", y: 0 },
-                    { x: "10.28", y: 0 },
-                    { x: "10.29", y: 0 },
-                    { x: "10.30", y: 0 },
-                    { x: "10.31", y: 0 },
-                    { x: "10.32", y: 0 },
-                    { x: "10.33", y: 0 },
-                    { x: "10.34", y: 0 }
-                ]
-            },
-            {
-                name: "100-199",
-                data: [
-                    { x: "10.20", y: 11 },
-                    { x: "10.21", y: 0 },
-                    { x: "10.22", y: 0 },
-                    { x: "10.23", y: 0 },
-                    { x: "10.24", y: 0 },
-                    { x: "10.25", y: 0 },
-                    { x: "10.26", y: 0 },
-                    { x: "10.27", y: 0 },
-                    { x: "10.28", y: 0 },
-                    { x: "10.29", y: 0 },
-                    { x: "10.30", y: 0 },
-                    { x: "10.31", y: 0 },
-                    { x: "10.32", y: 0 },
-                    { x: "10.33", y: 0 },
-                    { x: "10.34", y: 0 }
-                ]
-            },
-            {
-                name: "200-299",
-                data: [
-                    { x: "10.20", y: 11 },
-                    { x: "10.21", y: 0 },
-                    { x: "10.22", y: 0 },
-                    { x: "10.23", y: 0 },
-                    { x: "10.24", y: 0 },
-                    { x: "10.25", y: 0 },
-                    { x: "10.26", y: 0 },
-                    { x: "10.27", y: 0 },
-                    { x: "10.28", y: 0 },
-                    { x: "10.29", y: 0 },
-                    { x: "10.30", y: 0 },
-                    { x: "10.31", y: 0 },
-                    { x: "10.32", y: 0 },
-                    { x: "10.33", y: 0 },
-                    { x: "10.34", y: 0 }
-                ]
-            },
-            {
-                name: "300-399",
-                data: [
-                    { x: "10.20", y: 11 },
-                    { x: "10.21", y: 0 },
-                    { x: "10.22", y: 0 },
-                    { x: "10.23", y: 0 },
-                    { x: "10.24", y: 0 },
-                    { x: "10.25", y: 0 },
-                    { x: "10.26", y: 0 },
-                    { x: "10.27", y: 0 },
-                    { x: "10.28", y: 0 },
-                    { x: "10.29", y: 0 },
-                    { x: "10.30", y: 0 },
-                    { x: "10.31", y: 0 },
-                    { x: "10.32", y: 0 },
-                    { x: "10.33", y: 0 },
-                    { x: "10.34", y: 0 }
-                ]
-            },
-            {
-                name: "400-499",
-                data: [
-                    { x: "10.20", y: 11 },
-                    { x: "10.21", y: 0 },
-                    { x: "10.22", y: 0 },
-                    { x: "10.23", y: 0 },
-                    { x: "10.24", y: 0 },
-                    { x: "10.25", y: 0 },
-                    { x: "10.26", y: 0 },
-                    { x: "10.27", y: 0 },
-                    { x: "10.28", y: 0 },
-                    { x: "10.29", y: 0 },
-                    { x: "10.30", y: 0 },
-                    { x: "10.31", y: 0 },
-                    { x: "10.32", y: 0 },
-                    { x: "10.33", y: 0 },
-                    { x: "10.34", y: 0 }
-                ]
-            },
-            {
-                name: "500-599",
-                data: [
-                    { x: "10.20", y: 11 },
-                    { x: "10.21", y: 0 },
-                    { x: "10.22", y: 0 },
-                    { x: "10.23", y: 0 },
-                    { x: "10.24", y: 0 },
-                    { x: "10.25", y: 0 },
-                    { x: "10.26", y: 0 },
-                    { x: "10.27", y: 0 },
-                    { x: "10.28", y: 0 },
-                    { x: "10.29", y: 0 },
-                    { x: "10.30", y: 0 },
-                    { x: "10.31", y: 0 },
-                    { x: "10.32", y: 0 },
-                    { x: "10.33", y: 0 },
-                    { x: "10.34", y: 0 }
-                ]
-            }
-        ]
+        series,
     };
+
+    console.log("bundleState", bundleState);
 
     return (
         <div className="mixed-chart">
+            {/* <p> {JSON.stringify(bundleState)}</p> */}
             {(typeof window !== 'undefined') &&
                 <Chart
                     options={state.options as any}

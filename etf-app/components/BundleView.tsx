@@ -7,8 +7,9 @@ import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { minimiseAddress, getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggregatorAddress, nativeAddress } from "./utils";
+import { getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggregatorAddress, nativeAddress, calculateTLV } from "./utils";
 import { ChartDataset } from "chart.js/auto";
+import MatrixView from "../components/MatrixView";
 
 
 interface CustomChartDataset extends ChartDataset<'pie', number[]> {
@@ -25,6 +26,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const userAddress = useAddress();
 
     const { contract, isLoading, error } = useContract(address, ABI);
+
+    const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
+        contract,
+        "returnStateOfBundles", [0, 96]
+    );
 
     const { data: name, isLoading: isNameLoading, error: nameError } = useContractRead(contract, "symbol");
     const { data: bundle, isLoading: countLoading, error: countError } = useContractRead(
@@ -68,7 +74,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         } else if (etfId == 0 && !isETFBurned) {
             return {
                 color: 'blue',
-                text: 'ETF Vault Open',
+                text: 'ETF Vault Available',
             }
         } else if (isETFBurned) {
             return {
@@ -136,9 +142,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
         <Card>
 
-
             <div className={styles.description}>
-                <h3>Bundle {bundleId}</h3>
+                <h3>Vault {bundleId}</h3>
                 {/* {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 && <p>ETF {BigNumber.from(etfId).toString()}</p>} */}
                 {/* {!etfIdLoading && isETFBurned && <p>ETF {isETFBurned.toString()}</p>} */}
 
@@ -146,9 +151,14 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
                 <div style={{
                     display: 'flex',
-                    justifyContent: 'center', // Center horizontally
-                    alignItems: 'center', // Center vertically
+                    justifyContent: 'space-evenly', // Center horizontally
+                    alignItems: 'space-between', // Center vertically
                 }}>
+                    <MatrixView address={address}
+                        bundleState={bundleState}
+                        bundleStateLoading={bundleStateLoading}
+                        bundleStateError={bundleStateError}
+                    />
                     <div style={{ width: '300px', height: '300px', marginBottom: '20px' }}>
                         {values && <Pie
                             data={
@@ -228,7 +238,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         }}
                     >
 
-                        {!etfIdLoading && BigNumber.from(etfId).toNumber() == 0 && <Button
+                        {!etfIdLoading && etfId && BigNumber.from(etfId)?.toNumber() == 0 && <Button
                             type="primary"
                             disabled={
                                 requiredTokenStructs.every((asset: any) => {
