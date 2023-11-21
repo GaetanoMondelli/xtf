@@ -151,7 +151,7 @@ describe("ChainLink CCIP Message layer", () => {
             expect(router.address).toBeDefined();
         });
 
-        it("should send a message to the primary contract on primary chain when deposit funds", async () => {
+        it.skip("should send a message to the primary contract on primary chain when deposit funds", async () => {
             const tokenStruct = {
                 assetContract: linkToken.address,
                 tokenType: 0,

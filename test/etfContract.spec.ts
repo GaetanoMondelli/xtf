@@ -231,6 +231,7 @@ describe("ETFContract", () => {
 
 
             it("should reedem and burn an ETF", async () => {
+                const startingTokenId = 1;
                 const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
                 const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));;
                 const ethersToWrap = ethers.utils.parseEther("0.5");
@@ -282,11 +283,11 @@ describe("ETFContract", () => {
 
                 await etfTokenContract.connect(etfOwner).approve(etfContract.address, etfTokenPerWrap);
 
-                const etfOwnerAddress = await etfContract.ownerOf(0);
+                const etfOwnerAddress = await etfContract.ownerOf(startingTokenId);
                 expect(etfOwnerAddress).toEqual(etfContract.address);
                 
                 // if 0 is passed should reedem the last ETF minted
-                await etfContract.connect(etfOwner).reedemETF(0);
+                await etfContract.connect(etfOwner).reedemETF(startingTokenId);
 
                 const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
                 expect(etfTokensBalance).toEqual(BigNumber.from(0));
