@@ -57,7 +57,7 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
             {nativeAddress !== address && !nameError && !isAllowanceLoading && allowance && <Button type="link" size="small" onClick={() => {
                 approve({
                     args: [etfAddress,
-                        BigNumber.from(bundle[0][index] || 0)
+                        BigNumber.from(getRequiredAsset(address)?.totalAmount || 0)
                     ]
                 })
             }
