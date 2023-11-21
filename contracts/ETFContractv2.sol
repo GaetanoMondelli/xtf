@@ -83,6 +83,9 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
     mapping(uint256 => mapping(uint256 => uint64))
         public bundleIdToChainIdSelector;
 
+    uint256 public bundleCount = 0;
+    mapping(uint256 => bool) public openedBundle;
+
     struct DepositFundMessage {
         uint256 bundleId;
         Token[] tokensToWrap;
@@ -190,6 +193,11 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                     "ETFContract: assetContract is duplicated"
                 );
             }
+        }
+
+        if (!openedBundle[_bundleId]) {
+            bundleCount += 1;
+            openedBundle[_bundleId] = true;
         }
 
         // set to the bundle for each token the max
@@ -1094,9 +1102,60 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
 
     function isETFBurned(uint256 tokenId) public view returns (bool) {
         // Ensure the token ID is valid.
-        require(tokenId < _currentIndex, "Token ID does not exist.");
+        // require(tokenId < _currentIndex, "Token ID does not exist.");
+        if (tokenId >= _currentIndex) {
+            return false;
+        }
 
         // Check the burned flag in the ownership struct of the token.
         return _ownerships[tokenId].burned;
+    }
+
+    function getBurnedCount() public view returns (uint256) {
+        return _burnCounter;
+    }
+
+    function _startTokenId() internal pure override returns (uint256) {
+        return 1;
+    }
+
+    function returnStateOfBundles(
+        uint256 offset,
+        uint256 items
+    )
+        public
+        view
+        returns (
+            uint256[] memory bundleIds,
+            address[] memory addresses,
+            uint256[][] memory quantities,
+            uint64[] memory selectorsIds,
+            bool[] memory areETFBurned
+        )
+    {
+        bundleIds = new uint256[](items);
+        addresses = new address[](items);
+        quantities = new uint256[][](items);
+        selectorsIds = new uint64[](items);
+        areETFBurned = new bool[](items);
+        for (uint256 i = 0; i < items; i++) {
+            uint256 currentIndex = i + offset;
+            bundleIds[i] = currentIndex;
+
+            uint256 qt = getTokenCountOfBundle(bundleIds[i]);
+            uint256[] memory bundlequantities = new uint256[](qt);
+            if (qt > 0) {
+                addresses[i] = bundleIdToAddress[bundleIds[i]][0];
+                selectorsIds[i] = bundleIdToChainIdSelector[bundleIds[i]][0];
+                for (uint256 j = 0; j < qt; j++) {
+                    bundlequantities[j] = getTokenOfBundle(bundleIds[i], j)
+                        .totalAmount;
+                }
+            }
+            quantities[i] = bundlequantities;
+            areETFBurned[i] = isETFBurned(bundleIdToETFId[bundleIds[i]]);
+        }
+
+        return (bundleIds, addresses, quantities, selectorsIds, areETFBurned);
     }
 }
