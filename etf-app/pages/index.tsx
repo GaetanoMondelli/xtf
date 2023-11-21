@@ -7,9 +7,9 @@ import ETFView from '../components/ETFView'
 import OpenETFView from "../components/OpenETF";
 import CloseETF from "../components/CloseETF";
 import { useState } from 'react'
-import { InputNumber } from 'antd';
+import { Card, InputNumber } from 'antd';
 import BundleView from "../components/BundleView";
-import MatrixView from "../components/MatrixView";
+import ETFStatsView from "../components/ETFStatsView";
 
 
 const minimiseAddress = (address: string) => {
@@ -32,15 +32,13 @@ const Home: NextPage = () => {
         </div>
       </div>
       <div>
-        <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['FungibleToken'][0].address} />
+        {/* <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['FungibleToken'][0].address} />
         <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['FungibleToken'][1].address} />
         <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['ETFToken'][0].address} />
 
-        <ETFView address={CONTRACTS['ETFv2'][0].address} />
+        <ETFView address={CONTRACTS['ETFv2'][0].address} /> */}
 
-        <MatrixView></MatrixView>
-
-
+        {/* 
         <div className={styles.center}>
           <OpenETFView
             address={CONTRACTS['ETFv2'][0].address}
@@ -48,20 +46,28 @@ const Home: NextPage = () => {
             tokenToBeWrapped2Address={CONTRACTS['FungibleToken'][1].address}
           ></OpenETFView>
           <CloseETF address={CONTRACTS['ETFv2'][0].address}></CloseETF>
-        </div>
-        <div className={styles.description}>
+        </div> */}
 
-          <span>Bundle Viewer {bundleId}</span>
-          <InputNumber
-            style={{
-              marginLeft: 20
-            }}
-            defaultValue={0}
-            min={0}
-            onChange={(value) => setBundleId(Number(value))}
-          />
-        </div>
+
         <br></br>
+        <br></br>
+        <Card>
+
+          <ETFStatsView tokenAddress={CONTRACTS['ETFToken'][0].address} address={CONTRACTS['ETFv2'][0].address} />
+          <br></br>
+          <div className={styles.description}>
+
+            <span>Bundle Viewer {bundleId}</span>
+            <InputNumber
+              style={{
+                marginLeft: 20
+              }}
+              defaultValue={0}
+              min={0}
+              onChange={(value) => setBundleId(Number(value))}
+            />
+          </div>
+        </Card>
         <br></br>
 
         <BundleView address={CONTRACTS['ETFv2'][0].address} bundleId={bundleId}
