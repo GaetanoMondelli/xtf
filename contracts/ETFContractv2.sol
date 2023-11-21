@@ -387,6 +387,15 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                 }
             }
 
+            // reset  addressToAmount
+            for (
+                uint256 i = 0;
+                i < bundleIdToAddress[_bundleId].length;
+                i += 1
+            ) {
+                addressToAmount[bundleIdToAddress[_bundleId][i]] = 0;
+            }
+
             ETFToken(etfTokenAddress).mint(owner(), fee);
 
             emit TokensWrapped(
@@ -1053,6 +1062,16 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
                             ]
                         );
                     }
+                }
+
+                for (
+                    i = 0;
+                    i < bundleIdToAddress[depositFundMessage.bundleId].length;
+                    i += 1
+                ) {
+                    addressToAmount[
+                        bundleIdToAddress[depositFundMessage.bundleId][i]
+                    ] = 0;
                 }
 
                 ETFToken(etfTokenAddress).mint(owner(), fee);
