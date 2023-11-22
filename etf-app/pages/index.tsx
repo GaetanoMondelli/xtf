@@ -71,6 +71,7 @@ const Home: NextPage = () => {
         <br></br>
 
         <BundleView address={CONTRACTS['ETFv2'][0].address} bundleId={bundleId}
+          setBundleId={setBundleId}
           tokenToBeWrapped1Address={CONTRACTS['FungibleToken'][0].address}
           tokenToBeWrapped2Address={CONTRACTS['FungibleToken'][1].address}
 

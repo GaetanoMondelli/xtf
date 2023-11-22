@@ -3,7 +3,6 @@ import React, { Component, useState } from "react";
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 import { requiredTokenStructs } from "./utils";
-import { useAddress, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
 import { BigNumber } from 'ethers';
 
 async function fetchBundleInfo(bundleId: string) {
@@ -15,10 +14,10 @@ async function fetchBundleInfo(bundleId: string) {
 
 
 
-export default function MatrixView({ address, bundleState, bundleStateLoading, bundleStateError }: {
-    address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any
+export default function MatrixView({ address, bundleState, bundleStateLoading, bundleStateError, setBundleId }: {
+    address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any, setBundleId: any
 }) {
-    const [selectedBundle, setSelectedBundle] = useState<string>();
+    // const [selectedBundle, setSelectedBundle] = useState<string>();
     const numberOfColumns = 16; // Previously numberOfRows
     const numberOfRows = 6;     // Previously numberOfColumns
     const series = [];
@@ -128,15 +127,10 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
 
 
     const handleCellClick = (event: any, chartContext: any, { seriesIndex, dataPointIndex }: any) => {
-        // const bundleId = `Bundle ${seriesIndex}, ${dataPointIndex}`;
-        // // Fetch bundle information based on bundleId (seriesIndex, dataPointIndex)
-        // // For example, using a function fetchBundleInfo(bundleId)
-        // fetchBundleInfo(bundleId).then(data => {
-        //     return setSelectedBundle(data);
-        // });
-
-
-
+        console.log("seriesIndex", seriesIndex, "dataPointIndex", dataPointIndex);
+        const bundleId = seriesIndex * numberOfColumns + dataPointIndex;
+        console.log(setBundleId)
+        setBundleId(bundleId);
     };
 
 
@@ -144,6 +138,9 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
     const state = {
         options: {
             chart: {
+                events: {
+                    dataPointSelection: handleCellClick
+                },
                 toolbar: {
                     show: false
                 },
@@ -154,9 +151,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
                     show: false
                 }
             },
-            events: {
-                dataPointSelection: handleCellClick,
-            },
+
             stroke: {
                 width: 1
             },
@@ -203,7 +198,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
 
     return (
         <div className="mixed-chart">
-            {/* <p> {JSON.stringify(bundleState)}</p> */}
+            {/* <p>P {JSON.stringify(selectedBundle)}</p> */}
             {(typeof window !== 'undefined') &&
                 <Chart
                     options={state.options as any}

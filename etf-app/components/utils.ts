@@ -9,7 +9,12 @@ const tokenToBeWrapped1Address = CONTRACTS['FungibleToken'][0].address
 const tokenToBeWrapped2Address = CONTRACTS['FungibleToken'][1].address
 const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
 
-
+export enum ETFState {
+    LOADING,
+    OPEN,
+    MINTED,
+    BURNED
+}
 
 export const ethersToWrap = ethers.utils.parseEther("0.5");
 
@@ -144,4 +149,19 @@ export const calculateTLV = async (bundleIdQuantities: any) => {
     }
     // div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100
     return total.div(BigNumber.from(10).pow(16)).div(BigNumber.from(10).pow(8)).toNumber() / 100;
+}
+
+
+
+export const getETFStatus = (etfIdLoading: any, etfId: any, isETFBurnedLoading: any, isETFBurned: any) => {
+    if (etfIdLoading || isETFBurnedLoading) {
+        return ETFState.LOADING;
+    } else if (etfId == 0 && !isETFBurned) {
+        return ETFState.OPEN;
+    }
+    else if (isETFBurned) {
+        return ETFState.BURNED;
+    } else {
+        return ETFState.MINTED;
+    }
 }

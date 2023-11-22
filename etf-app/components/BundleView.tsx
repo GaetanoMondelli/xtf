@@ -2,12 +2,13 @@ import { useAddress, useContract, useContractRead, useContractWrite } from "@thi
 import styles from '../styles/page.module.css'
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 import TokenDescriptions from "./TokenDescriptionsView";
-import { Badge, Button, Card, Descriptions, Form, InputNumber, Progress, Divider } from 'antd';
+import { Badge, Button, Card, Descriptions, Form, InputNumber, Progress, Divider, Result } from 'antd';
+import { FireFilled } from '@ant-design/icons';
 import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggregatorAddress, nativeAddress, calculateTLV } from "./utils";
+import { getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus } from "./utils";
 import { ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 
@@ -15,8 +16,8 @@ import MatrixView from "../components/MatrixView";
 interface CustomChartDataset extends ChartDataset<'pie', number[]> {
     customLabels?: string[];
 }
-export default function BundleView({ address, bundleId, tokenToBeWrapped1Address, tokenToBeWrapped2Address }: {
-    address: string, bundleId: number,
+export default function BundleView({ address, bundleId, tokenToBeWrapped1Address, tokenToBeWrapped2Address, setBundleId }: {
+    address: string, bundleId: number, setBundleId: any,
     tokenToBeWrapped1Address: string, tokenToBeWrapped2Address: string
 }) {
 
@@ -64,19 +65,21 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     );
 
 
+
     const getRibbonProps = (etfIdLoading: any, etfId: any, isETFBurnedLoading: any, isETFBurned: any) => {
 
-        if (etfIdLoading || isETFBurnedLoading) {
+        const state = getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned);
+        if (state == ETFState.LOADING) {
             return {
                 color: 'grey',
                 text: 'Loading...',
             }
-        } else if (etfId == 0 && !isETFBurned) {
+        } else if (state == ETFState.OPEN) {
             return {
                 color: 'blue',
                 text: 'ETF Vault Available',
             }
-        } else if (isETFBurned) {
+        } else if (state == ETFState.BURNED) {
             return {
                 color: 'red',
                 text: 'ETF Burned',
@@ -139,7 +142,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     return <Badge.Ribbon
         {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
     >
-
         <Card>
 
             <div className={styles.description}>
@@ -156,6 +158,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                 }}>
                     <MatrixView address={address}
                         bundleState={bundleState}
+                        setBundleId={setBundleId}
                         bundleStateLoading={bundleStateLoading}
                         bundleStateError={bundleStateError}
                     />
@@ -181,7 +184,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     </div>
                 </div>
 
-                <Card>
+                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) == ETFState.OPEN && <Card>
 
                     {bundle && requiredTokenStructs.map((asset: any) => {
                         const tokenAddress = asset.assetContract;
@@ -281,10 +284,37 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         }
                     </div >
                 </Card>
+                }
+                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.MINTED && <Card>
+                    <Result
+                        status="success"
+                        title="The Bundle has been locked and ETF tokens have been minted"
+                        subTitle="You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets"
+                        extra={[<Button type="primary" onClick={() => {
 
+                            reedem({
+                                args: [etfId],
+                            })
+
+                        }}>Reedem</Button>
+                        ]}
+                    />
+
+                </Card>
+                }
+                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.BURNED && <Card>
+                    <Result
+                        icon={<FireFilled />}
+                        status={"error"}
+                        title="The ETF has been burned and the tokens have been redeemed"
+                        subTitle="You can trade your tokens again"
+                    />
+                </Card>
+                }
             </div>
 
         </Card>
+
     </Badge.Ribbon>
 
 }
