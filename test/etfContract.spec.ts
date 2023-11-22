@@ -285,6 +285,9 @@ describe("ETFContract", () => {
 
                 const etfOwnerAddress = await etfContract.ownerOf(startingTokenId);
                 expect(etfOwnerAddress).toEqual(etfContract.address);
+
+                // need to wait lock time to reedem (1 day)
+                await ethers.provider.send("evm_increaseTime", [86400]);
                 
                 // if 0 is passed should reedem the last ETF minted
                 await etfContract.connect(etfOwner).reedemETF(startingTokenId);

@@ -91,6 +91,11 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
         Token[] tokensToWrap;
     }
 
+    // mappint of etf token id to expiration time for the lock
+    mapping(uint256 => uint) public tokenIdToExpirationTime;
+
+    uint lockTime = 1 minutes;
+
     constructor(
         string memory _name,
         string memory _symbol,
@@ -310,6 +315,13 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
 
             _safeMint(address(this), 1);
 
+            tokenIdToExpirationTime[tokenId] = block.timestamp + lockTime;
+            console.log("tokenId: %s", tokenId);
+            console.log(
+                "tokenIdToExpirationTime[tokenId]: %s",
+                tokenIdToExpirationTime[tokenId]
+            );
+
             uint256 fee = (etfTokenPerWrap * percentageFee) / 100;
 
             uint256 remainingAmount = etfTokenPerWrap - fee;
@@ -474,6 +486,8 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
         uint256 fee = (etfTokenPerWrap * percentageFee) / 100;
 
         ETFToken(etfTokenAddress).mint(_to, etfTokenPerWrap - fee);
+
+        tokenIdToExpirationTime[etfId] = block.timestamp + lockTime;
 
         ETFToken(etfTokenAddress).mint(owner(), fee);
 
@@ -649,6 +663,18 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
         require(
             ETFToken(etfTokenAddress).balanceOf(msg.sender) >= etfTokenPerWrap,
             "ETFContract: msg.sender does not have enough ETF Tokens"
+        );
+
+        // tokenIdToExpirationTime[etfId] = block.timestamp + lockTime has to be expired
+        console.log(
+            "re tokenIdToExpirationTime[etfId]: %s",
+            tokenIdToExpirationTime[etfId]
+        );
+        console.log("block.timestamp: %s", block.timestamp);
+        console.log("etfId: %s", etfId);
+        require(
+            tokenIdToExpirationTime[etfId] < block.timestamp,
+            "ETFContract: ETF Token is still locked"
         );
 
         // burn the ETF Token
