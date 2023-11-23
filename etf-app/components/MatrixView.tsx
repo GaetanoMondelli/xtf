@@ -13,12 +13,11 @@ async function fetchBundleInfo(bundleId: string) {
 }
 
 
-
 export default function MatrixView({ address, bundleState, bundleStateLoading, bundleStateError, setBundleId }: {
     address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any, setBundleId: any
 }) {
     // const [selectedBundle, setSelectedBundle] = useState<string>();
-    const numberOfColumns = 16; // Previously numberOfRows
+    const numberOfColumns = 16  ; // Previously numberOfRows
     const numberOfRows = 6;     // Previously numberOfColumns
     const series = [];
 
@@ -56,7 +55,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
             // red
             return "#FF4560";
         }
-        if (allZero) {
+        else if (allZero) {
             console.log("allZero", allZero);
             return "#D3D3D3";
         }
@@ -69,7 +68,6 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
             return "#008FFB";
         }
         else {
-            console.log("else", atLeastOneNotZero);
             return "#FF4560";
         }
     }

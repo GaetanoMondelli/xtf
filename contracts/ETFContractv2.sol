@@ -659,11 +659,12 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
     }
 
     // reedem ETF function
-    function reedemETF(uint256 etfId) public returns (uint256 tokenId) {
+    function reedemETF(uint256 bundleId) public returns (uint256 etfId) {
         require(
             ETFToken(etfTokenAddress).balanceOf(msg.sender) >= etfTokenPerWrap,
             "ETFContract: msg.sender does not have enough ETF Tokens"
         );
+        etfId = bundleIdToETFId[bundleId];
 
         // tokenIdToExpirationTime[etfId] = block.timestamp + lockTime has to be expired
         console.log(
@@ -680,10 +681,13 @@ contract ETFv2 is Ownable, ERC721Multiwrap, CCIPReceiver {
         // burn the ETF Token
         ETFToken(etfTokenAddress).burn(msg.sender, etfTokenPerWrap);
         // transfer the ETF to msg.sender
-        if (etfId == 0) {
-            etfId = lastETFReedemed;
-        }
-        _unwrap(etfId, msg.sender);
+        // if (etfId == 0) {
+        //     etfId = lastETFReedemed;
+        // }
+        // _unwrap(etfId, msg.sender);
+
+        _releaseTokens(msg.sender, bundleId);
+        _burn(etfId);
 
         lastETFReedemed += 1;
         return lastETFReedemed - 1;

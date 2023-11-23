@@ -2,7 +2,7 @@ import { useAddress, useContract, useContractRead, useContractWrite } from "@thi
 import styles from '../styles/page.module.css'
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 import TokenDescriptions from "./TokenDescriptionsView";
-import { Badge, Button, Card, Descriptions, Form, InputNumber, Progress, Divider, Result } from 'antd';
+import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result } from 'antd';
 import { FireFilled } from '@ant-design/icons';
 import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
@@ -12,6 +12,7 @@ import { getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggr
 import { ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 
+const { Countdown } = Statistic;
 
 interface CustomChartDataset extends ChartDataset<'pie', number[]> {
     customLabels?: string[];
@@ -62,6 +63,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const { data: isETFBurned, isLoading: isETFBurnedLoading, error: isETFBurnedError } = useContractRead(
         contract,
         "isETFBurned", [etfId]
+    );
+
+    const { data: expirationTime, isLoading: expirationTimeLoading, error: expirationTimeError } = useContractRead(
+        contract,
+        "tokenIdToExpirationTime", [etfId]
     );
 
 
@@ -277,7 +283,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                             <Button type="primary" onClick={() => {
 
                                 reedem({
-                                    args: [etfId],
+                                    args: [bundleId],
                                 })
 
                             }}>Reedem</Button>
@@ -286,14 +292,18 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                 </Card>
                 }
                 {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.MINTED && <Card>
+                    <Countdown value={
+                        expirationTimeLoading ? 0 : expirationTimeError ? 0 : expirationTime ? expirationTime.toNumber() * 1000 : 0
+
+                    }></Countdown>
                     <Result
                         status="success"
                         title="The Bundle has been locked and ETF tokens have been minted"
-                        subTitle="You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets"
+                        subTitle={"You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets " + bundleId + " " + etfId}
                         extra={[<Button type="primary" onClick={() => {
 
                             reedem({
-                                args: [etfId],
+                                args: [bundleId],
                             })
 
                         }}>Reedem</Button>
@@ -313,8 +323,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                 }
             </div>
 
-        </Card>
+        </Card >
 
-    </Badge.Ribbon>
+    </Badge.Ribbon >
 
 }
