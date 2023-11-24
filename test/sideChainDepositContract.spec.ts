@@ -8,7 +8,7 @@ describe("ChainLink CCIP Message layer", () => {
     const fungibleTokenName = "FungibleToken";
     const nativeWrapperContractName = "NativeTokenWrapper";
     const etfContractName = "ETFv2";
-    const royaltyBps = 1000;
+    // const royaltyBps = 1000;
     const etfTokenContractName = "ETFToken";
     const etfTokenPerWrap = 100;
     const fee = 0;
@@ -93,15 +93,15 @@ describe("ChainLink CCIP Message layer", () => {
             },
         ];
 
-        const royaltyInfo = {
-            recipient: owner.address,
-            bps: royaltyBps,
-        }
+        // const royaltyInfo = {
+        //     recipient: owner.address,
+        //     bps: royaltyBps,
+        // }
 
         etfPrimaryContract = await EtfContractFactory.deploy(
             "ETF-v0.0.3",
             "ETF",
-            royaltyInfo,
+            // royaltyInfo,
             nativeTokenWrapper.address,
             etfTokenContract.address,
             etfTokenPerWrap,
@@ -151,7 +151,7 @@ describe("ChainLink CCIP Message layer", () => {
             expect(router.address).toBeDefined();
         });
 
-        it.skip("should send a message to the primary contract on primary chain when deposit funds", async () => {
+        it("should send a message to the primary contract on primary chain when deposit funds", async () => {
             const tokenStruct = {
                 assetContract: linkToken.address,
                 tokenType: 0,

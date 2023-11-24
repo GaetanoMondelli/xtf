@@ -1,0 +1,27 @@
+    function changeAssets(
+        uint256 _percentageFee,
+        TokenAmounts[] memory _whitelistedTokenAmounts
+    ) public onlyOwner {
+        for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
+            uint64 chainIdSelector = _whitelistedTokenAmounts[i]
+                .chainIdSelector;
+            if (!chainSelectorIdInETF[chainIdSelector]) {
+                chainSelectorIds.push(chainIdSelector);
+                chainSelectorIdInETF[chainIdSelector] = true;
+            }
+            _setupRole(ASSET_ROLE, _whitelistedTokenAmounts[i].assetContract);
+            tokenQuantities[chainIdSelector][
+                _whitelistedTokenAmounts[i].assetContract
+            ] = _whitelistedTokenAmounts[i].amount;
+            whitelistedTokens[chainIdSelector].push(
+                _whitelistedTokenAmounts[i].assetContract
+            );
+
+            tokenIdToDataFeed[
+                _whitelistedTokenAmounts[i].assetContract
+            ] = AggregatorV3Interface(
+                _whitelistedTokenAmounts[i].oracleAddress
+            );
+        }
+        percentageFee = _percentageFee;
+    }

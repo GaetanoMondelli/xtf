@@ -1,10 +1,19 @@
+require('dotenv').config();
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-solhint";
 import '@nomiclabs/hardhat-ethers';
 import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.9",
+  solidity: {
+    version: "0.8.9",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 10,
+      },
+    },
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true
@@ -21,9 +30,14 @@ const config: HardhatUserConfig = {
     matic: {
       url: "https://rpc-mumbai.maticvigil.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    }
+    },
+    sepolia: {
+      url: "https://eth-sepolia.g.alchemy.com/v2/RFiBHY2-HWqMY3wHC_lMpOKdJfji5EgY",
+      chainId: 11155111,
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY || ''],
+      gas: 100000000000,
+    },
   },
 };
 
 export default config;
-

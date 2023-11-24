@@ -11,7 +11,7 @@ describe("ETFContract", () => {
     const priceAggregatorContractName = "MockAggregator";
     const mockRouterContractName = "MockRouterClient";
     const ETFURI = "https://example.com";
-    const royaltyBps = 1000;
+    // const royaltyBps = 1000;
     const fee = 0;
     const etfTokenPerWrap = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
     const priceDecimals = 8;
@@ -38,7 +38,7 @@ describe("ETFContract", () => {
     let priceAggregatortokenToBeWrapped1: any;
     let tokenToBeWrapped2: any;
     let priceAggregatortokenToBeWrapped2: any;
-    let royaltyInfo: any;
+    // let royaltyInfo: any;
     let router: any;
     let totalValue: any;
     let tokenPrices: any;
@@ -129,16 +129,15 @@ describe("ETFContract", () => {
             console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
         }
 
-        royaltyInfo = {
-            recipient: owner.address,
-            bps: royaltyBps,
-        }
+        // royaltyInfo = {
+        //     recipient: owner.address,
+        //     bps: royaltyBps,
+        // }
 
 
         etfContract = await EtfContractFactory.deploy(
             "ETF-v0.0.3",
             "ETF",
-            royaltyInfo,
             nativeTokenWrapper.address,
             etfTokenContract.address,
             etfTokenPerWrap,
@@ -163,7 +162,8 @@ describe("ETFContract", () => {
         });
 
         describe("mint ETF", () => {
-            it("should prevent to invoke ETF wrap function from an eoa", async () => {
+            it.skip("should prevent to invoke ETF wrap function from an eoa", async () => {
+                // removed wrap function from etf contract
                 const uriForWrappedToken = "https://example.com";
 
                 const tokenStruct = {
@@ -181,7 +181,7 @@ describe("ETFContract", () => {
                 );
             });
 
-            it("should mint an ETF", async () => {
+            it.skip("should mint an ETF", async () => {
                 const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
                 const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
                 const ethersToWrap = ethers.utils.parseEther("0.5");
@@ -439,7 +439,6 @@ describe("ETFContract", () => {
                 etfContract = await EtfContractFactory.deploy(
                     "ETF-v0.0.3",
                     "ETF",
-                    royaltyInfo,
                     nativeTokenWrapper.address,
                     etfTokenContract.address,
                     BigNumber.from(etfTokenPerWrap).mul(BigNumber.from(10).pow(18)),

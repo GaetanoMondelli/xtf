@@ -12,7 +12,9 @@
     "stop:node": "kill-port 8545",
     "deploy:local": "sleep 5 && hardhat run scripts/deploy.ts --network localhost",
     "thirdweb:generate": "npx thirdweb generate",
-    "init": "npm run stop:node & npm run start:node & npm run deploy:local"
+    "init": "npm run stop:node & npm run start:node & npm run deploy:local",
+    "checksize": "npm run build:contracts && npx ts-node scripts/checksize.ts",
+    "deploy-sepolia": "hardhat run scripts/deploy-sep.ts --network sepolia"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -41,6 +43,7 @@
     "@typechain/ethers-v5": "^10.2.0",
     "@typechain/hardhat": "^6.1.5",
     "antd": "^5.11.0",
+    "dotenv": "^16.3.1",
     "hardhat-gas-reporter": "^1.0.9",
     "solidity-coverage": "^0.8.2",
     "typechain": "^8.1.1"

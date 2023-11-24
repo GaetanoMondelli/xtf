@@ -3,8 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@thirdweb-dev/contracts/base/ERC20Base.sol";
 import "@thirdweb-dev/contracts/extension/Ownable.sol";
-import "hardhat/console.sol";
 
+interface IETFToken {
+    function mint(address account, uint256 amount) external;
+    function burn(address account, uint256 amount) external;
+}
 
 
 contract ETFToken is ERC20, Ownable {
@@ -19,7 +22,7 @@ contract ETFToken is ERC20, Ownable {
      * @param amount The amount of tokens to mint.
      */
     function mint(address account, uint256 amount) external onlyOwner {
-        console.log("Minting %s ETF tokens for %s", amount, account);
+        // console.log("Minting %s ETF tokens for %s", amount, account);
         _mint(account, amount);
     }
 
