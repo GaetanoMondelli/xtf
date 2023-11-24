@@ -12,7 +12,6 @@ import {ContractMetadata} from "@thirdweb-dev/contracts/extension/ContractMetada
 import {ERC721A} from "@thirdweb-dev/contracts/eip/ERC721AVirtualApprove.sol";
 import {DefaultOperatorFilterer} from "@thirdweb-dev/contracts/extension/DefaultOperatorFilterer.sol";
 import {IERC20Metadata, IERC20} from "@thirdweb-dev/contracts/base/ERC20Base.sol";
-import {PermissionsEnumerable} from "@thirdweb-dev/contracts/extension/PermissionsEnumerable.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -38,7 +37,6 @@ contract ETFv2 is
     ContractMetadata,
     Ownable,
     DefaultOperatorFilterer,
-    PermissionsEnumerable,
     CCIPReceiver
 {
     /*//////////////////////////////////////////////////////////////
@@ -76,6 +74,8 @@ contract ETFv2 is
     uint64[] public chainSelectorIds;
     // ChainSelectorId in the ETF
     mapping(uint64 => bool) public chainSelectorIdInETF;
+    // map of whitelisted tokens per chainIdSelector
+    mapping(uint64 => mapping(address => bool)) public isWhiteListedToken;
     // whitelist of token addresses for the ETF
     mapping(uint64 => address[]) public whitelistedTokens;
     // number of tokens that must be wrapped per etf
@@ -127,9 +127,6 @@ contract ETFv2 is
     {
         _setupOwner(msg.sender);
         _setOperatorRestriction(true);
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, msg.sender);
-        _setupRole(TRANSFER_ROLE, msg.sender);
 
         // _revokeRole(ASSET_ROLE, address(0));
         // _setupRole(MINTER_ROLE, address(0));
@@ -145,7 +142,9 @@ contract ETFv2 is
                 chainSelectorIds.push(chainIdSelector);
                 chainSelectorIdInETF[chainIdSelector] = true;
             }
-            _setupRole(ASSET_ROLE, _whitelistedTokenAmounts[i].assetContract);
+            isWhiteListedToken[chainIdSelector][
+                _whitelistedTokenAmounts[i].assetContract
+            ] = true;
             tokenQuantities[chainIdSelector][
                 _whitelistedTokenAmounts[i].assetContract
             ] = _whitelistedTokenAmounts[i].amount;
@@ -160,7 +159,6 @@ contract ETFv2 is
             );
         }
 
-        _setupRole(ASSET_ROLE, NATIVE_TOKEN);
         uriETFToken = _uriETFToken;
         etfTokenAddress = _etfTokenAddress;
         tokensToWrapQuantity = _whitelistedTokenAmounts.length;
@@ -188,7 +186,7 @@ contract ETFv2 is
             "ETFContract: bundleId was already closed for an ETF"
         );
 
-        validateTokensToWrap(_tokensToWrap);
+        validateTokensToWrap(_tokensToWrap, currentChainSelectorId);
         updateBundleCount(_bundleId);
         addAddressToBundle(_bundleId, msg.sender);
 
@@ -289,11 +287,14 @@ contract ETFv2 is
         bytes data
     );
 
-    function validateTokensToWrap(Token[] memory tokensToWrap) internal view {
+    function validateTokensToWrap(Token[] memory tokensToWrap, uint64 chainSelectorId) internal view {
         for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
             // check each assetContract is whitelisted
             require(
-                hasRole(ASSET_ROLE, tokensToWrap[i].assetContract),
+                // hasRole(ASSET_ROLE, tokensToWrap[i].assetContract),
+                isWhiteListedToken[chainSelectorId][
+                    tokensToWrap[i].assetContract
+                ],
                 "ETFContract: assetContract is not whitelisted"
             );
 
@@ -449,7 +450,7 @@ contract ETFv2 is
             "ETFContract: bundleId was already closed for an ETF"
         );
 
-        validateTokensToWrap(depositFundMessage.tokensToWrap);
+        validateTokensToWrap(depositFundMessage.tokensToWrap, message.sourceChainSelector);
         updateBundleCount(depositFundMessage.bundleId);
         addAddressToBundle(
             depositFundMessage.bundleId,
