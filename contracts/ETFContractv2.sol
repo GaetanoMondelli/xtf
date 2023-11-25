@@ -175,6 +175,36 @@ contract ETFv2 is
         emit EtherReceived(msg.sender, msg.value);
     }
 
+    function changeAssets(
+        uint256 _percentageFee,
+        TokenAmounts[] memory _whitelistedTokenAmounts
+    ) public onlyOwner {
+        for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
+            uint64 chainIdSelector = _whitelistedTokenAmounts[i]
+                .chainIdSelector;
+            if (!chainSelectorIdInETF[chainIdSelector]) {
+                chainSelectorIds.push(chainIdSelector);
+                chainSelectorIdInETF[chainIdSelector] = true;
+            }
+            isWhiteListedToken[chainIdSelector][
+                _whitelistedTokenAmounts[i].assetContract
+            ] = true;
+            tokenQuantities[chainIdSelector][
+                _whitelistedTokenAmounts[i].assetContract
+            ] = _whitelistedTokenAmounts[i].amount;
+            whitelistedTokens[chainIdSelector].push(
+                _whitelistedTokenAmounts[i].assetContract
+            );
+
+            tokenIdToDataFeed[
+                _whitelistedTokenAmounts[i].assetContract
+            ] = AggregatorV3Interface(
+                _whitelistedTokenAmounts[i].oracleAddress
+            );
+        }
+        percentageFee = _percentageFee;
+    }
+
     // depositFunds function receive a list of Tokens and put them in an unclosed
     function depositFunds(
         uint256 _bundleId,
@@ -287,7 +317,10 @@ contract ETFv2 is
         bytes data
     );
 
-    function validateTokensToWrap(Token[] memory tokensToWrap, uint64 chainSelectorId) internal view {
+    function validateTokensToWrap(
+        Token[] memory tokensToWrap,
+        uint64 chainSelectorId
+    ) internal view {
         for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
             // check each assetContract is whitelisted
             require(
@@ -450,7 +483,10 @@ contract ETFv2 is
             "ETFContract: bundleId was already closed for an ETF"
         );
 
-        validateTokensToWrap(depositFundMessage.tokensToWrap, message.sourceChainSelector);
+        validateTokensToWrap(
+            depositFundMessage.tokensToWrap,
+            message.sourceChainSelector
+        );
         updateBundleCount(depositFundMessage.bundleId);
         addAddressToBundle(
             depositFundMessage.bundleId,

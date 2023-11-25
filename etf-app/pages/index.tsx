@@ -1,16 +1,17 @@
-import { ConnectWallet, useContract } from "@thirdweb-dev/react";
+import { ConnectWallet, useChainId, useConnect, useContract, useSwitchChain, useWallet } from "@thirdweb-dev/react";
 import styles from '../styles/page.module.css'
 import { NextPage } from "next";
 import CONTRACTS from '../../CONTRACTS.json'
+import SEPOLIA_CONTRACTS from '../../CONTRACTS-sepolia.json'
 import TokenView from '../components/TokenView'
 import ETFView from '../components/ETFView'
 import OpenETFView from "../components/OpenETF";
 import CloseETF from "../components/CloseETF";
-import { useState } from 'react'
-import { Card, InputNumber } from 'antd';
+import { Card, InputNumber, Switch } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
-
+import { useState, useEffect } from 'react';
+import { Sepolia } from "@thirdweb-dev/chains";
 
 const minimiseAddress = (address: string) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -19,43 +20,56 @@ const minimiseAddress = (address: string) => {
 const Home: NextPage = () => {
 
   const [bundleId, setBundleId] = useState<number>(0);
+  const [localTest, setLocalTest] = useState<boolean>(false)
+  const [contracts, setContracts] = useState<any>(CONTRACTS);
+
+  const chainId = useChainId();
+  const walletInstance = useWallet();
+
+
+  const switchChain = useSwitchChain();
+  useEffect(() => {
+    if (!walletInstance) return
+    if (!localTest && chainId !== Sepolia.chainId) {
+      switchChain(Sepolia.chainId)
+    }
+    else if (localTest && chainId !== 31337) {
+      switchChain(31337)
+    }
+
+  }, [chainId, localTest])
+
+  useEffect(() => {
+    if (localTest) {
+      setContracts(CONTRACTS)
+    } else {
+      setContracts(SEPOLIA_CONTRACTS)
+    }
+  }, [localTest])
+
+
+
 
   return (
     <main className={styles.main}>
       <div className={styles.description}>
         <p>
-          CAKE PROTOCOL&nbsp;
-          <code className={styles.code}>{minimiseAddress(JSON.stringify(CONTRACTS['ETFv2'][0].address))}</code>
+          CAKE PROTOCOL&nbsp; {chainId}
+          <code className={styles.code}>{minimiseAddress(JSON.stringify(contracts['ETFv2'][0].address))}</code>
         </p>
         <div>
           <ConnectWallet />
         </div>
       </div>
       <div>
-        {/* <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['FungibleToken'][0].address} />
-        <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['FungibleToken'][1].address} />
-        <TokenView className={styles.tokenView} etfAddress={CONTRACTS['ETFv2'][0].address} address={CONTRACTS['ETFToken'][0].address} />
-
-        <ETFView address={CONTRACTS['ETFv2'][0].address} /> */}
-
-        {/* 
-        <div className={styles.center}>
-          <OpenETFView
-            address={CONTRACTS['ETFv2'][0].address}
-            tokenToBeWrapped1Address={CONTRACTS['FungibleToken'][0].address}
-            tokenToBeWrapped2Address={CONTRACTS['FungibleToken'][1].address}
-          ></OpenETFView>
-          <CloseETF address={CONTRACTS['ETFv2'][0].address}></CloseETF>
-        </div> */}
-
-
         <br></br>
         <br></br>
         <Card>
 
-          <ETFStatsView tokenAddress={CONTRACTS['ETFToken'][0].address} address={CONTRACTS['ETFv2'][0].address} />
+          <ETFStatsView tokenAddress={SEPOLIA_CONTRACTS['ETFToken'][0].address} address={contracts['ETFv2'][0].address} />
           <br></br>
           <div className={styles.description}>
+ 
 
             <span>Bundle Viewer {bundleId}</span>
             <InputNumber
@@ -66,14 +80,17 @@ const Home: NextPage = () => {
               min={0}
               onChange={(value) => setBundleId(Number(value))}
             />
+            &nbsp;&nbsp;&nbsp;<span>Hardhat local test</span> &nbsp;&nbsp;
+            <Switch checked={localTest} onChange={(checked) => setLocalTest(checked)} />
+
           </div>
         </Card>
         <br></br>
 
-        <BundleView address={CONTRACTS['ETFv2'][0].address} bundleId={bundleId}
+        <BundleView address={contracts['ETFv2'][0].address} bundleId={bundleId}
           setBundleId={setBundleId}
-          tokenToBeWrapped1Address={CONTRACTS['FungibleToken'][0].address}
-          tokenToBeWrapped2Address={CONTRACTS['FungibleToken'][1].address}
+          tokenToBeWrapped1Address={contracts['FungibleToken'][0].address}
+          tokenToBeWrapped2Address={contracts['FungibleToken'][1].address}
 
         ></BundleView>
       </div>

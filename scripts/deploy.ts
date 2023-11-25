@@ -13,7 +13,7 @@ async function main() {
   const fungibleTokenName = "FungibleToken";
   const priceAggregatorContractName = "MockAggregator";
   const mockRouterContractName = "MockRouterClient";
-  const royaltyBps = 1000;
+  // const royaltyBps = 1000;
   const ETFURI = "https://etfx.com";
   const contracts: any = {};
   const DEMO_USER_ADDRESS = "0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203";
@@ -58,10 +58,6 @@ async function main() {
     ) => [etfContractName,
         "ETF-v0.0.1",
         "ETF",
-        {
-          recipient: owner.address,
-          bps: royaltyBps
-        },
         nativeTokenWrapper.address,
         etfTokenContract.address,
         etfTokenPerWrap,

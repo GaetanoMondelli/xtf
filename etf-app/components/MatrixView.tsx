@@ -2,7 +2,7 @@ import dynamic from 'next/dynamic'
 import React, { Component, useState } from "react";
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
-import { requiredTokenStructs } from "./utils";
+// import { requiredTokenStructs } from "./utils";
 import { BigNumber } from 'ethers';
 
 async function fetchBundleInfo(bundleId: string) {
@@ -13,8 +13,8 @@ async function fetchBundleInfo(bundleId: string) {
 }
 
 
-export default function MatrixView({ address, bundleState, bundleStateLoading, bundleStateError, setBundleId }: {
-    address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any, setBundleId: any
+export default function MatrixView({ address, bundleState, bundleStateLoading, bundleStateError, setBundleId, requiredTokenStructs }: {
+    address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any, setBundleId: any, requiredTokenStructs: any
 }) {
     // const [selectedBundle, setSelectedBundle] = useState<string>();
     const numberOfColumns = 16  ; // Previously numberOfRows

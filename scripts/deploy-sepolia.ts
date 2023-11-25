@@ -11,16 +11,15 @@ async function main() {
     const etfContractName = "ETFv2";
     const fungibleTokenName = "FungibleToken";
     const etfTokenContractName = "ETFToken";
-    const ETFURI = "https://etfx.com";
+    const ETFURI = "https://cryptotrade.fund";
     const contracts: any = {};
     const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const fee = 0;
-    const royaltyBps = 1000;
     const etfTokenPerWrap = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
     // Sepolia data feed addresses
-    const sepDAIUSDDataFeedAddress = "0x14866185B1962B63C3Ea9E03Bc1da838bab34C19";
     const sepETHUSDDataFeedAddress = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
+    const sepDAIUSDDataFeedAddress = "0x14866185B1962B63C3Ea9E03Bc1da838bab34C19";
     const sepLINKUSDDataFeedAddress = "0xc59E3633BAAC79493d908e63626716e204A45EdF";
     const sepSNXUSDDataFeedAddress = "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC";
 
@@ -77,11 +76,7 @@ async function main() {
         ) => [etfContractName,
                 "ETF-v0.0.1",
                 "ETF",
-                {
-                    recipient: owner.address,
-                    bps: royaltyBps
-                },
-                sepNativeTokenWrapperAddress,
+                nativeTokenWrapper,
                 etfTokenContract.address,
                 etfTokenPerWrap,
                 fee,
@@ -131,3 +126,11 @@ main()
         console.error(error);
         process.exit(1);
     });
+
+// Deploying contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
+// FungibleToken deployed to: 0x0C20e14603137b43ECa358ebB753821461984F89
+// FungibleToken deployed to: 0x735770Bd277473058B35b4D9Ad005b0C874cEB31
+// FungibleToken deployed to: 0x874611Af8964421c42dda6Eed1f2e80B33692CDf
+// ETFToken deployed to: 0xcc0d27fAb11dceA541e9cFFeB6fb5D0fd3D3e6eB
+// ETFv2 deployed to: 0xE37CA7dF644F55532Ee9E510755E7d46C566659C
+          

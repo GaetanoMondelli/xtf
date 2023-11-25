@@ -129,12 +129,6 @@ describe("ETFContract", () => {
             console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
         }
 
-        // royaltyInfo = {
-        //     recipient: owner.address,
-        //     bps: royaltyBps,
-        // }
-
-
         etfContract = await EtfContractFactory.deploy(
             "ETF-v0.0.3",
             "ETF",

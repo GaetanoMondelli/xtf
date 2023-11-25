@@ -14,7 +14,7 @@
     "thirdweb:generate": "npx thirdweb generate",
     "init": "npm run stop:node & npm run start:node & npm run deploy:local",
     "checksize": "npm run build:contracts && npx ts-node scripts/checksize.ts",
-    "deploy-sepolia": "hardhat run scripts/deploy-sep.ts --network sepolia"
+    "deploy-sepolia": "hardhat run scripts/deploy-sepolia.ts --network sepolia"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -37,6 +37,7 @@
     "@ethersproject/providers": "^5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
     "@nomicfoundation/hardhat-toolbox": "^2.0.1",
+    "@nomicfoundation/hardhat-verify": "^2.0.1",
     "@nomiclabs/hardhat-etherscan": "^3.1.6",
     "@nomiclabs/hardhat-solhint": "^3.0.0",
     "@thirdweb-dev/contracts": "^3.8.3",

@@ -8,9 +8,10 @@ import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { getRequiredAsset, requiredTokenStructs, getValueChartData, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus } from "./utils";
-import { ChartDataset } from "chart.js/auto";
+import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus } from "./utils";
+import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
+
 
 const { Countdown } = Statistic;
 
@@ -25,6 +26,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
     const [prices, setPrices] = useState<any>();
     const [values, setValues] = useState<any>();
+    const [requiredTokenStructs, setRequiredTokenStructs] = useState<any>([]);
     const userAddress = useAddress();
 
     const { contract, isLoading, error } = useContract(address, ABI);
@@ -70,6 +72,15 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         "tokenIdToExpirationTime", [etfId]
     );
 
+    const { data: requiredAsset, isLoading: requiredAssetLoading, error: requiredAssetError } = useContractRead(
+        contract,
+        "getRequiredAssets", []
+    );
+
+    const getRequiredAsset = (address: string) => {
+
+        return !requiredAssetLoading && requiredAsset ? requiredTokenStructs.find((asset: any) => asset.assetContract === address) : [];
+    }
 
 
     const getRibbonProps = (etfIdLoading: any, etfId: any, isETFBurnedLoading: any, isETFBurned: any) => {
@@ -99,16 +110,45 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
     }
 
+    const getValueChartData = (tokens: any, prices: any) => {
+        const labels: any = [];
+        const values: any = [];
+        tokens.map((asset: any, index: number) => {
+            const value = prices[index]
+            values.push(BigNumber.from(value).mul(BigNumber.from(asset.totalAmount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
+            console.log('valueS', value, asset.totalAmount, values[values.length - 1])
+            labels.push(asset.assetContract);
+        });
+        return [labels, values];
+    }
+
     useEffect(() => {
         async function fetchData() {
-            const valuesChart = await getValueChartData();
+            console.log('almeno qui2')
+
+            if (requiredAssetLoading || requiredAsset == undefined) return;
             const prices = await getPriceAggregatorAddress();
-            console.log("Fetched data: ", valuesChart); // Check what data is being fetched
-            setValues(valuesChart);
-            setPrices(prices);
+            const tmpRequiredAssets: any = [];
+            for (let i = 0; i < requiredAsset[0].length; i++) {
+                const quantity = requiredAsset[0][i];
+                const assetContract = requiredAsset[1][i];
+                const assetChainSelector = requiredAsset[2][i];
+                tmpRequiredAssets.push({
+                    assetContract: assetContract,
+                    tokenType: 0,
+                    totalAmount: quantity,
+                    tokenId: 0,
+                    chainSelector: assetChainSelector
+                });
+                setRequiredTokenStructs(tmpRequiredAssets);
+                const valuesChart = getValueChartData(tmpRequiredAssets, prices);
+                setValues(valuesChart);
+                setPrices(prices);
+            }
         }
         fetchData();
-    }, []);
+    }, [requiredAsset]);
+
 
 
     const transformUserDepositForChart = (userDeposit: any, prices: any) => {
@@ -141,7 +181,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         },
         {
             data: transformUserDepositForChart(userDeposit, prices)[1],
-            backgroundColor: [...values[0].map((address: string) => "rgba(75, 192, 192, 0.5)"), "rgba(54, 162, 235, 0.5)"],
+            label: 'User Deposit',
+            backgroundColor: [...values[0].map((address: string) => "rgba(75, 192, 192, 0.5)"), "rgba(255, 99, 132, 0.5)"],
         }
     ];
 
@@ -162,14 +203,46 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     justifyContent: 'space-evenly', // Center horizontally
                     alignItems: 'space-between', // Center vertically
                 }}>
+                    {/* {!requiredAssetLoading && <pre>{JSON.stringify(values, null, 2)}</pre>} */}
                     <MatrixView address={address}
                         bundleState={bundleState}
                         setBundleId={setBundleId}
                         bundleStateLoading={bundleStateLoading}
                         bundleStateError={bundleStateError}
+                        requiredTokenStructs={requiredTokenStructs}
                     />
-                    <div style={{ width: '300px', height: '300px', marginBottom: '20px' }}>
+                    <div style={{ width: '400px', height: '300px', marginBottom: '20px' }}>
                         {values && <Pie
+                            options={
+
+                                {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'right',
+                                            labels: {
+                                                generateLabels(chart) {
+                                                    const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
+                                                    const labelsOriginal: any = original.call(this, chart);
+                                                    const userDeposits = {...labelsOriginal[labelsOriginal.length - 1]};
+                                                    const otherDeposits = {...labelsOriginal[labelsOriginal.length - 1]};
+
+                                                    userDeposits.text = "User's asset Deposits";
+                                                    userDeposits.fillStyle = 'rgba(75, 192, 192, 0.5)';
+                                                    labelsOriginal.push(userDeposits);
+
+                                                    otherDeposits.text = "Other's asset Deposits";
+                                                    otherDeposits.fillStyle = 'rgba(255, 99, 132, 0.5)';
+                                                    labelsOriginal.push(otherDeposits);
+
+                                                    return labelsOriginal;
+                                                },
+                                            },
+                                        }
+                                    },
+                                }
+                            }
                             data={
                                 userDeposit == undefined || userDeposit[0].length == 0 ?
                                     {
@@ -216,6 +289,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     bundle={bundle}
                                     index={index}
                                     setQuantities={setQuantities}
+                                    requiredTokenStructs={requiredTokenStructs}
                                 ></TokenDescriptions>
 
                                 <Progress

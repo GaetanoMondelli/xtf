@@ -1,5 +1,6 @@
 import { BigNumber, ethers } from "ethers";
 import CONTRACTS from '../../CONTRACTS.json'
+import SEPOLIA_CONTRACTS from '../../CONTRACTS-sepolia.json'
 const MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
 const ETFContractv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 export const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -8,6 +9,13 @@ const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
 const tokenToBeWrapped1Address = CONTRACTS['FungibleToken'][0].address
 const tokenToBeWrapped2Address = CONTRACTS['FungibleToken'][1].address
 const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
+const SepoliaChainId = 11155111;
+const HardhatChainId = 31337;
+const sepoliaPriceDataFeed = ["0x694AA1769357215DE4FAC081bf1f309aDC325306",
+    "0x14866185B1962B63C3Ea9E03Bc1da838bab34C19",
+    "0xc59E3633BAAC79493d908e63626716e204A45EdF",
+    "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC"]
+
 
 export enum ETFState {
     LOADING,
@@ -41,9 +49,18 @@ const tokenStruct2 = {
 
 export const requiredTokenStructs = [nativeTokenStruct, tokenStruct1, tokenStruct2];
 
-export const getRequiredAsset = (address: string) => {
-    return requiredTokenStructs.find((asset) => asset.assetContract === address);
+const getContracts = (chainId: any) => {
+    let chainContracts: any = CONTRACTS;
+    if (chainId == SepoliaChainId) {
+        chainContracts = SEPOLIA_CONTRACTS;
+    }
+    return chainContracts;
 }
+
+
+// export const getRequiredAsset = (address: string) => {
+//     return requiredTokenStructs.find((asset) => asset.assetContract === address);
+// }
 
 
 export const getTotalQuantites = async () => {
@@ -54,22 +71,39 @@ export const getTotalQuantites = async () => {
 
 export const getPriceAggregatorAddress = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
+    // get chainId
+    const network = await provider.getNetwork();
+    const chainId = network.chainId;
 
     let prices = [];
 
-    for (const contractObject of CONTRACTS['MockAggregator']) {
-        const { address } = contractObject;
-        const contract = new ethers.Contract(address, MockAggregatorABI, provider);
-        try {
-            const price = await contract.latestRoundData();
-            prices.push(BigNumber.from(price.answer));
+    if (chainId == SepoliaChainId) {
+        for (let address of sepoliaPriceDataFeed) {
+            const contract = new ethers.Contract(address, MockAggregatorABI, provider);
+            try {
+                const price = await contract.latestRoundData();
+                prices.push(BigNumber.from(price.answer));
+            }
+            catch (err) {
+                console.log('err data feed', err);
+                prices.push(BigNumber.from(0));
+            }
         }
-        catch (err) {
-            console.log('err', err);
-            prices.push(BigNumber.from(0));
+    } else {
+
+        for (const contractObject of CONTRACTS['MockAggregator']) {
+            const { address } = contractObject;
+            const contract = new ethers.Contract(address, MockAggregatorABI, provider);
+            try {
+                const price = await contract.latestRoundData();
+                prices.push(BigNumber.from(price.answer));
+            }
+            catch (err) {
+                console.log('err', err);
+                prices.push(BigNumber.from(0));
+            }
         }
     }
-
     return prices;
 };
 
@@ -114,22 +148,19 @@ export const getInvestorAddressesForBundle = async (bundleId: number) => {
     return addressTokensMap;
 }
 
-export const getTokensByAddres = async (bundleId: number, address: string) => {
+
+export const getTokensByAddress = async (bundleId: number, address: string) => {
     const values = [];
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const prices: any[] = await getPriceAggregatorAddress();
+    // get chainId
+    const network = await provider.getNetwork();
+    const chainId = network.chainId;
+    let chainContracts = getContracts(chainId);
 
-    const contractObject = CONTRACTS['ETFv2'][0];
+    const contractObject = chainContracts['ETFv2'][0];
     const { address: contractAddress } = contractObject;
     const contract = new ethers.Contract(contractAddress, ETFContractv2ABI, provider);
     const recordArray = await contract.getAddressQuantityPerBundle(bundleId, address);
-    for (const record of recordArray) {
-        console.log('record22', address, record);
-
-        // values.push(BigNumber.from(value).mul(BigNumber.from(record.amount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
-    }
-    // console.log('values', values);
-    // return values;
     return recordArray;
 }
 

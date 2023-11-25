@@ -14,6 +14,9 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true
@@ -35,7 +38,6 @@ const config: HardhatUserConfig = {
       url: "https://eth-sepolia.g.alchemy.com/v2/RFiBHY2-HWqMY3wHC_lMpOKdJfji5EgY",
       chainId: 11155111,
       accounts: [process.env.DEPLOYER_PRIVATE_KEY || ''],
-      gas: 100000000000,
     },
   },
 };
