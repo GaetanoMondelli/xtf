@@ -8,7 +8,7 @@ import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus } from "./utils";
+import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 
@@ -172,11 +172,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         {
             data: values[1],
             backgroundColor: [
-                'rgba(54, 162, 235)',
-                'rgba(255, 99, 132)',
-                'rgba(255, 206, 86)',
                 'rgba(153, 102, 255)',
-                'rgba(255, 159, 64)',
+                'rgba(255, 206, 86)',
+                'rgba(54, 162, 235)',
+                'rgba(28, 24, 64)',
+                'rgba(255, 99, 132)',
             ],
         },
         {
@@ -193,9 +193,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
             <div className={styles.description}>
                 <h3>Vault {bundleId}</h3>
-                {/* {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 && <p>ETF {BigNumber.from(etfId).toString()}</p>} */}
-                {/* {!etfIdLoading && isETFBurned && <p>ETF {isETFBurned.toString()}</p>} */}
-
                 <br></br>
 
                 <div style={{
@@ -225,14 +222,22 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                                 generateLabels(chart) {
                                                     const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
                                                     const labelsOriginal: any = original.call(this, chart);
-                                                    const userDeposits = {...labelsOriginal[labelsOriginal.length - 1]};
-                                                    const otherDeposits = {...labelsOriginal[labelsOriginal.length - 1]};
 
-                                                    userDeposits.text = "User's asset Deposits";
+
+
+
+                                                    for (let i = 0; i < labelsOriginal.length; i++) {
+                                                        console.log("labelsOriginal[i].text", labelsOriginal[i].text, getAssetName(labelsOriginal[i].text))
+                                                        labelsOriginal[i].text = getAssetName(labelsOriginal[i].text);
+                                                    }
+
+                                                    const userDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
+                                                    const otherDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
+                                                    userDeposits.text = "User's Deposits";
                                                     userDeposits.fillStyle = 'rgba(75, 192, 192, 0.5)';
                                                     labelsOriginal.push(userDeposits);
 
-                                                    otherDeposits.text = "Other's asset Deposits";
+                                                    otherDeposits.text = "Other's Deposits";
                                                     otherDeposits.fillStyle = 'rgba(255, 99, 132, 0.5)';
                                                     labelsOriginal.push(otherDeposits);
 

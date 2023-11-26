@@ -1,9 +1,9 @@
 import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead } from "@thirdweb-dev/react";
 import styles from '../styles/page.module.css'
-import { Button, Descriptions, InputNumber, Tag } from 'antd';
-import style from '../styles/page.module.css';
+import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip } from 'antd';
+import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
-import { minimiseAddress, nativeAddress, showOnlyTwoDecimals } from "./utils";
+import { minimiseAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon } from "./utils";
 
 
 
@@ -19,6 +19,8 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
 
     const { data: allowance, isLoading: isAllowanceLoading, error: nameError } = useContractRead(contract, "allowance", [userAddress, etfAddress]);
 
+    // https://sepolia.etherscan.io/address/0x39C07e48dfCAfd49A6e4be9ca0164c5Be9A505fc#readContract
+
     const getRequiredAsset = (address: string) => {
         return requiredTokenStructs ? requiredTokenStructs.find((asset: any) => asset.assetContract === address) : [];
     }
@@ -26,7 +28,30 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
 
 
     return <Descriptions column={3} title={
-        balance?.symbol
+        <div
+            style={{
+                display: "flex",
+                gap: 5,
+                alignItems: "center",
+            }}
+        >
+            <div>
+                <Avatar
+                    src={getAssetIcon(address)}
+                    style={
+                        {
+                            marginRight: 10
+                        }
+                    }
+                >{balance?.symbol}</Avatar>
+                <span>{balance?.symbol}</span>
+            </div>
+            {/* over appea text see on explore */}
+            {address !== nativeAddress &&
+                <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
+                    <SelectOutlined style={{ fontSize: '14px', color: '#08c' }} onClick={() => { window.open(`https://sepolia.etherscan.io/address/${address}`, "_blank") }} />
+                </Tooltip>}
+        </div>
     }>
         <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item>
         <Descriptions.Item label="Balance">

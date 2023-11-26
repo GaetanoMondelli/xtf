@@ -11,11 +11,13 @@ const tokenToBeWrapped2Address = CONTRACTS['FungibleToken'][1].address
 const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
 const SepoliaChainId = 11155111;
 const HardhatChainId = 31337;
+const DAIAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][0].address, CONTRACTS['FungibleToken'][0].address];
+const LINKAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][1].address, CONTRACTS['FungibleToken'][1].address];
+const SNXAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][2].address];
 const sepoliaPriceDataFeed = ["0x694AA1769357215DE4FAC081bf1f309aDC325306",
     "0x14866185B1962B63C3Ea9E03Bc1da838bab34C19",
     "0xc59E3633BAAC79493d908e63626716e204A45EdF",
     "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC"]
-
 
 export enum ETFState {
     LOADING,
@@ -61,6 +63,40 @@ const getContracts = (chainId: any) => {
 // export const getRequiredAsset = (address: string) => {
 //     return requiredTokenStructs.find((asset) => asset.assetContract === address);
 // }
+
+
+export const getAssetIcon = (address: string) => {
+
+    if (address === nativeAddress) {
+        return 'https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880'
+    }
+    if (DAIAddresses.includes(address)) {
+        return 'https://assets.coingecko.com/coins/images/9956/standard/Badge_Dai.png?1696509996'
+    }
+    if (LINKAddresses.includes(address)) {
+        return 'https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png?1547034700'
+    }
+    if (SNXAddresses.includes(address)) {
+        return 'https://assets.coingecko.com/coins/images/3406/small/SNX.png?1598631139'
+    }
+    return undefined;
+}
+
+export const getAssetName = (address: string) => {
+    if (address === nativeAddress) {
+        return 'ETH'
+    }
+    if (DAIAddresses.includes(address)) {
+        return 'DAI'
+    }
+    if (LINKAddresses.includes(address)) {
+        return 'LINK'
+    }
+    if (SNXAddresses.includes(address)) {
+        return 'SNX'
+    }
+    return undefined;
+}
 
 
 export const getTotalQuantites = async () => {
