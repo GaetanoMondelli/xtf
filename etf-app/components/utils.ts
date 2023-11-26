@@ -219,6 +219,10 @@ export const calculateTLV = async (bundleIdQuantities: any) => {
 }
 
 
+export const getSepoliaDataFeedAddress = () => {
+    return sepoliaPriceDataFeed;
+}
+
 
 export const getETFStatus = (etfIdLoading: any, etfId: any, isETFBurnedLoading: any, isETFBurned: any) => {
     if (etfIdLoading || isETFBurnedLoading) {

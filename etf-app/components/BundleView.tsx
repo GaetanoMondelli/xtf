@@ -124,8 +124,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
     useEffect(() => {
         async function fetchData() {
-            console.log('almeno qui2')
-
             if (requiredAssetLoading || requiredAsset == undefined) return;
             const prices = await getPriceAggregatorAddress();
             const tmpRequiredAssets: any = [];

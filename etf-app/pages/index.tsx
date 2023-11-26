@@ -10,6 +10,7 @@ import CloseETF from "../components/CloseETF";
 import { Card, InputNumber, Switch } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
+import PriceValueStats from "../components/PricesValueStats";
 import { useState, useEffect } from 'react';
 import { Sepolia } from "@thirdweb-dev/chains";
 
@@ -54,7 +55,7 @@ const Home: NextPage = () => {
     <main className={styles.main}>
       <div className={styles.description}>
         <p>
-          CAKE PROTOCOL&nbsp; {chainId}
+          XTF PROTOCOL&nbsp; {chainId}
           <code className={styles.code}>{minimiseAddress(JSON.stringify(contracts['ETFv2'][0].address))}</code>
         </p>
         <div>
@@ -67,11 +68,12 @@ const Home: NextPage = () => {
         <Card>
 
           <ETFStatsView tokenAddress={SEPOLIA_CONTRACTS['ETFToken'][0].address} address={contracts['ETFv2'][0].address} />
+          <PriceValueStats address={contracts['ETFv2'][0].address} />
           <br></br>
           <div className={styles.description}>
  
 
-            <span>Bundle Viewer {bundleId}</span>
+            <span>Vault Viewer {bundleId}</span>
             <InputNumber
               style={{
                 marginLeft: 20
