@@ -1,7 +1,8 @@
 import type { AppProps } from "next/app";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
+import { ConfigProvider, Typography } from "antd";
 // import "../styles/globals.css";
-// import "../node_modules/neobrutalismcss/dist/index.css";
+import "../node_modules/neobrutalismcss/dist/index.css";
 
 // This is the chain your dApp will work on.
 // Change this to the chain your app is built for.
@@ -55,7 +56,17 @@ function MyApp({ Component, pageProps }: AppProps) {
       clientId={process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID}
       activeChain={SepoliaChain}
     >
-      <Component {...pageProps} />
+      <ConfigProvider
+        theme={{
+          token: {
+            fontFamily: "Stint Ultra Expanded",
+          }
+        }}
+      >
+
+        <Component {...pageProps} />
+      </ConfigProvider>
+
     </ ThirdwebProvider>
   );
 }

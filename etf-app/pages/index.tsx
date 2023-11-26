@@ -60,14 +60,14 @@ const Home: NextPage = () => {
         </p>
         <div>
           <ConnectWallet
-            // className="nb-button default"
+          // className="nb-button default"
           />
         </div>
       </div>
       <div>
         <br></br>
         <br></br>
-        <Card className="card" 
+        <Card className="card"
           style={{
             width: "100%",
           }}
@@ -79,9 +79,23 @@ const Home: NextPage = () => {
           <div className={styles.description}>
 
 
-            <span>Vault Viewer {bundleId}</span>
+            <span>Vault Viewer</span>
             <InputNumber
+              
               style={{
+                // padding: 10px;
+                // background-color: #ff5733;
+                // color: black;
+                // border: 2px solid black;
+                // border-radius: 0.25rem;
+                // box-shadow: 2px 2px 0px 0px #000;
+                // border-radius: 5px;
+                // padding: "5px",
+                // backgroundColor: "#ff5733",
+                color: "black",
+                border: "2px solid black",
+                borderRadius: "0.25rem",
+                boxShadow: "2px 2px 0px 0px #000",
                 marginLeft: 20
               }}
               defaultValue={0}
@@ -89,7 +103,8 @@ const Home: NextPage = () => {
               onChange={(value) => setBundleId(Number(value))}
             />
             &nbsp;&nbsp;&nbsp;<span>Hardhat local test</span> &nbsp;&nbsp;
-            <Switch checked={localTest} onChange={(checked) => setLocalTest(checked)} />
+            <Switch
+              className="nb-input blue" checked={localTest} onChange={(checked) => setLocalTest(checked)} />
 
           </div>
         </Card>

@@ -176,15 +176,21 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                 'rgba(28, 24, 64)',
                 'rgba(255, 99, 132)',
             ],
+            borderColor: 'black',
+            borderWidth: 2,
+
         },
         {
             data: transformUserDepositForChart(userDeposit, prices)[1],
+            borderColor: 'black',
+            borderWidth: 2,
             label: 'User Deposit',
             backgroundColor: [...values[0].map((address: string) => "rgba(75, 192, 192, 0.5)"), "rgba(255, 99, 132, 0.5)"],
         }
     ];
 
     return <Badge.Ribbon
+        className="badge"
         {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
     >
         <Card
@@ -257,6 +263,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                         datasets: [
                                             {
                                                 data: values[1],
+                                                borderColor: 'black',
+                                                borderWidth: 2
 
                                             },
                                         ]

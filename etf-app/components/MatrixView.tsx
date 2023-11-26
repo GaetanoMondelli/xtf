@@ -17,7 +17,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
     address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any, setBundleId: any, requiredTokenStructs: any
 }) {
     // const [selectedBundle, setSelectedBundle] = useState<string>();
-    const numberOfColumns = 16  ; // Previously numberOfRows
+    const numberOfColumns = 16; // Previously numberOfRows
     const numberOfRows = 6;     // Previously numberOfColumns
     const series = [];
 
@@ -151,13 +151,20 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
             },
 
             stroke: {
-                width: 1
+                width: 2,
+                colors: ["black"],
+
             },
             legend: {
                 show: false
             },
             plotOptions: {
                 heatmap: {
+                    radius: 2,
+                    enableShades: true,
+                    useFillColorAsStroke: false,
+
+                    shadeIntensity: 0.5,
                     distributed: true, // Ensure colors are applied per-cell
                     colorScale: {
                         inverse: true,
@@ -165,8 +172,10 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
                             from: cell.y,
                             to: cell.y,
                             color: cell.fillColor
+
                         })))
-                    }
+                    },
+
                 }
             },
             dataLabels: {
@@ -192,7 +201,6 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
         series,
     };
 
-    console.log("bundleState", bundleState);
 
     return (
         <div className="mixed-chart">

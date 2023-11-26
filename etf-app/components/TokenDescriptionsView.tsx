@@ -43,15 +43,19 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
             >
                 <div>
                     <Avatar
+                        size={40}
                         src={getAssetIcon(address)}
+                        className="avatar"
                         style={
                             {
-                                marginRight: 10
+                                marginRight: 12,
+                                marginLeft: 10,
+                                marginBottom: 10,
                             }
                         }
                     >{balance?.symbol}</Avatar>
-                    <span>{balance?.symbol}</span>
                 </div>
+                <span>{balance?.symbol}</span>
                 {/* over appea text see on explore */}
                 {address !== nativeAddress &&
                     <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
