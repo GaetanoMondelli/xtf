@@ -27,32 +27,38 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
 
 
 
-    return <Descriptions column={3} title={
-        <div
-            style={{
-                display: "flex",
-                gap: 5,
-                alignItems: "center",
-            }}
-        >
-            <div>
-                <Avatar
-                    src={getAssetIcon(address)}
-                    style={
-                        {
-                            marginRight: 10
+    return <Descriptions
+        style={{
+            width: 850,
+        }}
+
+        column={3}
+        title={
+            <div
+                style={{
+                    display: "flex",
+                    gap: 5,
+                    alignItems: "center",
+                }}
+            >
+                <div>
+                    <Avatar
+                        src={getAssetIcon(address)}
+                        style={
+                            {
+                                marginRight: 10
+                            }
                         }
-                    }
-                >{balance?.symbol}</Avatar>
-                <span>{balance?.symbol}</span>
+                    >{balance?.symbol}</Avatar>
+                    <span>{balance?.symbol}</span>
+                </div>
+                {/* over appea text see on explore */}
+                {address !== nativeAddress &&
+                    <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
+                        <SelectOutlined style={{ fontSize: '14px', color: '#08c' }} onClick={() => { window.open(`https://sepolia.etherscan.io/address/${address}`, "_blank") }} />
+                    </Tooltip>}
             </div>
-            {/* over appea text see on explore */}
-            {address !== nativeAddress &&
-                <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
-                    <SelectOutlined style={{ fontSize: '14px', color: '#08c' }} onClick={() => { window.open(`https://sepolia.etherscan.io/address/${address}`, "_blank") }} />
-                </Tooltip>}
-        </div>
-    }>
+        }>
         <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item>
         <Descriptions.Item label="Balance">
             {balanceLoading && <Tag color="processing">Loading...</Tag>}

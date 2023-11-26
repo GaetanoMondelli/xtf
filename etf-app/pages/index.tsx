@@ -7,7 +7,7 @@ import TokenView from '../components/TokenView'
 import ETFView from '../components/ETFView'
 import OpenETFView from "../components/OpenETF";
 import CloseETF from "../components/CloseETF";
-import { Card, InputNumber, Switch } from 'antd';
+import { Button, Card, InputNumber, Switch } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
@@ -59,19 +59,25 @@ const Home: NextPage = () => {
           <code className={styles.code}>{minimiseAddress(JSON.stringify(contracts['ETFv2'][0].address))}</code>
         </p>
         <div>
-          <ConnectWallet />
+          <ConnectWallet
+            // className="nb-button default"
+          />
         </div>
       </div>
       <div>
         <br></br>
         <br></br>
-        <Card>
+        <Card className="card" 
+          style={{
+            width: "100%",
+          }}
+        >
 
           <ETFStatsView tokenAddress={SEPOLIA_CONTRACTS['ETFToken'][0].address} address={contracts['ETFv2'][0].address} />
           <PriceValueStats address={contracts['ETFv2'][0].address} />
           <br></br>
           <div className={styles.description}>
- 
+
 
             <span>Vault Viewer {bundleId}</span>
             <InputNumber

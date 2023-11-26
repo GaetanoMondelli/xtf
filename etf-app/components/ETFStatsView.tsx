@@ -65,7 +65,10 @@ export default function ETFStatsView(
 
 
 
-    return <Card>
+    return <Card className="card"
+        style={{
+            width: "95%",
+        }}>
         <Meta
             title="Vault Stats"
         />

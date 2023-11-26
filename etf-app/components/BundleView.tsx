@@ -187,7 +187,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     return <Badge.Ribbon
         {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
     >
-        <Card>
+        <Card
+            className="card"
+            style={{
+                width: "100%",
+            }}>
 
             <div className={styles.description}>
                 <h3>Vault {bundleId}</h3>
@@ -266,7 +270,12 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     </div>
                 </div>
 
-                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) == ETFState.OPEN && <Card>
+                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) == ETFState.OPEN && <Card
+                    className="card"
+                    style={{
+                        width: "95%",
+                    }}>
+
 
                     {bundle && requiredTokenStructs.map((asset: any) => {
                         const tokenAddress = asset.assetContract;
@@ -368,7 +377,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     </div >
                 </Card>
                 }
-                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.MINTED && <Card>
+                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.MINTED && <Card
+                    className="card"
+                    style={{
+                        width: "95%",
+                    }}>
                     <Countdown value={
                         expirationTimeLoading ? 0 : expirationTimeError ? 0 : expirationTime ? expirationTime.toNumber() * 1000 : 0
 
@@ -389,7 +402,12 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
                 </Card>
                 }
-                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.BURNED && <Card>
+                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.BURNED && <Card
+
+                    className="card"
+                    style={{
+                        width: "95%",
+                    }}>
                     <Result
                         icon={<FireFilled />}
                         status={"error"}

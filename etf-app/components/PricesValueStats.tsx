@@ -73,7 +73,10 @@ export default function PriceValueStats(
 
 
     return <Card
-    >
+        className="card"
+        style={{
+            width: "95%",
+        }}>
         <Meta
             title="Vault Composition"
             description="Prices are fetched from Chainlink Data Feeds"

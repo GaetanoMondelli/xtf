@@ -1,6 +1,7 @@
 import type { AppProps } from "next/app";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
-import "../styles/globals.css";
+// import "../styles/globals.css";
+// import "../node_modules/neobrutalismcss/dist/index.css";
 
 // This is the chain your dApp will work on.
 // Change this to the chain your app is built for.
