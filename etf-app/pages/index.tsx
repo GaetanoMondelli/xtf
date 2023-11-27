@@ -11,8 +11,11 @@ import { Button, Card, InputNumber, Switch } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
+import Prices from "../components/Prices";
+
 import { useState, useEffect } from 'react';
 import { Sepolia } from "@thirdweb-dev/chains";
+import PriceChartComponent from "../components/PriceDiagram";
 
 const minimiseAddress = (address: string) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -54,19 +57,38 @@ const Home: NextPage = () => {
   return (
     <main className={styles.main}>
       <div className={styles.description}>
-        <p>
-          XTF PROTOCOL&nbsp; {chainId}
-          <code className={styles.code}>{minimiseAddress(JSON.stringify(contracts['ETFv2'][0].address))}</code>
-        </p>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 20
+          }}
+        >
+          <img width={120} src="/images/lg.png" alt="logo" />
+        </div>
+        <Prices
+
+          address={contracts['ETFv2'][0].address} />
+
         <div>
           <ConnectWallet
-          // className="nb-button default"
+            theme={'light'}
+            // className="nb-input blue"
+            btnTitle="Connect"
+            style={{
+              backgroundColor: "White",
+              color: "black",
+              colorScheme: "light",
+              border: "2px solid black",
+              borderRadius: "0.25rem",
+              boxShadow: "2px 2px 0px 0px #000",
+            }}
           />
         </div>
       </div>
       <div>
-        <br></br>
-        <br></br>
         <Card className="card"
           style={{
             width: "100%",
@@ -75,23 +97,15 @@ const Home: NextPage = () => {
 
           <ETFStatsView tokenAddress={SEPOLIA_CONTRACTS['ETFToken'][0].address} address={contracts['ETFv2'][0].address} />
           <PriceValueStats address={contracts['ETFv2'][0].address} />
+          {/* <Prices address={contracts['ETFv2'][0].address} /> */}
           <br></br>
           <div className={styles.description}>
 
 
             <span>Vault Viewer</span>
             <InputNumber
-              
+
               style={{
-                // padding: 10px;
-                // background-color: #ff5733;
-                // color: black;
-                // border: 2px solid black;
-                // border-radius: 0.25rem;
-                // box-shadow: 2px 2px 0px 0px #000;
-                // border-radius: 5px;
-                // padding: "5px",
-                // backgroundColor: "#ff5733",
                 color: "black",
                 border: "2px solid black",
                 borderRadius: "0.25rem",
@@ -109,6 +123,7 @@ const Home: NextPage = () => {
           </div>
         </Card>
         <br></br>
+        {/* <PriceChartComponent></PriceChartComponent> */}
 
         <BundleView address={contracts['ETFv2'][0].address} bundleId={bundleId}
           setBundleId={setBundleId}
