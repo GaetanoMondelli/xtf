@@ -3,17 +3,15 @@ import styles from '../styles/page.module.css'
 import { NextPage } from "next";
 import CONTRACTS from '../../CONTRACTS.json'
 import SEPOLIA_CONTRACTS from '../../CONTRACTS-sepolia.json'
-import TokenView from '../components/TokenView'
-import ETFView from '../components/ETFView'
-import OpenETFView from "../components/OpenETF";
-import CloseETF from "../components/CloseETF";
+import ChainContext from "../context/chain";
 import { Button, Card, InputNumber, Switch } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
 import Prices from "../components/Prices";
+import { Chain } from "../components/utils";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Sepolia } from "@thirdweb-dev/chains";
 import PriceChartComponent from "../components/PriceDiagram";
 
@@ -26,7 +24,7 @@ const Home: NextPage = () => {
   const [bundleId, setBundleId] = useState<number>(0);
   const [localTest, setLocalTest] = useState<boolean>(false)
   const [contracts, setContracts] = useState<any>(CONTRACTS);
-
+  const { selectedChain, setSelectedChain } = useContext(ChainContext);
   const chainId = useChainId();
   const walletInstance = useWallet();
 
@@ -35,19 +33,26 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (!walletInstance) return
     if (!localTest && chainId !== Sepolia.chainId) {
-      switchChain(Sepolia.chainId)
+      // switchChain(Sepolia.chainId)
+      setLocalTest(true)
     }
     else if (localTest && chainId !== 31337) {
-      switchChain(31337)
+      setLocalTest(false)
+      // switchChain(31337)
     }
 
-  }, [chainId, localTest])
+  }, [chainId])
 
   useEffect(() => {
+    if (!walletInstance) return
     if (localTest) {
       setContracts(CONTRACTS)
+      setSelectedChain(Chain.Localhost)
+      switchChain(31337)
     } else {
       setContracts(SEPOLIA_CONTRACTS)
+      setSelectedChain(Chain.Sepolia)
+      switchChain(Sepolia.chainId)
     }
   }, [localTest])
 
@@ -94,15 +99,20 @@ const Home: NextPage = () => {
             width: "100%",
           }}
         >
+          <div>
 
-          <ETFStatsView tokenAddress={SEPOLIA_CONTRACTS['ETFToken'][0].address} address={contracts['ETFv2'][0].address} />
+            <p>Contracts</p>
+            <p>ETF Address</p>
+            <p>{contracts['ETFv2'][0].address}</p>
+          </div>
+          <ETFStatsView tokenAddress={contracts['ETFToken'][0].address} address={contracts['ETFv2'][0].address} />
           <PriceValueStats address={contracts['ETFv2'][0].address} />
           {/* <Prices address={contracts['ETFv2'][0].address} /> */}
           <br></br>
           <div className={styles.description}>
 
 
-            <span>Vault Viewer</span>
+            <span>Vault Viewer {selectedChain}</span>
             <InputNumber
 
               style={{
@@ -117,13 +127,22 @@ const Home: NextPage = () => {
               onChange={(value) => setBundleId(Number(value))}
             />
             &nbsp;&nbsp;&nbsp;<span>Hardhat local test</span> &nbsp;&nbsp;
-            <Switch
-              className="nb-input blue" checked={localTest} onChange={(checked) => setLocalTest(checked)} />
+            <Switch checkedChildren="Hardhat" unCheckedChildren="Sepolia"
+              className="nb-input"
+
+              style={{
+                color: "black",
+                border: "2px solid black",
+                borderRadius: "0.25rem",
+                boxShadow: "2px 2px 0px 0px #000",
+                marginLeft: 20
+              }}
+              checked={localTest} onChange={(checked) => setLocalTest(checked)} />
 
           </div>
         </Card>
         <br></br>
-        {/* <PriceChartComponent></PriceChartComponent> */}
+        <PriceChartComponent></PriceChartComponent>
 
         <BundleView address={contracts['ETFv2'][0].address} bundleId={bundleId}
           setBundleId={setBundleId}

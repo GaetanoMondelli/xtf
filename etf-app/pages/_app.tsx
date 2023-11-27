@@ -1,14 +1,13 @@
 import type { AppProps } from "next/app";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
 import { ConfigProvider, Typography } from "antd";
-// import "../styles/globals.css";
+import ChainContext from "../context/chain";
 import "../node_modules/neobrutalismcss/dist/index.css";
-
-// This is the chain your dApp will work on.
-// Change this to the chain your app is built for.
-// You can also import additional chains from `@thirdweb-dev/chains` and pass them directly.
+import { useState } from "react";
+import { Chain } from "../components/utils";
 const activeChain = "localhost";
 const sepoliaEndpoint = "https://orbital-capable-season.ethereum-sepolia.quiknode.pro/8a961b76e01b85d94eb0568af4d471c8f46ea07c";
+
 
 const SepoliaChain = {
   // === Required information for connecting to the network === \\
@@ -30,7 +29,6 @@ const SepoliaChain = {
 
 
 const localhostChain = {
-
   // === Required information for connecting to the network === \\
   chainId: 31337, // Chain ID of the network
   // Array of RPC URLs to use
@@ -50,24 +48,28 @@ const localhostChain = {
   name: "Hardhat Testnet", // Name of the network
 };
 
+
 function MyApp({ Component, pageProps }: AppProps) {
+  const [selectedChain, setSelectedChain] = useState(Chain.Localhost);
   return (
-    <ThirdwebProvider
-      clientId={process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID}
-      activeChain={SepoliaChain}
-    >
-      <ConfigProvider
-        theme={{
-          token: {
-            fontFamily: "Stint Ultra Expanded",
-          }
-        }}
+    <ChainContext.Provider value={{ selectedChain, setSelectedChain }}>
+      <ThirdwebProvider
+        clientId={process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID}
+        activeChain={
+          selectedChain === Chain.Localhost ? localhostChain : SepoliaChain
+        }
       >
-
-        <Component {...pageProps} />
-      </ConfigProvider>
-
-    </ ThirdwebProvider>
+        <ConfigProvider
+          theme={{
+            token: {
+              fontFamily: "Stint Ultra Expanded",
+            }
+          }}
+        >
+          <Component {...pageProps} />
+        </ConfigProvider>
+      </ ThirdwebProvider>
+    </ChainContext.Provider>
   );
 }
 

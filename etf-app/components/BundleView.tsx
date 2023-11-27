@@ -28,7 +28,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [values, setValues] = useState<any>();
     const [requiredTokenStructs, setRequiredTokenStructs] = useState<any>([]);
     const userAddress = useAddress();
-
+    console.log("userAddrescazz: ", address, ABI);
     const { contract, isLoading, error } = useContract(address, ABI);
 
     const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
@@ -115,6 +115,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         const values: any = [];
         tokens.map((asset: any, index: number) => {
             const value = prices[index]
+            if(!value) return;
             values.push(BigNumber.from(value).mul(BigNumber.from(asset.totalAmount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
             console.log('valueS', value, asset.totalAmount, values[values.length - 1])
             labels.push(asset.assetContract);
@@ -156,6 +157,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         let totalValue = 0;
         let contribution = 0;
         for (let i = 0; i < userDepositArray.length; i++) {
+            if (userDepositArray[i] == undefined || prices[i] == undefined) continue;
             let value = BigNumber.from(userDepositArray[i]).mul(BigNumber.from(prices[i]).div(BigNumber.from(10).pow(8))).div(BigNumber.from(10).pow(18)).toNumber();
             contribution += value;
             totalValue += (BigNumber.from(getRequiredAsset(addresses[i])?.totalAmount || 0).mul(BigNumber.from(prices[i]).div(BigNumber.from(10).pow(8))).div(BigNumber.from(10).pow(18))).toNumber();
@@ -235,7 +237,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
 
                                                     for (let i = 0; i < labelsOriginal.length; i++) {
-                                                        console.log("labelsOriginal[i].text", labelsOriginal[i].text, getAssetName(labelsOriginal[i].text))
                                                         labelsOriginal[i].text = getAssetName(labelsOriginal[i].text);
                                                     }
 
