@@ -2,11 +2,14 @@ import { useAddress, useContract, useBalance, Web3Button, useConnectionStatus, u
 import styles from '../styles/page.module.css'
 import { Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
 import style from '../styles/page.module.css';
-import { BigNumber } from "ethers";
+import { BigNumber, ContractInterface } from "ethers";
 import { showOnlyTwoDecimals, calculateTLV } from "./utils";
 import { useEffect, useState } from "react";
+import { abi } from "../../abi/etf"
 
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+
+
 
 const { Meta } = Card;
 
@@ -19,7 +22,7 @@ export default function ETFStatsView(
     // use effect to calculate TLV
     // await calculateTLV()
 
-    const { contract, isLoading, error } = useContract(address, ABI);
+    const { contract, isLoading, error } = useContract(address, ABI as ContractInterface);
     const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address, ABI);
 
     // const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address, ABI);

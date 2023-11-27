@@ -94,7 +94,6 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
             // Invert the row index to start from the bottom
 
             if (bundleIds && bundleIds.length > 0) {
-                console.log("bundleIds", bundleIds)
                 const bundleId = bundleIds.shift();
                 const quantity = quantities.shift();
                 const isBurned = areBurned.shift();

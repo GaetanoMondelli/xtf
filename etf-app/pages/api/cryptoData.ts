@@ -2,21 +2,21 @@
 import axios from 'axios';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-type CoinGeckoResponse = {
-    prices: Array<[number, number]>;
+type YoungPlatformResponse = {
 };
 
 export default async function handler(
     req: NextApiRequest,
-    res: NextApiResponse<CoinGeckoResponse | { message: string }>
+    res: NextApiResponse<YoungPlatformResponse | { message: string }>
 ) {
     try {
-        const { id, days } = req.query as { id: string; days: string };
-        const response = await axios.get<CoinGeckoResponse>(`https://api.coingecko.com/api/v3/coins/${id}/market_chart`, {
-            params: { vs_currency: 'usd', days: days, interval: 'daily' }
+        const { asset } = req.query as { asset: string };
+        const response = await axios.get<YoungPlatformResponse>(`https://api.youngplatform.com/api/v3/charts?pair=${asset}-EUR`, {
+            // Include additional necessary parameters here
         });
         res.status(200).json(response.data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Error fetching data' });
     }
 }

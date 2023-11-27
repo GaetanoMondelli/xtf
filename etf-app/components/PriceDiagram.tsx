@@ -6,55 +6,72 @@ type PriceData = { time: number; price: number };
 type AssetData = Record<string, PriceData[]>;
 
 const ChartComponent: React.FC = () => {
-    const [chartData, setChartData] = useState<any>({});
+    const [chartData, setChartData] = useState<any>();
     const days = 100; // Number of days for historical data
+
+
+    // Normalization: Scale prices so that they start at the same point
+    const normalizeData = (data: PriceData[]) => {
+        const firstDayPrice = data[0]?.price || 1;  // Avoid division by zero
+        return data.map(d => ({
+            time: d.time,
+            price: (d.price / firstDayPrice) * 100  // Scale to start at 100
+        }));
+    };
 
     const fetchData = async () => {
         const assets = {
-            ethereum: 'ETH',
-            chainlink: 'LINK',
-            havven: 'SNX',
-            dai: 'DAI'
+            'ETH': 'ETH',
+            'LINK': 'LINK',
+            'SNX': 'SNX',
+            'DAI': 'DAI'
         };
         const allData: AssetData = {};
 
-        for (const [id, symbol] of Object.entries(assets)) {
+        for (const [apiAsset, symbol] of Object.entries(assets)) {
             const response = await axios.get<any>(`/api/cryptoData`, {
-                params: { id, days }
+                params: { asset: symbol }
             });
-            allData[symbol] = response.data?.prices?.map(([time, price]: [number, number]) => ({ time, price }));
+            allData[symbol] = response.data?.map((data: any) => ({
+                time: data.time, // Adjust if the API uses a different property name
+                price: data.close  // Adjust if the API uses a different property name
+            }));
         }
 
+        // Assuming all assets have the same number of data points
         const indexAssetData = allData['ETH']?.map((ethData, index) => {
             const ethPrice = ethData.price;
             const daiPrice = allData['DAI'][index]?.price || 0;
             const linkPrice = allData['LINK'][index]?.price || 0;
-            const snxPrice = allData['havven'][index]?.price || 0;
+            const snxPrice = allData['SNX'][index]?.price || 0;
 
             return {
                 time: ethData.time,
-                value: 0.05 * ethPrice + 15 * daiPrice + 3 * linkPrice + 6 * snxPrice
+                price: 0.05 * ethPrice + 15 * daiPrice + 3 * linkPrice + 6 * snxPrice
             };
         });
 
-        console.log('line', indexAssetData);
-        console.log('line', allData);
+        for (const key of Object.keys(allData)) {
+            allData[key] = normalizeData(allData[key]);
+        }
+        const normalizedIndexAssetData = normalizeData(indexAssetData);
+
 
         setChartData({
-            // labels: indexAssetData?.map(data => new Date(data.time).toLocaleDateString()),
+            labels: indexAssetData?.map(data => new Date(data.time).toLocaleDateString()),
             datasets: [
-                // ...Object.keys(assets)?.map(symbol => ({
-                //     label: symbol.toUpperCase(),
-                //     data: allData[symbol]?.map(data => data.price),
-                //     borderColor: getRandomColor(),
-                //     fill: false,
-                // })),
-                // {
-                //     label: 'Index Asset',
-                //     data: indexAssetData?.map(data => data.value),
-                //     borderColor: '#000000',
-                //     fill: false,
-                // }
+                ...Object.keys(assets)?.map(symbol => ({
+                    label: symbol,
+                    data: allData[symbol]?.map(data => data.price),
+                    borderColor: getRandomColor(),
+                    fill: false,
+                })),
+                {
+                    label: 'Index Asset',
+                    data: normalizedIndexAssetData?.map(data => data.price),
+                    borderColor: '#000000',
+                    fill: false,
+                }
             ]
         });
     };
@@ -75,7 +92,8 @@ const ChartComponent: React.FC = () => {
     return (
         <div>
             <h2>Asset Price Comparison</h2>
-            {/* <Line data={chartData} /> */}
+
+            {chartData && <Line data={chartData} />}
         </div>
     );
 };

@@ -63,7 +63,7 @@ export default function Prices(
                             fontSize: 20,
                             color: "black",
                         }}
-                    >{getAssetName(requiredAsset[1][index])}: {showOnlyTwoDecimals(price)} $ </span>
+                    >{requiredAsset && getAssetName(requiredAsset[1][index])}: {showOnlyTwoDecimals(price)} $ </span>
                     <span> | </span>
                 </>
             })}

@@ -19,6 +19,11 @@ const sepoliaPriceDataFeed = ["0x694AA1769357215DE4FAC081bf1f309aDC325306",
     "0xc59E3633BAAC79493d908e63626716e204A45EdF",
     "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC"]
 
+export enum Chain {
+    Sepolia = "sepolia",
+    Localhost = "localhost"
+}
+
 export enum ETFState {
     LOADING,
     OPEN,
@@ -210,6 +215,7 @@ export const calculateTLV = async (bundleIdQuantities: any) => {
     for (let i = 0; i < quantities.length; i++) {
         for (let j = 0; j < quantities[i].length; j++) {
             if (!areBurned[i]) {
+                if (!quantities[i][j] || prices[i]) continue;
                 total = total.add(BigNumber.from(quantities[i][j]).mul(prices[j]));
             }
         }
