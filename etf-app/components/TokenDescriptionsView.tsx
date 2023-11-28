@@ -7,8 +7,8 @@ import { minimiseAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon } fro
 
 
 
-export default function TokenDescriptions({ address, etfAddress, bundle, index, setQuantities, requiredTokenStructs }:
-    { address: string, etfAddress?: string, bundle: any, index: number, setQuantities: any, requiredTokenStructs: any }) {
+export default function TokenDescriptions({ address, etfAddress, bundle, index, setQuantities, requiredTokenStructs, chainSelectorId }:
+    { address: string, etfAddress?: string, bundle: any, index: number, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any }) {
 
     const userAddress = useAddress();
     const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
@@ -25,14 +25,14 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
         return requiredTokenStructs ? requiredTokenStructs.find((asset: any) => asset.assetContract === address) : [];
     }
 
-
+    const isOnExternalChain = getRequiredAsset(address)?.chainSelector.toString() !== chainSelectorId.toString();
 
     return <Descriptions
         style={{
             width: 850,
         }}
 
-        column={3}
+        column={2}
         title={
             <div
                 style={{
@@ -55,7 +55,10 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                         }
                     >{balance?.symbol}</Avatar>
                 </div>
-                <span>{balance?.symbol}</span>
+                <span>{balance?.symbol}&nbsp;
+                    {isOnExternalChain &&
+                        <Tag color="orange">This asset is collected on a different chain with Selector Id = {getRequiredAsset(address)?.chainSelector.toString()}</Tag>}
+                </span>
                 {/* over appea text see on explore */}
                 {address !== nativeAddress &&
                     <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
@@ -64,14 +67,14 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
             </div>
         }>
         <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item>
-        <Descriptions.Item label="Balance">
+        {!isOnExternalChain && <Descriptions.Item label="Balance">
             {balanceLoading && <Tag color="processing">Loading...</Tag>}
             {!balanceError && !balanceLoading && balance && <Tag color="success">{showOnlyTwoDecimals(balance.displayValue)} {balance.symbol}</Tag>}
-        </Descriptions.Item>,
+        </Descriptions.Item>
+        }
 
 
-
-        <Descriptions.Item label="Quantity to Deposit">
+        {!isOnExternalChain && <Descriptions.Item label="Quantity to Deposit">
             <InputNumber
                 style={{
                     marginLeft: 20
@@ -92,7 +95,8 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                 }}
             />
         </Descriptions.Item>
-        <Descriptions.Item label="Allowance">
+        }
+        {!isOnExternalChain && <Descriptions.Item label="Allowance">
             {nativeAddress === address && <Tag color="blue">∞</Tag>}
             {nativeAddress !== address && isAllowanceLoading && <Tag color="processing">Loading...</Tag>}
             {!nameError && !isAllowanceLoading && allowance && <Tag color="blue">{showOnlyTwoDecimals(utils.formatUnits(allowance, 18))}</Tag>}
@@ -106,7 +110,8 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
             }>Approve More Tokens</Button>
             }
         </Descriptions.Item>
-
+        }
+    }
     </Descriptions>
 
 

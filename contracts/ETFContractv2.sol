@@ -15,6 +15,7 @@ import {IERC20Metadata, IERC20} from "@thirdweb-dev/contracts/base/ERC20Base.sol
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
 // import ERC721Multiwrap
 
@@ -29,6 +30,10 @@ struct TokenAmounts {
     uint256 amount;
     address oracleAddress;
     uint64 chainIdSelector;
+}
+
+struct ReedeemETFMessage {
+    uint256 bundleId;
 }
 
 contract ETFv2 is
@@ -72,6 +77,8 @@ contract ETFv2 is
     uint64 public currentChainSelectorId;
     // All the blockchain that have assets wrapped in the ETF
     uint64[] public chainSelectorIds;
+    // address of Link Token
+    address public link;
     // ChainSelectorId in the ETF
     mapping(uint64 => bool) public chainSelectorIdInETF;
     // map of whitelisted tokens per chainIdSelector
@@ -109,6 +116,11 @@ contract ETFv2 is
 
     uint lockTime = 1 minutes;
 
+    enum PayFeesIn {
+        Native,
+        LINK
+    }
+
     constructor(
         string memory _name,
         string memory _symbol,
@@ -119,7 +131,8 @@ contract ETFv2 is
         TokenAmounts[] memory _whitelistedTokenAmounts,
         string memory _uriETFToken,
         uint64 _currentChainSelectorId,
-        address _router
+        address _router,
+        address _link
     )
         ERC721A(_name, _symbol)
         TokenStore(_nativeTokenWrapper)
@@ -142,9 +155,12 @@ contract ETFv2 is
                 chainSelectorIds.push(chainIdSelector);
                 chainSelectorIdInETF[chainIdSelector] = true;
             }
+            
             isWhiteListedToken[chainIdSelector][
                 _whitelistedTokenAmounts[i].assetContract
             ] = true;
+
+
             tokenQuantities[chainIdSelector][
                 _whitelistedTokenAmounts[i].assetContract
             ] = _whitelistedTokenAmounts[i].amount;
@@ -167,6 +183,8 @@ contract ETFv2 is
         disableMint = true;
         lastETFReedemed = 0;
         router = _router;
+        link = _link;
+
         currentChainSelectorId = _currentChainSelectorId;
     }
 
@@ -175,35 +193,35 @@ contract ETFv2 is
         emit EtherReceived(msg.sender, msg.value);
     }
 
-    function changeAssets(
-        uint256 _percentageFee,
-        TokenAmounts[] memory _whitelistedTokenAmounts
-    ) public onlyOwner {
-        for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
-            uint64 chainIdSelector = _whitelistedTokenAmounts[i]
-                .chainIdSelector;
-            if (!chainSelectorIdInETF[chainIdSelector]) {
-                chainSelectorIds.push(chainIdSelector);
-                chainSelectorIdInETF[chainIdSelector] = true;
-            }
-            isWhiteListedToken[chainIdSelector][
-                _whitelistedTokenAmounts[i].assetContract
-            ] = true;
-            tokenQuantities[chainIdSelector][
-                _whitelistedTokenAmounts[i].assetContract
-            ] = _whitelistedTokenAmounts[i].amount;
-            whitelistedTokens[chainIdSelector].push(
-                _whitelistedTokenAmounts[i].assetContract
-            );
+    // function changeAssets(
+    //     uint256 _percentageFee,
+    //     TokenAmounts[] memory _whitelistedTokenAmounts
+    // ) public onlyOwner {
+    //     for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
+    //         uint64 chainIdSelector = _whitelistedTokenAmounts[i]
+    //             .chainIdSelector;
+    //         if (!chainSelectorIdInETF[chainIdSelector]) {
+    //             chainSelectorIds.push(chainIdSelector);
+    //             chainSelectorIdInETF[chainIdSelector] = true;
+    //         }
+    //         isWhiteListedToken[chainIdSelector][
+    //             _whitelistedTokenAmounts[i].assetContract
+    //         ] = true;
+    //         tokenQuantities[chainIdSelector][
+    //             _whitelistedTokenAmounts[i].assetContract
+    //         ] = _whitelistedTokenAmounts[i].amount;
+    //         whitelistedTokens[chainIdSelector].push(
+    //             _whitelistedTokenAmounts[i].assetContract
+    //         );
 
-            tokenIdToDataFeed[
-                _whitelistedTokenAmounts[i].assetContract
-            ] = AggregatorV3Interface(
-                _whitelistedTokenAmounts[i].oracleAddress
-            );
-        }
-        percentageFee = _percentageFee;
-    }
+    //         tokenIdToDataFeed[
+    //             _whitelistedTokenAmounts[i].assetContract
+    //         ] = AggregatorV3Interface(
+    //             _whitelistedTokenAmounts[i].oracleAddress
+    //         );
+    //     }
+    //     percentageFee = _percentageFee;
+    // }
 
     // depositFunds function receive a list of Tokens and put them in an unclosed
     function depositFunds(
@@ -271,14 +289,21 @@ contract ETFv2 is
         quantities = new uint256[](tokensToWrapQuantity);
         addresses = new address[](tokensToWrapQuantity);
         selectorsIds = new uint64[](tokensToWrapQuantity);
+        uint256 index = 0;
+
         for (uint256 c = 0; c < chainSelectorIds.length; c++) {
             uint64 chainSelectorId = chainSelectorIds[c];
-            for (uint256 i = 0; i < tokensToWrapQuantity; i += 1) {
-                quantities[i] = tokenQuantities[chainSelectorId][
+            for (
+                uint256 i = 0;
+                i < whitelistedTokens[chainSelectorId].length;
+                i += 1
+            ) {
+                quantities[index] = tokenQuantities[chainSelectorId][
                     whitelistedTokens[chainSelectorId][i]
                 ];
-                addresses[i] = whitelistedTokens[chainSelectorId][i];
-                selectorsIds[i] = chainSelectorId;
+                addresses[index] = whitelistedTokens[chainSelectorId][i];
+                selectorsIds[index] = chainSelectorId;
+                index += 1;
             }
         }
     }
@@ -616,6 +641,52 @@ contract ETFv2 is
         uint256 bundleId
     ) public view returns (address[] memory) {
         return bundleIdToAddress[bundleId];
+    }
+
+    function sendReedeemMessage(
+        uint256 bundleId,
+        uint64 destinationChainSelector,
+        PayFeesIn payFeesIn
+    ) public returns (bytes32 messageId) {
+        require(
+            isETFBurned(bundleIdToETFId[bundleId]),
+            "ETFContract: bundleId was not reedemed"
+        );
+
+        ReedeemETFMessage memory data = ReedeemETFMessage({bundleId: bundleId});
+        messageId = send(destinationChainSelector, payFeesIn, data);
+    }
+
+    function send(
+        uint64 destinationChainSelector,
+        PayFeesIn payFeesIn,
+        ReedeemETFMessage memory data
+    ) internal returns (bytes32 messageId) {
+        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
+            receiver: abi.encode(address(this)),
+            data: abi.encode(data),
+            tokenAmounts: new Client.EVMTokenAmount[](0),
+            extraArgs: "",
+            feeToken: payFeesIn == PayFeesIn.LINK ? link : address(0)
+        });
+
+        uint256 fee = IRouterClient(router).getFee(
+            destinationChainSelector,
+            message
+        );
+
+        if (payFeesIn == PayFeesIn.LINK) {
+            // LinkTokenInterface(i_link).approve(i_router, fee);
+            messageId = IRouterClient(i_router).ccipSend(
+                destinationChainSelector,
+                message
+            );
+        } else {
+            messageId = IRouterClient(i_router).ccipSend{value: fee}(
+                destinationChainSelector,
+                message
+            );
+        }
     }
 
     // this could be too much to maintain if many addresses are in the bundle

@@ -3,7 +3,7 @@ import styles from '../styles/page.module.css'
 import { Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
 import style from '../styles/page.module.css';
 import { BigNumber, ContractInterface } from "ethers";
-import { showOnlyTwoDecimals, calculateTLV } from "./utils";
+import { showOnlyTwoDecimals, calculateTLV, nativeAddress } from "./utils";
 import { useEffect, useState } from "react";
 import { abi } from "../../abi/etf"
 
@@ -52,6 +52,16 @@ export default function ETFStatsView(
         "bundleCount",
     );
 
+    const { data: chainSelectorId, isLoading: chainSelectorIdLoading, error: chainSelectorIdError } = useContractRead(
+        contract,
+        "currentChainSelectorId",
+    );
+
+    const { data: isWhiteListed, isLoading: isWhiteListedLoading, error: isWhiteListedError } = useContractRead(
+        contract,
+        "isWhiteListedToken", [0, nativeAddress] 
+    );
+
     const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
         contract,
         "returnStateOfBundles", [0, 96]
@@ -84,6 +94,10 @@ export default function ETFStatsView(
                 margin: '0 20px 0 20px'
             }}
         >
+            {/* {!chainSelectorIdLoading && <p>Chain Selector ID {BigNumber.from(chainSelectorId).toString()}</p>}
+            {!isWhiteListedLoading && <p>Whitelisted: {isWhiteListed ? "Yes" : "No"}</p>} */}
+
+
             <Statistic title="Vault Opened" value={
                 bundleCountLoading ? "Loading..." : bundleCountError ?
                     "Error" : bundleCount ? bundleCount.toString() : "0"

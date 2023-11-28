@@ -83,7 +83,8 @@ async function main() {
                 tokenAmounts,
                 ETFURI,
                 sepSelectorId,
-                sepRouterAddress
+                sepRouterAddress,
+                contracts[fungibleTokenName][1].address
             ]
     ]
 

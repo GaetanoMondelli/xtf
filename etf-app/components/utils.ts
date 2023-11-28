@@ -215,8 +215,12 @@ export const calculateTLV = async (bundleIdQuantities: any) => {
     for (let i = 0; i < quantities.length; i++) {
         for (let j = 0; j < quantities[i].length; j++) {
             if (!areBurned[i]) {
-                if (!quantities[i][j] || prices[i]) continue;
-                total = total.add(BigNumber.from(quantities[i][j]).mul(prices[j]));
+                try{
+                    total = total.add(BigNumber.from(quantities[i][j]).mul(prices[j]));
+                }
+                catch(err){
+                    console.log('err', err);
+                }
             }
         }
     }

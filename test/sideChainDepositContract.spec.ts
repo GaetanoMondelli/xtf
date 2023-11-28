@@ -109,7 +109,8 @@ describe("ChainLink CCIP Message layer", () => {
             tokenAmounts,
             ETFURI,
             mockPrimaryChainSelectorId,
-            router.address
+            router.address,
+            linkToken.address,
         );
 
 

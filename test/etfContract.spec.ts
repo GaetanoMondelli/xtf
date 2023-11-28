@@ -38,7 +38,6 @@ describe("ETFContract", () => {
     let priceAggregatortokenToBeWrapped1: any;
     let tokenToBeWrapped2: any;
     let priceAggregatortokenToBeWrapped2: any;
-    // let royaltyInfo: any;
     let router: any;
     let totalValue: any;
     let tokenPrices: any;
@@ -139,7 +138,8 @@ describe("ETFContract", () => {
             tokenAmounts,
             ETFURI,
             mockChainSelectorId,
-            router.address
+            router.address,
+            tokenToBeWrapped2.address // It represents the LINK token address
         );
 
         await etfTokenContract.connect(owner).setOwner(etfContract.address);
@@ -440,7 +440,8 @@ describe("ETFContract", () => {
                     tokenAmounts,
                     ETFURI,
                     mockChainSelectorId,
-                    router.address
+                    router.address,
+                    tokenToBeWrapped2.address // It represents the LINK token address
                 );
 
                 etfTokenContract = await EtfTokenContractFactory.deploy();
@@ -487,7 +488,6 @@ describe("ETFContract", () => {
                 const checkMessageReceivedETFContractPromise = new Promise<void>((resolve, reject) => {
                     etfContract.on("MessageReceived", (messageId: string, chainIdSelector: any, sender: any, data: any) => {
                         try {
-                            // console.log('etf message received', messageId, sender, chainIdSelector, data)
                             expect(messageId).toEqual(mockMessageId);
                             expect(sender).toEqual(etfOwner2.address);
                             expect(chainIdSelector).toEqual(BigNumber.from(mockSecondaryChainSelectorId));

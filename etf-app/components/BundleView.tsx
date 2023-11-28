@@ -28,7 +28,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [values, setValues] = useState<any>();
     const [requiredTokenStructs, setRequiredTokenStructs] = useState<any>([]);
     const userAddress = useAddress();
-    console.log("userAddrescazz: ", address, ABI);
     const { contract, isLoading, error } = useContract(address, ABI);
 
     const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
@@ -77,6 +76,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         "getRequiredAssets", []
     );
 
+    const { data: chainSelectorId, isLoading: chainSelectorIdLoading, error: chainSelectorIdError } = useContractRead(
+        contract,
+        "currentChainSelectorId",
+    );
+
     const getRequiredAsset = (address: string) => {
 
         return !requiredAssetLoading && requiredAsset ? requiredTokenStructs.find((asset: any) => asset.assetContract === address) : [];
@@ -115,7 +119,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         const values: any = [];
         tokens.map((asset: any, index: number) => {
             const value = prices[index]
-            if(!value) return;
+            if (!value) return;
             values.push(BigNumber.from(value).mul(BigNumber.from(asset.totalAmount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
             console.log('valueS', value, asset.totalAmount, values[values.length - 1])
             labels.push(asset.assetContract);
@@ -311,6 +315,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     index={index}
                                     setQuantities={setQuantities}
                                     requiredTokenStructs={requiredTokenStructs}
+                                    chainSelectorId={chainSelectorId}
                                 ></TokenDescriptions>
 
                                 <Progress
@@ -319,7 +324,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     } success={
                                         {
                                             percent:
-                                                userDeposit != undefined && userDeposit[0].length > 0 ?
+                                                userDeposit && userDeposit[0][index] != undefined && userDeposit[0].length > 0 ?
                                                     Number(BigNumber.from(userDeposit[0][index]).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 0)))
                                                     : 0
                                         }
@@ -351,18 +356,23 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                 })
                             }
                             onClick={() => {
-                                const structArray = requiredTokenStructs.map((asset: any) => {
-                                    const tokenAddress = asset.assetContract;
-                                    let quantity = tokenAddress === nativeAddress ?
-                                        ethers.utils.parseEther(quantities.get(tokenAddress)?.toString() || "0") :
-                                        BigNumber.from(quantities.get(tokenAddress) || 0).mul(BigNumber.from(10).pow(18));
-                                    return {
-                                        assetContract: tokenAddress,
-                                        tokenType: 0,
-                                        tokenId: 0,
-                                        totalAmount: quantity,
-                                    };
-                                });
+                                const structArray = requiredTokenStructs
+                                    .filter((asset: any) => {
+                                        return quantities.get(asset.assetContract) !== undefined && quantities.get(asset.assetContract) !== 0 &&
+                                            asset.chainSelector === chainSelectorId;
+                                    })
+                                    .map((asset: any) => {
+                                        const tokenAddress = asset.assetContract;
+                                        let quantity = tokenAddress === nativeAddress ?
+                                            ethers.utils.parseEther(quantities.get(tokenAddress)?.toString() || "0") :
+                                            BigNumber.from(quantities.get(tokenAddress) || 0).mul(BigNumber.from(10).pow(18));
+                                        return {
+                                            assetContract: tokenAddress,
+                                            tokenType: 0,
+                                            tokenId: 0,
+                                            totalAmount: quantity,
+                                        };
+                                    });
                                 depositFunds({
                                     args: [bundleId, structArray],
                                     overrides: {

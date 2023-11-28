@@ -53,5 +53,6 @@ module.exports = [
     tokenAmounts,
     "https://cryptotrade.fund",
     sepSelectorId,
-    sepRouterAddress
+    sepRouterAddress,
+    // CONTRACTS[fungibleTokenName][0].address
 ]

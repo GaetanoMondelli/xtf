@@ -13,13 +13,17 @@ async function main() {
   const fungibleTokenName = "FungibleToken";
   const priceAggregatorContractName = "MockAggregator";
   const mockRouterContractName = "MockRouterClient";
-  // const royaltyBps = 1000;
+  const SidechainDepositContractName = "SidechainDeposit";
+  
   const ETFURI = "https://etfx.com";
   const contracts: any = {};
   const DEMO_USER_ADDRESS = "0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203";
   const DEM0_USER_ADDRESS_2 = "0x001385E75cfc5563a925981F8501916D7Efb4344";
-  const mockChainSelectorId = 0;
+  const mockChainSelectorId = BigNumber.from(0);
+  const mockSecondaryChainSelectorId = BigNumber.from(1);
   const amounts = [ethers.utils.parseEther("0.5"), BigNumber.from(10).mul(BigNumber.from(10).pow(18)), BigNumber.from(20).mul(BigNumber.from(10).pow(18))];
+
+
 
 
   const contractNamesDeployParams: any = [
@@ -49,7 +53,7 @@ async function main() {
           oracleAddress: contracts[priceAggregatorContractName][1].address,
         },
         {
-          chainIdSelector: mockChainSelectorId,
+          chainIdSelector: mockSecondaryChainSelectorId,
           assetContract: contracts[fungibleTokenName][1].address,
           amount: amounts[2],
           oracleAddress: contracts[priceAggregatorContractName][2].address,
@@ -65,7 +69,8 @@ async function main() {
         tokenAmounts,
         ETFURI,
         mockChainSelectorId,
-        router.address
+        router.address,
+        contracts[fungibleTokenName][0].address,
       ]
   ]
 
