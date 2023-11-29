@@ -15,8 +15,10 @@ function getContractSize(contractPath: string) {
 
 function main() {
   const size = getContractSize(CONTRACT_ARTIFACT_PATH);
+  console.log(`MAXIMUM_BYTECODE_SIZE Spurious Dragon: ${24576} bytes`);
   console.log(`Bytecode size of contract: ${size.bytecodeSize} bytes`);
   console.log(`Deployed bytecode size of contract: ${size.deployedBytecodeSize} bytes`);
+  console.log(`You have ${24576 - size.deployedBytecodeSize} bytes left to add to the contract 💀`);
 }
 
 main();

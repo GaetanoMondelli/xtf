@@ -491,7 +491,7 @@ describe("ETFContract", () => {
 
 
 
-            it("should be able to receive notification", async () => {
+            it("should be able to receive notification and update the bundle", async () => {
                 const amountOfSideChainTokenToWrap = 10;
                 const tokenStruct1 = {
                     assetContract: sideChainTokenWrapped.address,

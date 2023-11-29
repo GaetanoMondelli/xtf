@@ -35,8 +35,6 @@ contract ETFv2 is
     ChainLinkData chainLinkData;
     // number of bundles
     uint256 public bundleCount = 0;
-    // last ETF reedemed
-    uint256 public lastETFReedemed = 0;
     // All the blockchain that have assets wrapped in the ETF
     uint64[] public chainSelectorIds;
     // ChainSelectorId in the ETF
@@ -66,6 +64,7 @@ contract ETFv2 is
     mapping(uint256 => uint256) public requestIdToBundleId;
     mapping(uint256 => bool) public openedBundle;
     mapping(uint256 => uint) public tokenIdToExpirationTime;
+    mapping(uint256 => address) public burner;
 
     constructor(
         string memory _name,
@@ -113,14 +112,7 @@ contract ETFv2 is
             );
         }
         COORDINATOR = VRFCoordinatorV2Interface(_chainLinkData.vrfCoordinator);
-
-        // uriETFToken = _etfOptions.uriETFToken;
-        // etfTokenAddress = _etfOptions.etfTokenAddress;
-        // etfTokenPerWrap = _etfOptions._etfTokenPerWrap;
-        // percentageFee = _etfOptions._percentageFee;
-
         etfOptions = _etfOptions;
-
         tokensToWrapQuantity = _whitelistedTokenAmounts.length;
     }
 
@@ -134,7 +126,7 @@ contract ETFv2 is
         Token[] memory _tokensToWrap
     ) external payable returns (bool canBeClosed) {
         // check if the bundleId is not already used
-        require(bundleIdToETFId[_bundleId] == 0, "bundle already closed");
+        require(bundleIdToETFId[_bundleId] == 0, "bundle is closed");
 
         validateTokensToWrap(
             _tokensToWrap,
@@ -176,9 +168,7 @@ contract ETFv2 is
 
         _releaseTokens(msg.sender, bundleId);
         _burn(etfId);
-
-        lastETFReedemed += 1;
-        return lastETFReedemed - 1;
+        burner[bundleId] = msg.sender;
     }
 
     //  get all required tokens for a bundle
@@ -391,6 +381,12 @@ contract ETFv2 is
             message.data
         );
 
+        // TO-DO: Need to check the sender is the router getting from sidechain address
+        // require(
+        //     address(bytes20(message.sender)) == chainLinkData.router,
+        //     "sender is not among the registered sidechains contracts"
+        // );
+
         DepositFundMessage memory depositFundMessage = abi.decode(
             message.data,
             (DepositFundMessage)
@@ -399,7 +395,7 @@ contract ETFv2 is
         // check if the chainIdSelector is in the ETF
         require(
             chainSelectorIdInETF[message.sourceChainSelector],
-            "chainSelId is not in the ETF"
+            "chainId not registered"
         );
 
         // check if the bundleId is not already closed
@@ -560,7 +556,10 @@ contract ETFv2 is
             "bundleId not reedemed"
         );
 
-        ReedeemETFMessage memory data = ReedeemETFMessage({bundleId: bundleId});
+        ReedeemETFMessage memory data = ReedeemETFMessage({
+            bundleId: bundleId,
+            receiver: burner[bundleId]
+        });
         messageId = send(destinationChainSelector, payFeesIn, data);
     }
 

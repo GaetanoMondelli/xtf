@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {LinkTokenInterface} from "./LinkTokenInterface.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@thirdweb-dev/contracts/base/ERC721Multiwrap.sol";
 import "@thirdweb-dev/contracts/extension/TokenStore.sol";
@@ -23,7 +24,17 @@ struct TokenAmounts {
     uint256 amount;
 }
 
-contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
+struct ReedeemETFMessage {
+    uint256 bundleId;
+    address receiver;
+}
+
+contract SidechainDeposit is
+    Ownable,
+    TokenStore,
+    PermissionsEnumerable,
+    CCIPReceiver
+{
     enum PayFeesIn {
         Native,
         LINK
@@ -34,8 +45,8 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
     bytes32 private constant UNWRAP_ROLE = keccak256("UNWRAP_ROLE");
     bytes32 private constant ASSET_ROLE = keccak256("ASSET_ROLE");
     address immutable primaryEtfContract;
-    address immutable i_router;
     address immutable i_link;
+    address router;
     address[] public whitelistedTokens;
     uint64 public primaryChainSelectorId;
     uint64 immutable chainSelectorId;
@@ -44,6 +55,7 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
     mapping(uint256 => address[]) public bundleIdToAddress;
     mapping(uint256 => mapping(address => mapping(uint256 => uint256)))
         public bundleIdToAddressToTokenAmount;
+    mapping(uint256 => address) public burner;
 
     event MessageSent(bytes32 messageId);
 
@@ -56,14 +68,14 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
         uint64 _primaryChainSelectorId,
         uint64 _chainSelectorId,
         address _primaryEtfContract,
-        address router,
-        address link,
+        address _router,
+        address _link,
         address _nativeTokenWrapper,
         TokenAmounts[] memory _whitelistedTokenAmounts
-    ) TokenStore(_nativeTokenWrapper) {
-        i_router = router;
-        i_link = link;
-        LinkTokenInterface(i_link).approve(i_router, type(uint256).max);
+    ) TokenStore(_nativeTokenWrapper) CCIPReceiver(router) {
+        router = _router;
+        i_link = _link;
+        LinkTokenInterface(i_link).approve(router, type(uint256).max);
         _setupRole(MINTER_ROLE, address(0));
         _setupOwner(msg.sender);
 
@@ -89,6 +101,10 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
         uint256 _bundleId,
         Token[] memory _tokensToWrap
     ) external payable returns (bytes32 messageId) {
+        require(
+            burner[_bundleId] == address(0),
+            "ETFContract: bundleId is already burned"
+        );
         for (uint256 i = 0; i < _tokensToWrap.length; i += 1) {
             // check each assetContract is whitelisted
             require(
@@ -175,7 +191,13 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
             bundleId: _bundleId,
             tokensToWrap: _tokensToWrap
         });
-        return send(primaryChainSelectorId, primaryEtfContract, message, PayFeesIn.Native);
+        return
+            send(
+                primaryChainSelectorId,
+                primaryEtfContract,
+                message,
+                PayFeesIn.Native
+            );
     }
 
     function send(
@@ -192,19 +214,19 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
             feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
         });
 
-        uint256 fee = IRouterClient(i_router).getFee(
+        uint256 fee = IRouterClient(router).getFee(
             destinationChainSelector,
             message
         );
 
         if (payFeesIn == PayFeesIn.LINK) {
-            // LinkTokenInterface(i_link).approve(i_router, fee);
-            messageId = IRouterClient(i_router).ccipSend(
+            // LinkTokenInterface(i_link).approve(router, fee);
+            messageId = IRouterClient(router).ccipSend(
                 destinationChainSelector,
                 message
             );
         } else {
-            messageId = IRouterClient(i_router).ccipSend{value: fee}(
+            messageId = IRouterClient(router).ccipSend{value: fee}(
                 destinationChainSelector,
                 message
             );
@@ -218,4 +240,24 @@ contract SidechainDeposit is Ownable, TokenStore, PermissionsEnumerable {
     }
 
     event EtherReceived(address indexed sender, uint256 value);
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public pure override(CCIPReceiver, ERC1155Receiver) returns (bool) {}
+
+    function _ccipReceive(
+        Client.Any2EVMMessage memory message
+    ) internal virtual override {
+        ReedeemETFMessage memory reedeemMessage = abi.decode(
+            message.data,
+            (ReedeemETFMessage)
+        );
+
+        require(
+            burner[reedeemMessage.bundleId] == address(0),
+            "ETFContract: bundleId is already burned"
+        );
+        _releaseTokens(reedeemMessage.receiver, reedeemMessage.bundleId);
+        burner[reedeemMessage.bundleId] = msg.sender;
+    }
 }

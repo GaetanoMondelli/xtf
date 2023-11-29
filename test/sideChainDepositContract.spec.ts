@@ -120,10 +120,6 @@ describe("ChainLink CCIP Message layer", () => {
         );
 
         const sideChainTokenAmounts = [
-            // {
-            //     assetContract: nativeAddress,
-            //     amount: ethers.utils.parseEther("0.2"),
-            // },
             {
                 assetContract: linkToken.address,
                 amount: 10,
@@ -145,7 +141,6 @@ describe("ChainLink CCIP Message layer", () => {
         const balance = await linkToken.balanceOf(sender.address);
         expect(balance).toEqual(BigNumber.from("1000000000000000000000"));
         await etfTokenContract.connect(owner).setOwner(etfPrimaryContract.address);
-        await router.setOnlyRouteTo(etfPrimaryContract.address);
     });
 
 
@@ -158,6 +153,7 @@ describe("ChainLink CCIP Message layer", () => {
         });
 
         it("should send a message to the primary contract on primary chain when deposit funds", async () => {
+            await router.setOnlyRouteTo(etfPrimaryContract.address);
             const tokenStruct = {
                 assetContract: linkToken.address,
                 tokenType: 0,
@@ -209,6 +205,47 @@ describe("ChainLink CCIP Message layer", () => {
             expect(event).toBeDefined();
             expect(event.args?.[0]).toEqual(mockMessgaeId);
             await checkRouterTestPromise;
+        });
+
+
+        it("shoudl receive a message from the primary contract to release funds when reedemed", async () => {
+            await router.setOnlyRouteTo(sideChainDepositContract.address);
+            const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+            const tokenStruct = {
+                assetContract: linkToken.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: 10,
+            };
+            const bundleId = 12;
+            await linkToken.connect(sender).approve(sideChainDepositContract.address, BigNumber.from(100));
+
+            await sideChainDepositContract.connect(sender).depositFundsAndNotify(
+                bundleId,
+                [tokenStruct],
+            );
+
+            const ReedemETFMessage = {
+                bundleId: 0,
+                receiver: receiver.address
+            }
+
+            const encodedData = ethers.utils.defaultAbiCoder.encode(
+                ['tuple(uint256,address)'],
+                [ReedemETFMessage]
+            );
+
+            await router.ccipReceive(
+                {
+                    messageId: mockMessageId,
+                    sourceChainSelector: mockSecondaryChainSelectorId,
+                    sender: etfPrimaryContract.address,
+                    data: encodedData,
+                    destTokenAmounts: []
+                }
+            );
+
+            
         });
     });
 });
