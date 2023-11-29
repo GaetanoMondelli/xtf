@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {ETFBase} from "./ETFContractBase.sol";
-import {Checks, TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
+import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -11,6 +11,8 @@ import {IERC20Metadata, IERC20} from "@thirdweb-dev/contracts/base/ERC20Base.sol
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
 contract ETFv2 is ETFBase {
+    // current chjainIdSelector
+    uint64 public currentChainSelectorId;
     mapping(uint64 => mapping(uint256 => mapping(address => mapping(uint256 => uint256))))
         public bundleIdToAddressToTokenAmount;
     // mapping of token address to price
@@ -35,41 +37,7 @@ contract ETFv2 is ETFBase {
             _chainLinkData
         )
     {
-        _setupOwner(msg.sender);
-        _setOperatorRestriction(true);
-        chainLinkData = _chainLinkData;
-
-        bool containNativeTokenAmount = false;
-        for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
-            if (_whitelistedTokenAmounts[i].assetContract == NATIVE_TOKEN) {
-                containNativeTokenAmount = true;
-            }
-            uint64 chainIdSelector = _whitelistedTokenAmounts[i]
-                .chainIdSelector;
-            if (!chainSelectorIdInETF[chainIdSelector]) {
-                chainSelectorIds.push(chainIdSelector);
-                chainSelectorIdInETF[chainIdSelector] = true;
-            }
-
-            isWhiteListedToken[chainIdSelector][
-                _whitelistedTokenAmounts[i].assetContract
-            ] = true;
-
-            tokenQuantities[chainIdSelector][
-                _whitelistedTokenAmounts[i].assetContract
-            ] = _whitelistedTokenAmounts[i].amount;
-            whitelistedTokens[chainIdSelector].push(
-                _whitelistedTokenAmounts[i].assetContract
-            );
-
-            tokenIdToDataFeed[
-                _whitelistedTokenAmounts[i].assetContract
-            ] = AggregatorV3Interface(
-                _whitelistedTokenAmounts[i].oracleAddress
-            );
-        }
-        etfOptions = _etfOptions;
-        tokensToWrapQuantity = _whitelistedTokenAmounts.length;
+        currentChainSelectorId = chainLinkData.currentChainSelectorId;
     }
 
     function validateTokensUpdateBundle(
@@ -77,12 +45,7 @@ contract ETFv2 is ETFBase {
         Token[] memory _tokensToWrap,
         uint64 chainSelectorId
     ) internal returns (bool canBeClosed) {
-        Checks.validateTokensToWrap(
-            isWhiteListedToken,
-            chainSelectorIdInETF,
-            _tokensToWrap,
-            chainSelectorId
-        );
+        validateTokensToWrap(_tokensToWrap, chainSelectorId);
         updateBundleCount(_bundleId);
         addAddressToBundle(_bundleId, msg.sender);
 

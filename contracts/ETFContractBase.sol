@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
-
 import {IETFToken} from "./ETFTokenContract.sol";
 import {Ownable} from "@thirdweb-dev/contracts/extension/Ownable.sol";
 import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
@@ -17,7 +16,7 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
-import {Checks, TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
+import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 
 contract ETFBase is
     TokenStore,
@@ -28,25 +27,27 @@ contract ETFBase is
     CCIPReceiver,
     VRFConsumerBaseV2
 {
-    VRFCoordinatorV2Interface immutable COORDINATOR;
+    VRFCoordinatorV2Interface COORDINATOR;
     //  Options to define ETF tokens, amount of tokens for etf, and fees
-    ETFTokenOptions etfOptions;
+    ETFTokenOptions public etfOptions;
     // data for chainlink services
     ChainLinkData chainLinkData;
+
+
     // mapping of token address to chainlink data feed
     mapping(address => AggregatorV3Interface) tokenIdToDataFeed;
     // map of whitelisted tokens per chainIdSelector
     mapping(uint64 => mapping(address => bool)) public isWhiteListedToken;
     // whitelist of token addresses for the ETF
-    mapping(uint64 => address[]) public whitelistedTokens;
+    mapping(uint64 => address[]) whitelistedTokens;
     // ChainSelectorId in the ETF
-    mapping(uint64 => bool) public chainSelectorIdInETF;
+    mapping(uint64 => bool) chainSelectorIdInETF;
     // All the blockchain that have assets wrapped in the ETF
-    uint64[] public chainSelectorIds;
+    uint64[] chainSelectorIds;
     // mapping of token address to  quantity of token that must be wrapped per etf
     mapping(uint64 => mapping(address => uint256)) public tokenQuantities;
     // number of tokens that must be wrapped per etf
-    uint256 public tokensToWrapQuantity;
+    uint256 tokensToWrapQuantity;
     // number of bundles
     uint256 public bundleCount = 0;
     // check if a bundle is opened
@@ -54,10 +55,9 @@ contract ETFBase is
     // list of all addresses with positions in a bundle
     mapping(uint256 => address[]) public bundleIdToAddress;
     // mapping in each bundle how many of each tokens each address has sent
-    mapping(uint256 => mapping(address => bool)) public addressInBundleId;
+    mapping(uint256 => mapping(address => bool)) addressInBundleId;
     // mapping bundleId to mapping of index to chainIdSelector
-    mapping(uint256 => mapping(uint256 => uint64))
-        public bundleIdToChainIdSelector;
+    mapping(uint256 => mapping(uint256 => uint64)) bundleIdToChainIdSelector;
     // map from bundleId to ETFId(TokenId)
     mapping(uint256 => uint256) public bundleIdToETFId;
 
@@ -76,7 +76,6 @@ contract ETFBase is
         COORDINATOR = VRFCoordinatorV2Interface(_chainLinkData.vrfCoordinator);
         _setupOwner(msg.sender);
         _setOperatorRestriction(true);
-        chainLinkData = _chainLinkData;
 
         bool containNativeTokenAmount = false;
         for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
@@ -108,6 +107,7 @@ contract ETFBase is
             );
         }
         etfOptions = _etfOptions;
+        chainLinkData = _chainLinkData;
         tokensToWrapQuantity = _whitelistedTokenAmounts.length;
     }
 
@@ -166,6 +166,33 @@ contract ETFBase is
         }
 
         return (bundleIds, addresses, quantities, selectorsIds, areETFBurned);
+    }
+
+    function validateTokensToWrap(
+        // mapping(uint64 => mapping(address => bool)) storage isWhiteListedToken,
+        // mapping(uint64 => bool) storage chainSelectorIdInETF,
+        ITokenBundle.Token[] memory tokensToWrap,
+        uint64 chainSelectorId
+    ) internal view {
+        // check if the chainIdSelector is in the ETF
+        require(chainSelectorIdInETF[chainSelectorId], "chain");
+
+        for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
+            // check each assetContract is whitelisted
+            require(
+                isWhiteListedToken[chainSelectorId][
+                    tokensToWrap[i].assetContract
+                ],
+                "blklst"
+            );
+            for (uint256 j = i + 1; j < tokensToWrap.length; j += 1) {
+                require(
+                    tokensToWrap[i].assetContract !=
+                        tokensToWrap[j].assetContract,
+                    "dup"
+                );
+            }
+        }
     }
 
     // Receive function

@@ -56,35 +56,3 @@ struct ETFTokenOptions {
     uint256 etfTokenPerWrap;
     uint256 percentageFee;
 }
-
-library Checks {
-    function validateTokensToWrap(
-        mapping(uint64 => mapping(address => bool)) storage isWhiteListedToken,
-        mapping(uint64 => bool) storage chainSelectorIdInETF,
-        ITokenBundle.Token[] memory tokensToWrap,
-        uint64 chainSelectorId
-    ) internal view {
-        // check if the chainIdSelector is in the ETF
-        require(
-            chainSelectorIdInETF[chainSelectorId],
-            "chain"
-        );
-
-        for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
-            // check each assetContract is whitelisted
-            require(
-                isWhiteListedToken[chainSelectorId][
-                    tokensToWrap[i].assetContract
-                ],
-                "blklst"
-            );
-            for (uint256 j = i + 1; j < tokensToWrap.length; j += 1) {
-                require(
-                    tokensToWrap[i].assetContract !=
-                        tokensToWrap[j].assetContract,
-                    "dup"
-                );
-            }
-        }
-    }
-}
