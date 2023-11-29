@@ -46,7 +46,7 @@ contract SidechainDeposit is
     bytes32 private constant ASSET_ROLE = keccak256("ASSET_ROLE");
     address immutable primaryEtfContract;
     address immutable i_link;
-    address router;
+    // address immutable i_router;
     address[] public whitelistedTokens;
     uint64 public primaryChainSelectorId;
     uint64 immutable chainSelectorId;
@@ -72,10 +72,9 @@ contract SidechainDeposit is
         address _link,
         address _nativeTokenWrapper,
         TokenAmounts[] memory _whitelistedTokenAmounts
-    ) TokenStore(_nativeTokenWrapper) CCIPReceiver(router) {
-        router = _router;
+    ) TokenStore(_nativeTokenWrapper) CCIPReceiver(_router) {
         i_link = _link;
-        LinkTokenInterface(i_link).approve(router, type(uint256).max);
+        LinkTokenInterface(i_link).approve(i_router, type(uint256).max);
         _setupRole(MINTER_ROLE, address(0));
         _setupOwner(msg.sender);
 
@@ -214,19 +213,19 @@ contract SidechainDeposit is
             feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
         });
 
-        uint256 fee = IRouterClient(router).getFee(
+        uint256 fee = IRouterClient(i_router).getFee(
             destinationChainSelector,
             message
         );
 
         if (payFeesIn == PayFeesIn.LINK) {
             // LinkTokenInterface(i_link).approve(router, fee);
-            messageId = IRouterClient(router).ccipSend(
+            messageId = IRouterClient(i_router).ccipSend(
                 destinationChainSelector,
                 message
             );
         } else {
-            messageId = IRouterClient(router).ccipSend{value: fee}(
+            messageId = IRouterClient(i_router).ccipSend{value: fee}(
                 destinationChainSelector,
                 message
             );
@@ -253,11 +252,14 @@ contract SidechainDeposit is
             (ReedeemETFMessage)
         );
 
+
+
         require(
             burner[reedeemMessage.bundleId] == address(0),
             "ETFContract: bundleId is already burned"
         );
+        console.log("reedeemMessage.receiver", reedeemMessage.receiver);
         _releaseTokens(reedeemMessage.receiver, reedeemMessage.bundleId);
-        burner[reedeemMessage.bundleId] = msg.sender;
+        burner[reedeemMessage.bundleId] = reedeemMessage.receiver;
     }
 }

@@ -141,6 +141,8 @@ describe("ChainLink CCIP Message layer", () => {
         const balance = await linkToken.balanceOf(sender.address);
         expect(balance).toEqual(BigNumber.from("1000000000000000000000"));
         await etfTokenContract.connect(owner).setOwner(etfPrimaryContract.address);
+        await router.setOnlyRouteTo(etfPrimaryContract.address);
+
     });
 
 
@@ -153,7 +155,6 @@ describe("ChainLink CCIP Message layer", () => {
         });
 
         it("should send a message to the primary contract on primary chain when deposit funds", async () => {
-            await router.setOnlyRouteTo(etfPrimaryContract.address);
             const tokenStruct = {
                 assetContract: linkToken.address,
                 tokenType: 0,
@@ -190,6 +191,7 @@ describe("ChainLink CCIP Message layer", () => {
             });
 
             await linkToken.connect(sender).approve(sideChainDepositContract.address, BigNumber.from(100));
+            await router.setOnlyRouteTo(etfPrimaryContract.address);
 
             const tx = await sideChainDepositContract.connect(sender).depositFundsAndNotify(
                 bundleId,
@@ -209,7 +211,7 @@ describe("ChainLink CCIP Message layer", () => {
 
 
         it("shoudl receive a message from the primary contract to release funds when reedemed", async () => {
-            await router.setOnlyRouteTo(sideChainDepositContract.address);
+            // await router.setOnlyRouteTo(sideChainDepositContract.address);
             const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
             const tokenStruct = {
                 assetContract: linkToken.address,
@@ -218,23 +220,30 @@ describe("ChainLink CCIP Message layer", () => {
                 totalAmount: 10,
             };
             const bundleId = 12;
+            const balanceSenderLinkTokenBeforeDeposit = await linkToken.balanceOf(sender.address);
             await linkToken.connect(sender).approve(sideChainDepositContract.address, BigNumber.from(100));
-
             await sideChainDepositContract.connect(sender).depositFundsAndNotify(
                 bundleId,
                 [tokenStruct],
             );
+            const balanceSenderLinkTokenAfterDeposit = await linkToken.balanceOf(sender.address);
+            
+            // Router sends message from primary contract with a reedem message 
+            // to the sidechain contract to release funds to the receiver
 
             const ReedemETFMessage = {
-                bundleId: 0,
+                bundleId: bundleId,
                 receiver: receiver.address
             }
 
+            const balanceReceiverLinkTokenBeforeReedemMessage = await linkToken.balanceOf(receiver.address);
+
             const encodedData = ethers.utils.defaultAbiCoder.encode(
                 ['tuple(uint256,address)'],
-                [ReedemETFMessage]
+                [[ReedemETFMessage.bundleId, ReedemETFMessage.receiver]]
             );
-
+            // Message from Primary contract -> Sidechain contract
+            await router.setOnlyRouteTo(sideChainDepositContract.address);
             await router.ccipReceive(
                 {
                     messageId: mockMessageId,
@@ -245,7 +254,11 @@ describe("ChainLink CCIP Message layer", () => {
                 }
             );
 
-            
+            const balanceReceiverLinkTokenAfterReedemMessage = await linkToken.balanceOf(receiver.address);
+
+            expect(balanceSenderLinkTokenAfterDeposit).toEqual(balanceSenderLinkTokenBeforeDeposit.sub(tokenStruct.totalAmount));
+            expect(balanceReceiverLinkTokenAfterReedemMessage).toEqual(balanceReceiverLinkTokenBeforeReedemMessage.add(tokenStruct.totalAmount));
+
         });
     });
 });
