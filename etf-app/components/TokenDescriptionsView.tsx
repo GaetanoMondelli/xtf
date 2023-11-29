@@ -111,7 +111,6 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
             }
         </Descriptions.Item>
         }
-    }
     </Descriptions>
 
 

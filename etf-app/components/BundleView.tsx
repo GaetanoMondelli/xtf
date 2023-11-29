@@ -2,13 +2,13 @@ import { useAddress, useContract, useContractRead, useContractWrite } from "@thi
 import styles from '../styles/page.module.css'
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 import TokenDescriptions from "./TokenDescriptionsView";
-import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result } from 'antd';
+import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result, Select } from 'antd';
 import { FireFilled } from '@ant-design/icons';
 import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName } from "./utils";
+import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 
@@ -27,7 +27,9 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [prices, setPrices] = useState<any>();
     const [values, setValues] = useState<any>();
     const [requiredTokenStructs, setRequiredTokenStructs] = useState<any>([]);
+    const [notifyChainSelectorId, setNotifyChainSelectorId] = useState<any>(0);
     const userAddress = useAddress();
+
     const { contract, isLoading, error } = useContract(address, ABI);
 
     const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
@@ -44,6 +46,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const { mutateAsync: depositFunds, isLoading: isLoadingDeposit, error: errorDeposit } = useContractWrite(
         contract,
         "depositFunds"
+    );
+
+    const { mutateAsync: sendReedeemMessage, isLoading: isLoadingsendReedeemMessage, error: errorSendReedeemMessage } = useContractWrite(
+        contract,
+        "sendReedeemMessage"
     );
 
     const { mutateAsync: reedem, isLoading: isReedemLoadinf, error: errorReedem } = useContractWrite(
@@ -236,23 +243,22 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                                 generateLabels(chart) {
                                                     const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
                                                     const labelsOriginal: any = original.call(this, chart);
-
-
-
-
                                                     for (let i = 0; i < labelsOriginal.length; i++) {
                                                         labelsOriginal[i].text = getAssetName(labelsOriginal[i].text);
                                                     }
 
                                                     const userDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
                                                     const otherDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
-                                                    userDeposits.text = "User's Deposits";
-                                                    userDeposits.fillStyle = 'rgba(75, 192, 192, 0.5)';
-                                                    labelsOriginal.push(userDeposits);
 
-                                                    otherDeposits.text = "Other's Deposits";
-                                                    otherDeposits.fillStyle = 'rgba(255, 99, 132, 0.5)';
-                                                    labelsOriginal.push(otherDeposits);
+                                                    if (userDeposit && userDeposit[0].length !== 0) {
+                                                        userDeposits.text = "User's Deposits";
+                                                        userDeposits.fillStyle = 'rgba(75, 192, 192, 0.5)';
+                                                        labelsOriginal.push(userDeposits);
+
+                                                        otherDeposits.text = "Other's Deposits";
+                                                        otherDeposits.fillStyle = 'rgba(255, 99, 132, 0.5)';
+                                                        labelsOriginal.push(otherDeposits);
+                                                    }
 
                                                     return labelsOriginal;
                                                 },
@@ -269,6 +275,13 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                             {
                                                 data: values[1],
                                                 borderColor: 'black',
+                                                backgroundColor: [
+                                                    'rgba(153, 102, 255)',
+                                                    'rgba(255, 206, 86)',
+                                                    'rgba(54, 162, 235)',
+                                                    'rgba(28, 24, 64)',
+                                                    'rgba(255, 99, 132)',
+                                                ],
                                                 borderWidth: 2
 
                                             },
@@ -433,6 +446,53 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         title="The ETF has been burned and the tokens have been redeemed"
                         subTitle="You can trade your tokens again"
                     />
+                    {/* Check if there are external chain assets and list all the chains
+                        and propose to send a notification to the user to withdraw the asset
+                        there will be a select box with the chain selector id and a button to send the notification
+                    */}
+
+                    {!isLoadingsendReedeemMessage && requiredTokenStructs.some((asset: any) => {
+                        return asset.chainSelector !== chainSelectorId;
+                    }) && <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            margin: '0 20px 0 20px'
+                        }}
+                    >
+                            <h3>There are assets on other chains (not this chain selector Id: {chainSelectorId.toString()})</h3>
+
+                            <Select
+                                onChange={(value) => {
+                                    setNotifyChainSelectorId(value);
+                                }}
+                                options={requiredTokenStructs.filter((asset: any) => {
+                                    return asset.chainSelector.toString() !== chainSelectorId.toString();
+                                }).map((asset: any) => {
+                                    return {
+                                        value: asset.chainSelector.toString(),
+                                        label: asset.chainSelector.toString()
+                                    }
+                                }
+                                )}
+                                style={{ width: 160 }}
+                                placeholder="Select a chain"
+                            />
+                            <br></br>
+                            <Button
+                                className="button"
+                                type="primary"
+                                onClick={() => {
+                                    sendReedeemMessage({
+                                        args: [bundleId, notifyChainSelectorId, PayFeesIn.Native],
+                                    })
+                                }}
+                            >Notify</Button>
+                        </div>
+                    }
+
                 </Card>
                 }
             </div>

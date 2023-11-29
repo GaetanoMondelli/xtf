@@ -16,25 +16,9 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-
-// import ERC721Multiwrap
-
-/**
- *  @notice A generic interface to describe any ERC20, ERC721 or ERC1155 token.
- *
- *  @param assetContract    The contract address of the asset.
- *  @param amount           Amount of the asset required.
- */
-struct TokenAmounts {
-    address assetContract;
-    uint256 amount;
-    address oracleAddress;
-    uint64 chainIdSelector;
-}
-
-struct ReedeemETFMessage {
-    uint256 bundleId;
-}
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
+import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 
 contract ETFv2 is
     TokenStore,
@@ -42,43 +26,19 @@ contract ETFv2 is
     ContractMetadata,
     Ownable,
     DefaultOperatorFilterer,
-    CCIPReceiver
+    CCIPReceiver,
+    VRFConsumerBaseV2
 {
-    /*//////////////////////////////////////////////////////////////
-                    Permission control roles
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Only MINTER_ROLE holders can wrap tokens, when wrapping is restricted.
-    bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    /// @dev Only UNWRAP_ROLE holders can unwrap tokens, when unwrapping is restricted.
-    bytes32 private constant UNWRAP_ROLE = keccak256("UNWRAP_ROLE");
-    /// @dev Only assets with ASSET_ROLE can be wrapped, when wrapping is restricted to particular assets.
-    bytes32 private constant ASSET_ROLE = keccak256("ASSET_ROLE");
-    /// @dev The address interpreted as native token of the chain.
-    /// @dev Only transfers to or from TRANSFER_ROLE holders are valid, when transfers are restricted.
-    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
-    address public constant NATIVE_TOKEN =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    // router for different chain assets
-    address public router;
-    // uri for the ETF Token
-    string public uriETFToken;
-    // check state to prevent users to invoke wrap function directly
-    bool private disableMint;
-    // address of ETF Token
-    address public etfTokenAddress;
-    // number of ETF Token that are minted per wrap
-    uint256 public etfTokenPerWrap;
-    // Percentage fee for the ETF
-    uint256 public percentageFee;
+    VRFCoordinatorV2Interface immutable COORDINATOR;
+    ETFTokenOptions etfOptions;
+    // data for chainlink services
+    ChainLinkData chainLinkData;
+    // number of bundles
+    uint256 public bundleCount = 0;
     // last ETF reedemed
-    uint256 public lastETFReedemed;
-    // current chain selector id
-    uint64 public currentChainSelectorId;
+    uint256 public lastETFReedemed = 0;
     // All the blockchain that have assets wrapped in the ETF
     uint64[] public chainSelectorIds;
-    // address of Link Token
-    address public link;
     // ChainSelectorId in the ETF
     mapping(uint64 => bool) public chainSelectorIdInETF;
     // map of whitelisted tokens per chainIdSelector
@@ -98,51 +58,30 @@ contract ETFv2 is
         public bundleIdToAddressToTokenAmount;
     mapping(address => AggregatorV3Interface) tokenIdToDataFeed;
     // mapping of token address to price
-    mapping(address => uint256) public addressToAmount;
+    mapping(uint256 => mapping(address => uint256)) public addressToAmount;
     // mapping bundleId to mapping of index to chainIdSelector
     mapping(uint256 => mapping(uint256 => uint64))
         public bundleIdToChainIdSelector;
-
-    uint256 public bundleCount = 0;
+    // mapping of bundleId to mapping requestId
+    mapping(uint256 => uint256) public requestIdToBundleId;
     mapping(uint256 => bool) public openedBundle;
-
-    struct DepositFundMessage {
-        uint256 bundleId;
-        ITokenBundle.Token[] tokensToWrap;
-    }
-
-    // mappint of etf token id to expiration time for the lock
     mapping(uint256 => uint) public tokenIdToExpirationTime;
-
-    uint lockTime = 1 minutes;
-
-    enum PayFeesIn {
-        Native,
-        LINK
-    }
 
     constructor(
         string memory _name,
         string memory _symbol,
-        address _nativeTokenWrapper,
-        address _etfTokenAddress,
-        uint256 _etfTokenPerWrap,
-        uint256 _percentageFee,
         TokenAmounts[] memory _whitelistedTokenAmounts,
-        string memory _uriETFToken,
-        uint64 _currentChainSelectorId,
-        address _router,
-        address _link
+        ETFTokenOptions memory _etfOptions,
+        ChainLinkData memory _chainLinkData
     )
         ERC721A(_name, _symbol)
-        TokenStore(_nativeTokenWrapper)
-        CCIPReceiver(_router)
+        TokenStore(_etfOptions.nativeTokenWrapper)
+        CCIPReceiver(_chainLinkData.router)
+        VRFConsumerBaseV2(_chainLinkData.vrfCoordinator)
     {
         _setupOwner(msg.sender);
         _setOperatorRestriction(true);
-
-        // _revokeRole(ASSET_ROLE, address(0));
-        // _setupRole(MINTER_ROLE, address(0));
+        chainLinkData = _chainLinkData;
 
         bool containNativeTokenAmount = false;
         for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
@@ -155,11 +94,10 @@ contract ETFv2 is
                 chainSelectorIds.push(chainIdSelector);
                 chainSelectorIdInETF[chainIdSelector] = true;
             }
-            
+
             isWhiteListedToken[chainIdSelector][
                 _whitelistedTokenAmounts[i].assetContract
             ] = true;
-
 
             tokenQuantities[chainIdSelector][
                 _whitelistedTokenAmounts[i].assetContract
@@ -174,18 +112,16 @@ contract ETFv2 is
                 _whitelistedTokenAmounts[i].oracleAddress
             );
         }
+        COORDINATOR = VRFCoordinatorV2Interface(_chainLinkData.vrfCoordinator);
 
-        uriETFToken = _uriETFToken;
-        etfTokenAddress = _etfTokenAddress;
+        // uriETFToken = _etfOptions.uriETFToken;
+        // etfTokenAddress = _etfOptions.etfTokenAddress;
+        // etfTokenPerWrap = _etfOptions._etfTokenPerWrap;
+        // percentageFee = _etfOptions._percentageFee;
+
+        etfOptions = _etfOptions;
+
         tokensToWrapQuantity = _whitelistedTokenAmounts.length;
-        etfTokenPerWrap = _etfTokenPerWrap;
-        percentageFee = _percentageFee;
-        disableMint = true;
-        lastETFReedemed = 0;
-        router = _router;
-        link = _link;
-
-        currentChainSelectorId = _currentChainSelectorId;
     }
 
     // Receive function
@@ -193,55 +129,24 @@ contract ETFv2 is
         emit EtherReceived(msg.sender, msg.value);
     }
 
-    // function changeAssets(
-    //     uint256 _percentageFee,
-    //     TokenAmounts[] memory _whitelistedTokenAmounts
-    // ) public onlyOwner {
-    //     for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
-    //         uint64 chainIdSelector = _whitelistedTokenAmounts[i]
-    //             .chainIdSelector;
-    //         if (!chainSelectorIdInETF[chainIdSelector]) {
-    //             chainSelectorIds.push(chainIdSelector);
-    //             chainSelectorIdInETF[chainIdSelector] = true;
-    //         }
-    //         isWhiteListedToken[chainIdSelector][
-    //             _whitelistedTokenAmounts[i].assetContract
-    //         ] = true;
-    //         tokenQuantities[chainIdSelector][
-    //             _whitelistedTokenAmounts[i].assetContract
-    //         ] = _whitelistedTokenAmounts[i].amount;
-    //         whitelistedTokens[chainIdSelector].push(
-    //             _whitelistedTokenAmounts[i].assetContract
-    //         );
-
-    //         tokenIdToDataFeed[
-    //             _whitelistedTokenAmounts[i].assetContract
-    //         ] = AggregatorV3Interface(
-    //             _whitelistedTokenAmounts[i].oracleAddress
-    //         );
-    //     }
-    //     percentageFee = _percentageFee;
-    // }
-
-    // depositFunds function receive a list of Tokens and put them in an unclosed
     function depositFunds(
         uint256 _bundleId,
         Token[] memory _tokensToWrap
     ) external payable returns (bool canBeClosed) {
         // check if the bundleId is not already used
-        require(
-            bundleIdToETFId[_bundleId] == 0,
-            "ETFContract: bundleId was already closed for an ETF"
-        );
+        require(bundleIdToETFId[_bundleId] == 0, "bundle already closed");
 
-        validateTokensToWrap(_tokensToWrap, currentChainSelectorId);
+        validateTokensToWrap(
+            _tokensToWrap,
+            chainLinkData.currentChainSelectorId
+        );
         updateBundleCount(_bundleId);
         addAddressToBundle(_bundleId, msg.sender);
 
-        updateTokenToWrapQuantity(
+        _tokensToWrap = updateTokenToWrapQuantity2(
             _bundleId,
             _tokensToWrap,
-            currentChainSelectorId,
+            chainLinkData.currentChainSelectorId,
             msg.sender
         );
 
@@ -250,23 +155,24 @@ contract ETFv2 is
         canBeClosed = checkIfBundleCanBeClosed(_bundleId);
 
         if (canBeClosed) {
-            closeBundle(_bundleId);
+            closeBundle(_bundleId, address(this));
         }
     }
 
     // reedem ETF function
     function reedemETF(uint256 bundleId) public returns (uint256 etfId) {
         require(
-            IERC20(etfTokenAddress).balanceOf(msg.sender) >= etfTokenPerWrap,
-            "ETFContract: msg.sender does not have enough ETF Tokens"
+            etfOptions.etfTokenPerWrap <=
+                IERC20(etfOptions.etfTokenAddress).balanceOf(msg.sender),
+            "not enough ETFs"
         );
         etfId = bundleIdToETFId[bundleId];
-        require(
-            tokenIdToExpirationTime[etfId] < block.timestamp,
-            "ETFContract: ETF Token is still locked"
-        );
+        require(tokenIdToExpirationTime[etfId] < block.timestamp, "locked");
 
-        IETFToken(etfTokenAddress).burn(msg.sender, etfTokenPerWrap);
+        IETFToken(etfOptions.etfTokenAddress).burn(
+            msg.sender,
+            etfOptions.etfTokenPerWrap
+        );
 
         _releaseTokens(msg.sender, bundleId);
         _burn(etfId);
@@ -353,7 +259,7 @@ contract ETFv2 is
                 isWhiteListedToken[chainSelectorId][
                     tokensToWrap[i].assetContract
                 ],
-                "ETFContract: assetContract is not whitelisted"
+                "asset not listed"
             );
 
             // check each assetContract is not duplicated
@@ -361,7 +267,7 @@ contract ETFv2 is
                 require(
                     tokensToWrap[i].assetContract !=
                         tokensToWrap[j].assetContract,
-                    "ETFContract: assetContract is duplicated"
+                    "asset dup"
                 );
             }
         }
@@ -381,78 +287,74 @@ contract ETFv2 is
         }
     }
 
-    function updateTokenToWrapQuantity(
+    function updateTokenToWrapQuantity2(
         uint256 bundleId,
         ITokenBundle.Token[] memory tokensToWrap,
         uint64 chainIdSelector,
         address depositAddress
-    ) internal {
+    ) internal returns (ITokenBundle.Token[] memory) {
         for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
-            bool tokenAlreadyInBundle = false;
+            uint256 tokenIndex;
 
-            for (uint256 j = 0; j < getTokenCountOfBundle(bundleId); j += 1) {
+            for (
+                tokenIndex = 0;
+                tokenIndex < getTokenCountOfBundle(bundleId);
+                tokenIndex += 1
+            ) {
                 if (
-                    getTokenOfBundle(bundleId, j).assetContract ==
+                    getTokenOfBundle(bundleId, tokenIndex).assetContract ==
                     tokensToWrap[i].assetContract
                 ) {
-                    tokenAlreadyInBundle = true;
-
-                    // check if the token quantity + current quantity is not greater than the quantity required
                     if (
-                        getTokenOfBundle(bundleId, j).totalAmount +
+                        getTokenOfBundle(bundleId, tokenIndex).totalAmount +
                             tokensToWrap[i].totalAmount >
                         tokenQuantities[chainIdSelector][
-                            getTokenOfBundle(bundleId, j).assetContract
+                            getTokenOfBundle(bundleId, tokenIndex).assetContract
                         ]
                     ) {
-                        tokensToWrap[i].totalAmount =
-                            tokenQuantities[chainIdSelector][
-                                getTokenOfBundle(bundleId, j).assetContract
-                            ] -
-                            getTokenOfBundle(bundleId, j).totalAmount;
+                        tokensToWrap[i].totalAmount = tokenQuantities[
+                            chainIdSelector
+                        ][getTokenOfBundle(bundleId, tokenIndex).assetContract];
                     }
 
-                    // update the token quantity
                     _updateTokenInBundle(
                         Token(
                             tokensToWrap[i].assetContract,
                             tokensToWrap[i].tokenType,
                             tokensToWrap[i].tokenId,
-                            getTokenOfBundle(bundleId, j).totalAmount +
+                            getTokenOfBundle(bundleId, tokenIndex).totalAmount +
                                 tokensToWrap[i].totalAmount
                         ),
                         bundleId,
-                        j
+                        tokenIndex
                     );
-                    // update the bundleIdToAddressToTokenAmount
                     bundleIdToAddressToTokenAmount[chainIdSelector][bundleId][
                         depositAddress
-                    ][j] += tokensToWrap[i].totalAmount;
+                    ][tokenIndex] += tokensToWrap[i].totalAmount;
+                    continue;
                 }
             }
+            _addTokenInBundle(
+                Token(
+                    tokensToWrap[i].assetContract,
+                    tokensToWrap[i].tokenType,
+                    tokensToWrap[i].tokenId,
+                    tokensToWrap[i].totalAmount
+                ),
+                bundleId
+            );
 
-            // if the token is not already in the bundle, add it
-            if (!tokenAlreadyInBundle) {
-                _addTokenInBundle(
-                    Token(
-                        tokensToWrap[i].assetContract,
-                        tokensToWrap[i].tokenType,
-                        tokensToWrap[i].tokenId,
-                        tokensToWrap[i].totalAmount
-                    ),
-                    bundleId
-                );
+            bundleIdToChainIdSelector[bundleId][
+                getTokenCountOfBundle(bundleId) - 1
+            ] = chainIdSelector;
 
-                bundleIdToChainIdSelector[bundleId][
-                    getTokenCountOfBundle(bundleId) - 1
-                ] = chainIdSelector;
-
-                bundleIdToAddressToTokenAmount[chainIdSelector][bundleId][
-                    depositAddress
-                ][getTokenCountOfBundle(bundleId) - 1] += tokensToWrap[i]
-                    .totalAmount;
-            }
+            bundleIdToAddressToTokenAmount[chainIdSelector][bundleId][
+                depositAddress
+            ][getTokenCountOfBundle(bundleId) - 1] += tokensToWrap[i]
+                .totalAmount;
         }
+
+        return tokensToWrap;
     }
 
     function checkIfBundleCanBeClosed(
@@ -489,8 +391,6 @@ contract ETFv2 is
             message.data
         );
 
-        // decode data as DepositFundMessage
-
         DepositFundMessage memory depositFundMessage = abi.decode(
             message.data,
             (DepositFundMessage)
@@ -499,13 +399,13 @@ contract ETFv2 is
         // check if the chainIdSelector is in the ETF
         require(
             chainSelectorIdInETF[message.sourceChainSelector],
-            "ETFContract: chainIdSelector is not in the ETF"
+            "chainSelId is not in the ETF"
         );
 
         // check if the bundleId is not already closed
         require(
             bundleIdToETFId[depositFundMessage.bundleId] == 0,
-            "ETFContract: bundleId was already closed for an ETF"
+            "already closed"
         );
 
         validateTokensToWrap(
@@ -518,7 +418,7 @@ contract ETFv2 is
             address(bytes20(message.sender))
         );
 
-        updateTokenToWrapQuantity(
+        updateTokenToWrapQuantity2(
             depositFundMessage.bundleId,
             depositFundMessage.tokensToWrap,
             message.sourceChainSelector,
@@ -530,30 +430,34 @@ contract ETFv2 is
         );
 
         if (canBeClosed) {
-            closeBundle(depositFundMessage.bundleId);
+            closeBundle(depositFundMessage.bundleId, address(this));
         }
     }
 
-    function closeBundle(uint256 bundleId) internal returns (uint256 tokenId) {
+    function closeBundle(
+        uint256 bundleId,
+        address to
+    ) internal returns (uint256 tokenId) {
         tokenId = nextTokenIdToMint();
 
         bundleIdToETFId[bundleId] = tokenId;
 
-        _safeMint(address(this), 1);
+        _safeMint(to, 1);
 
         tokenIdToExpirationTime[tokenId] = block.timestamp + lockTime;
 
-        uint256 fee = (etfTokenPerWrap * percentageFee) / 100;
+        uint256 fee = (etfOptions.etfTokenPerWrap * etfOptions.percentageFee) /
+            100;
 
-        uint256 remainingAmount = etfTokenPerWrap - fee;
+        uint256 remainingAmount = etfOptions.etfTokenPerWrap - fee;
 
-        // ETFToken(etfTokenAddress).mint(msg.sender, etfTokenPerWrap - fee);
         // calculate the total value of the bundle
         uint256 totalValue = 0;
         for (uint256 i = 0; i < getTokenCountOfBundle(bundleId); i += 1) {
-            uint256 priceAggrDecimals = tokenIdToDataFeed[
-                getTokenOfBundle(bundleId, i).assetContract
-            ].decimals();
+            //  TO-DO: NEED TO SCALE THE PRICE TO THE TOKEN DECIMALS
+            // uint256 priceAggrDecimals = tokenIdToDataFeed[
+            //     getTokenOfBundle(bundleId, i).assetContract
+            // ].decimals();
             uint256 tokenDecimals = 18;
             if (getTokenOfBundle(bundleId, i).assetContract != NATIVE_TOKEN) {
                 tokenDecimals = IERC20Metadata(
@@ -571,10 +475,7 @@ contract ETFv2 is
                 getTokenOfBundle(bundleId, i).totalAmount;
         }
 
-        require(
-            totalValue > 0,
-            "ETFContract: totalValue of the bundle must be greater than 0"
-        );
+        require(totalValue > 0, "totalValue<=0");
 
         //  different account have contributed to the bundle in proportion to the value of the tokens they sent,
         //  they can have different amount of tokens
@@ -615,26 +516,32 @@ contract ETFv2 is
                             (uint256(answer) * tokenIdToAmount[j])) /
                         totalValue;
                 }
-                addressToAmount[addressToSend] += amountToSend;
+                addressToAmount[bundleId][addressToSend] += amountToSend;
             }
         }
 
         // transfer the tokens to each address
 
         for (uint256 i = 0; i < bundleIdToAddress[bundleId].length; i += 1) {
-            if (addressToAmount[bundleIdToAddress[bundleId][i]] > 0) {
-                IETFToken(etfTokenAddress).mint(
+            if (addressToAmount[bundleId][bundleIdToAddress[bundleId][i]] > 0) {
+                IETFToken(etfOptions.etfTokenAddress).mint(
                     bundleIdToAddress[bundleId][i],
-                    addressToAmount[bundleIdToAddress[bundleId][i]]
+                    addressToAmount[bundleId][bundleIdToAddress[bundleId][i]]
                 );
             }
         }
 
-        for (uint256 i = 0; i < bundleIdToAddress[bundleId].length; i += 1) {
-            addressToAmount[bundleIdToAddress[bundleId][i]] = 0;
-        }
+        requestIdToBundleId[
+            COORDINATOR.requestRandomWords(
+                chainLinkData.keyHash,
+                chainLinkData.subscriptionId,
+                REQUEST_CONFIRMATIONS,
+                CALLBACK_GAS_LIMIT,
+                NUM_WORDS
+            )
+        ] = bundleId;
 
-        IETFToken(etfTokenAddress).mint(owner(), fee);
+        IETFToken(etfOptions.etfTokenAddress).mint(owner(), fee);
     }
 
     function getAllAddressesForBundleId(
@@ -650,7 +557,7 @@ contract ETFv2 is
     ) public returns (bytes32 messageId) {
         require(
             isETFBurned(bundleIdToETFId[bundleId]),
-            "ETFContract: bundleId was not reedemed"
+            "bundleId not reedemed"
         );
 
         ReedeemETFMessage memory data = ReedeemETFMessage({bundleId: bundleId});
@@ -667,25 +574,26 @@ contract ETFv2 is
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: "",
-            feeToken: payFeesIn == PayFeesIn.LINK ? link : address(0)
+            feeToken: payFeesIn == PayFeesIn.LINK
+                ? chainLinkData.link
+                : address(0)
         });
 
-        uint256 fee = IRouterClient(router).getFee(
+        uint256 fee = IRouterClient(chainLinkData.router).getFee(
             destinationChainSelector,
             message
         );
 
         if (payFeesIn == PayFeesIn.LINK) {
             // LinkTokenInterface(i_link).approve(i_router, fee);
-            messageId = IRouterClient(i_router).ccipSend(
+            messageId = IRouterClient(chainLinkData.router).ccipSend(
                 destinationChainSelector,
                 message
             );
         } else {
-            messageId = IRouterClient(i_router).ccipSend{value: fee}(
-                destinationChainSelector,
-                message
-            );
+            messageId = IRouterClient(chainLinkData.router).ccipSend{
+                value: fee
+            }(destinationChainSelector, message);
         }
     }
 
@@ -807,5 +715,23 @@ contract ETFv2 is
         returns (bool)
     {
         return true;
+    }
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal virtual override {
+        // TO-DO: the winning probability should be based on the amount of ETFs that the user has deposited
+        // let's transform the randomWord into a number between 0 and address[bundleId].length
+        address winner = bundleIdToAddress[requestIdToBundleId[requestId]][
+            randomWords[0] %
+                bundleIdToAddress[requestIdToBundleId[requestId]].length
+        ];
+        approve(winner, bundleIdToETFId[requestIdToBundleId[requestId]]);
+        transferFrom(
+            address(this),
+            winner,
+            bundleIdToETFId[requestIdToBundleId[requestId]]
+        );
     }
 }

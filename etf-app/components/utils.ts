@@ -19,10 +19,18 @@ const sepoliaPriceDataFeed = ["0x694AA1769357215DE4FAC081bf1f309aDC325306",
     "0xc59E3633BAAC79493d908e63626716e204A45EdF",
     "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC"]
 
+
+
 export enum Chain {
     Sepolia = "sepolia",
     Localhost = "localhost"
 }
+
+export enum PayFeesIn {
+    Native = 0,
+    LINK = 1,
+}
+
 
 export enum ETFState {
     LOADING,

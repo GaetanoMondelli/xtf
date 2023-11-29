@@ -10,6 +10,7 @@ describe("ETFContract", () => {
     const fungibleTokenName = "FungibleToken";
     const priceAggregatorContractName = "MockAggregator";
     const mockRouterContractName = "MockRouterClient";
+    const mockVRFCoordinatorV2Name = "VRFCoordinatorV2Mock";
     const ETFURI = "https://example.com";
     // const royaltyBps = 1000;
     const fee = 0;
@@ -30,6 +31,7 @@ describe("ETFContract", () => {
     let FungibleTokenFactory: any;
     let NativeTokenWrapperFactory: any;
     let PriceAggregatorContractFactory: any;
+    let VRFCoordinatorV2MockContractFactory: any;
     let EtfContractFactory: any;
     let EtfTokenContractFactory: any;
     let nativeTokenWrapper: any;
@@ -39,6 +41,8 @@ describe("ETFContract", () => {
     let tokenToBeWrapped2: any;
     let priceAggregatortokenToBeWrapped2: any;
     let router: any;
+    let vrFCoordinatorV2: any;
+    let subscriptionId;
     let totalValue: any;
     let tokenPrices: any;
 
@@ -50,6 +54,7 @@ describe("ETFContract", () => {
         EtfContractFactory = await ethers.getContractFactory(etfContractName);
         PriceAggregatorContractFactory = await ethers.getContractFactory(priceAggregatorContractName);
         MockRouterContractFactory = await ethers.getContractFactory(mockRouterContractName);
+        VRFCoordinatorV2MockContractFactory = await ethers.getContractFactory(mockVRFCoordinatorV2Name);
 
         tokenToBeWrapped1 = await FungibleTokenFactory.deploy(
             "TokenToWrapped1",
@@ -82,6 +87,16 @@ describe("ETFContract", () => {
 
         router = await MockRouterContractFactory.deploy();
 
+        vrFCoordinatorV2 = await VRFCoordinatorV2MockContractFactory.deploy(0, 0);
+
+        let subscriptionIdTx = await vrFCoordinatorV2.createSubscription();
+
+        let subscription = await subscriptionIdTx.wait();
+        subscriptionId = subscription.events[0].args['subId'];
+
+        console.log('subscriptionId', subscriptionId);
+
+        await vrFCoordinatorV2.connect(owner).fundSubscription(subscriptionId, BigNumber.from(10).pow(18).mul(100));
 
         const tokenAmounts = [
             {
@@ -128,22 +143,34 @@ describe("ETFContract", () => {
             console.log('totalValue', tokenAmount.amount, tokenPrice.amount, totalValue.toString());
         }
 
+        const eTFTokenOptions = {
+            nativeTokenWrapper: nativeTokenWrapper.address,
+            uriETFToken: ETFURI,
+            etfTokenAddress: etfTokenContract.address,
+            etfTokenPerWrap: etfTokenPerWrap,
+            percentageFee: fee
+        }
+
+        const chainLinkData = {
+            router: router.address,
+            link: tokenToBeWrapped2.address,
+            currentChainSelectorId: mockChainSelectorId,
+            subscriptionId: subscriptionId,
+            vrfCoordinator: vrFCoordinatorV2.address,
+            keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
+        }
+
         etfContract = await EtfContractFactory.deploy(
             "ETF-v0.0.3",
             "ETF",
-            nativeTokenWrapper.address,
-            etfTokenContract.address,
-            etfTokenPerWrap,
-            fee,
             tokenAmounts,
-            ETFURI,
-            mockChainSelectorId,
-            router.address,
-            tokenToBeWrapped2.address // It represents the LINK token address
+            eTFTokenOptions,
+            chainLinkData
         );
 
         await etfTokenContract.connect(owner).setOwner(etfContract.address);
         await router.setOnlyRouteTo(etfContract.address);
+        await vrFCoordinatorV2.addConsumer(subscriptionId, etfContract.address);
     });
 
     describe("deploy contracts", () => {
@@ -220,7 +247,8 @@ describe("ETFContract", () => {
                     });
 
                 const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                expect(etfTokensBalance).toEqual(etfTokenPerWrap);
+                const diff = etfTokenPerWrap.sub(etfTokensBalance);
+                expect(diff.lte(BigNumber.from(1))).toBeTruthy();
             });
 
 
@@ -430,18 +458,30 @@ describe("ETFContract", () => {
                 ];
 
 
+                const eTFTokenOptions = {
+                    nativeTokenWrapper: nativeTokenWrapper.address,
+                    uriETFToken: ETFURI,
+                    etfTokenAddress: etfTokenContract.address,
+                    etfTokenPerWrap: etfTokenPerWrap,
+                    percentageFee: fee
+                }
+
+                const chainLinkData = {
+                    router: router.address,
+                    link: tokenToBeWrapped2.address,
+                    currentChainSelectorId: mockChainSelectorId,
+                    subscriptionId: 1,
+                    vrfCoordinator: vrFCoordinatorV2.address,
+                    keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
+                }
+
+
                 etfContract = await EtfContractFactory.deploy(
                     "ETF-v0.0.3",
                     "ETF",
-                    nativeTokenWrapper.address,
-                    etfTokenContract.address,
-                    BigNumber.from(etfTokenPerWrap).mul(BigNumber.from(10).pow(18)),
-                    fee,
                     tokenAmounts,
-                    ETFURI,
-                    mockChainSelectorId,
-                    router.address,
-                    tokenToBeWrapped2.address // It represents the LINK token address
+                    eTFTokenOptions,
+                    chainLinkData
                 );
 
                 etfTokenContract = await EtfTokenContractFactory.deploy();

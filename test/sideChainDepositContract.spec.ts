@@ -93,26 +93,31 @@ describe("ChainLink CCIP Message layer", () => {
             },
         ];
 
-        // const royaltyInfo = {
-        //     recipient: owner.address,
-        //     bps: royaltyBps,
-        // }
+
+        const eTFTokenOptions = {
+            nativeTokenWrapper: nativeTokenWrapper.address,
+            uriETFToken: ETFURI,
+            etfTokenAddress: etfTokenContract.address,
+            etfTokenPerWrap: etfTokenPerWrap,
+            percentageFee: fee
+        }
+
+        const chainLinkData = {
+            router: router.address,
+            link: linkToken.address,
+            currentChainSelectorId: mockPrimaryChainSelectorId,
+            subscriptionId: 1,
+            vrfCoordinator: linkToken.address,
+            keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
+        }
 
         etfPrimaryContract = await EtfContractFactory.deploy(
             "ETF-v0.0.3",
             "ETF",
-            // royaltyInfo,
-            nativeTokenWrapper.address,
-            etfTokenContract.address,
-            etfTokenPerWrap,
-            fee,
             tokenAmounts,
-            ETFURI,
-            mockPrimaryChainSelectorId,
-            router.address,
-            linkToken.address,
+            eTFTokenOptions,
+            chainLinkData
         );
-
 
         const sideChainTokenAmounts = [
             // {
