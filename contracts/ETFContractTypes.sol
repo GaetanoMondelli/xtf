@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
+import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
 import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
 
 /**
@@ -44,17 +45,9 @@ enum PayFeesIn {
 }
 uint32 constant CALLBACK_GAS_LIMIT = 100000;
 
-// The default is 3, but you can set this higher.
 uint16 constant REQUEST_CONFIRMATIONS = 3;
 
-// For this example, retrieve 2 random values in one request.
-// Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
 uint32 constant NUM_WORDS = 1;
-
-        //     uriETFToken = _etfOptions.uriETFToken;
-        // etfTokenAddress = _etfOptions.etfTokenAddress;
-        // etfTokenPerWrap = _etfOptions._etfTokenPerWrap;
-        // percentageFee = _etfOptions._percentageFee;
 
 struct ETFTokenOptions {
     address nativeTokenWrapper;
@@ -62,4 +55,36 @@ struct ETFTokenOptions {
     address etfTokenAddress;
     uint256 etfTokenPerWrap;
     uint256 percentageFee;
+}
+
+library Checks {
+    function validateTokensToWrap(
+        mapping(uint64 => mapping(address => bool)) storage isWhiteListedToken,
+        mapping(uint64 => bool) storage chainSelectorIdInETF,
+        ITokenBundle.Token[] memory tokensToWrap,
+        uint64 chainSelectorId
+    ) internal view {
+        // check if the chainIdSelector is in the ETF
+        require(
+            chainSelectorIdInETF[chainSelectorId],
+            "chain"
+        );
+
+        for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
+            // check each assetContract is whitelisted
+            require(
+                isWhiteListedToken[chainSelectorId][
+                    tokensToWrap[i].assetContract
+                ],
+                "blklst"
+            );
+            for (uint256 j = i + 1; j < tokensToWrap.length; j += 1) {
+                require(
+                    tokensToWrap[i].assetContract !=
+                        tokensToWrap[j].assetContract,
+                    "dup"
+                );
+            }
+        }
+    }
 }

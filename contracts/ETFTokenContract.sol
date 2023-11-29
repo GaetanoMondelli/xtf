@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@thirdweb-dev/contracts/base/ERC20Base.sol";
 import "@thirdweb-dev/contracts/extension/Ownable.sol";
+import "hardhat/console.sol";
 
 interface IETFToken {
     function mint(address account, uint256 amount) external;

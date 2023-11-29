@@ -1,68 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import {IETFToken} from "./ETFTokenContract.sol";
-import {Ownable} from "@thirdweb-dev/contracts/extension/Ownable.sol";
-import {ITokenBundle} from "@thirdweb-dev/contracts/extension/interface/ITokenBundle.sol";
-import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
-import {IERC165} from "@thirdweb-dev/contracts/eip/interface/IERC165.sol";
-import {ERC1155Receiver} from "@thirdweb-dev/contracts/openzeppelin-presets/utils/ERC1155/ERC1155Receiver.sol";
-import {TokenStore} from "@thirdweb-dev/contracts/extension/TokenStore.sol";
-import {ContractMetadata} from "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
-import {ERC721A} from "@thirdweb-dev/contracts/eip/ERC721AVirtualApprove.sol";
-import {DefaultOperatorFilterer} from "@thirdweb-dev/contracts/extension/DefaultOperatorFilterer.sol";
-import {IERC20Metadata, IERC20} from "@thirdweb-dev/contracts/base/ERC20Base.sol";
+import {ETFBase} from "./ETFContractBase.sol";
+import {Checks, TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {IETFToken} from "./ETFTokenContract.sol";
+import {IERC20Metadata, IERC20} from "@thirdweb-dev/contracts/base/ERC20Base.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
-import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
-import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 
-contract ETFv2 is
-    TokenStore,
-    ERC721A,
-    ContractMetadata,
-    Ownable,
-    DefaultOperatorFilterer,
-    CCIPReceiver,
-    VRFConsumerBaseV2
-{
-    VRFCoordinatorV2Interface immutable COORDINATOR;
-    ETFTokenOptions etfOptions;
-    // data for chainlink services
-    ChainLinkData chainLinkData;
-    // number of bundles
-    uint256 public bundleCount = 0;
-    // All the blockchain that have assets wrapped in the ETF
-    uint64[] public chainSelectorIds;
-    // ChainSelectorId in the ETF
-    mapping(uint64 => bool) public chainSelectorIdInETF;
-    // map of whitelisted tokens per chainIdSelector
-    mapping(uint64 => mapping(address => bool)) public isWhiteListedToken;
-    // whitelist of token addresses for the ETF
-    mapping(uint64 => address[]) public whitelistedTokens;
-    // number of tokens that must be wrapped per etf
-    uint256 public tokensToWrapQuantity;
-    // mapping of token address to  quantity of token that must be wrapped per etf
-    mapping(uint64 => mapping(address => uint256)) public tokenQuantities;
-    // map from bundleId to ETFId(TokenId)
-    mapping(uint256 => uint256) public bundleIdToETFId;
-    // mapping in each bundle how many of each tokens each address has sent
-    mapping(uint256 => mapping(address => bool)) public addressInBundleId;
-    mapping(uint256 => address[]) public bundleIdToAddress;
+contract ETFv2 is ETFBase {
     mapping(uint64 => mapping(uint256 => mapping(address => mapping(uint256 => uint256))))
         public bundleIdToAddressToTokenAmount;
-    mapping(address => AggregatorV3Interface) tokenIdToDataFeed;
     // mapping of token address to price
     mapping(uint256 => mapping(address => uint256)) public addressToAmount;
-    // mapping bundleId to mapping of index to chainIdSelector
-    mapping(uint256 => mapping(uint256 => uint64))
-        public bundleIdToChainIdSelector;
     // mapping of bundleId to mapping requestId
     mapping(uint256 => uint256) public requestIdToBundleId;
-    mapping(uint256 => bool) public openedBundle;
     mapping(uint256 => uint) public tokenIdToExpirationTime;
     mapping(uint256 => address) public burner;
 
@@ -73,10 +27,13 @@ contract ETFv2 is
         ETFTokenOptions memory _etfOptions,
         ChainLinkData memory _chainLinkData
     )
-        ERC721A(_name, _symbol)
-        TokenStore(_etfOptions.nativeTokenWrapper)
-        CCIPReceiver(_chainLinkData.router)
-        VRFConsumerBaseV2(_chainLinkData.vrfCoordinator)
+        ETFBase(
+            _name,
+            _symbol,
+            _whitelistedTokenAmounts,
+            _etfOptions,
+            _chainLinkData
+        )
     {
         _setupOwner(msg.sender);
         _setOperatorRestriction(true);
@@ -111,14 +68,32 @@ contract ETFv2 is
                 _whitelistedTokenAmounts[i].oracleAddress
             );
         }
-        COORDINATOR = VRFCoordinatorV2Interface(_chainLinkData.vrfCoordinator);
         etfOptions = _etfOptions;
         tokensToWrapQuantity = _whitelistedTokenAmounts.length;
     }
 
-    // Receive function
-    receive() external payable {
-        emit EtherReceived(msg.sender, msg.value);
+    function validateTokensUpdateBundle(
+        uint256 _bundleId,
+        Token[] memory _tokensToWrap,
+        uint64 chainSelectorId
+    ) internal returns (bool canBeClosed) {
+        Checks.validateTokensToWrap(
+            isWhiteListedToken,
+            chainSelectorIdInETF,
+            _tokensToWrap,
+            chainSelectorId
+        );
+        updateBundleCount(_bundleId);
+        addAddressToBundle(_bundleId, msg.sender);
+
+        _tokensToWrap = updateTokenToWrapQuantity(
+            _bundleId,
+            _tokensToWrap,
+            chainSelectorId,
+            msg.sender
+        );
+
+        canBeClosed = checkIfBundleCanBeClosed(_bundleId);
     }
 
     function depositFunds(
@@ -126,25 +101,15 @@ contract ETFv2 is
         Token[] memory _tokensToWrap
     ) external payable returns (bool canBeClosed) {
         // check if the bundleId is not already used
-        require(bundleIdToETFId[_bundleId] == 0, "bundle is closed");
+        require(bundleIdToETFId[_bundleId] == 0, "cls");
 
-        validateTokensToWrap(
+        canBeClosed = validateTokensUpdateBundle(
+            _bundleId,
             _tokensToWrap,
             chainLinkData.currentChainSelectorId
         );
-        updateBundleCount(_bundleId);
-        addAddressToBundle(_bundleId, msg.sender);
-
-        _tokensToWrap = updateTokenToWrapQuantity2(
-            _bundleId,
-            _tokensToWrap,
-            chainLinkData.currentChainSelectorId,
-            msg.sender
-        );
 
         _transferTokenBatch(msg.sender, address(this), _tokensToWrap);
-
-        canBeClosed = checkIfBundleCanBeClosed(_bundleId);
 
         if (canBeClosed) {
             closeBundle(_bundleId, address(this));
@@ -159,12 +124,31 @@ contract ETFv2 is
             "not enough ETFs"
         );
         etfId = bundleIdToETFId[bundleId];
-        require(tokenIdToExpirationTime[etfId] < block.timestamp, "locked");
+        require(tokenIdToExpirationTime[etfId] < block.timestamp, "lkd");
 
         IETFToken(etfOptions.etfTokenAddress).burn(
             msg.sender,
             etfOptions.etfTokenPerWrap
         );
+
+        for (uint256 i = 0; i < getTokenCountOfBundle(bundleId); i += 1) {
+            if (
+                bundleIdToChainIdSelector[bundleId][i] ==
+                chainLinkData.currentChainSelectorId
+            ) {
+                continue;
+            }
+            _updateTokenInBundle(
+                Token(
+                    getTokenOfBundle(bundleId, i).assetContract,
+                    getTokenOfBundle(bundleId, i).tokenType,
+                    getTokenOfBundle(bundleId, i).tokenId,
+                    0
+                ),
+                bundleId,
+                i
+            );
+        }
 
         _releaseTokens(msg.sender, bundleId);
         _burn(etfId);
@@ -230,38 +214,12 @@ contract ETFv2 is
     }
 
     // Event to log the received Ether
-    event EtherReceived(address indexed sender, uint256 value);
     event MessageReceived(
         bytes32 messageId,
         uint64 chainId,
         address sender,
         bytes data
     );
-
-    function validateTokensToWrap(
-        Token[] memory tokensToWrap,
-        uint64 chainSelectorId
-    ) internal view {
-        for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
-            // check each assetContract is whitelisted
-            require(
-                // hasRole(ASSET_ROLE, tokensToWrap[i].assetContract),
-                isWhiteListedToken[chainSelectorId][
-                    tokensToWrap[i].assetContract
-                ],
-                "asset not listed"
-            );
-
-            // check each assetContract is not duplicated
-            for (uint256 j = i + 1; j < tokensToWrap.length; j += 1) {
-                require(
-                    tokensToWrap[i].assetContract !=
-                        tokensToWrap[j].assetContract,
-                    "asset dup"
-                );
-            }
-        }
-    }
 
     function addAddressToBundle(uint256 bundleId, address _address) internal {
         if (!addressInBundleId[bundleId][_address]) {
@@ -271,13 +229,14 @@ contract ETFv2 is
     }
 
     function updateBundleCount(uint256 _bundleId) internal {
+        require(bundleIdToETFId[_bundleId] == 0, "cls");
         if (!openedBundle[_bundleId]) {
             bundleCount += 1;
             openedBundle[_bundleId] = true;
         }
     }
 
-    function updateTokenToWrapQuantity2(
+    function updateTokenToWrapQuantity(
         uint256 bundleId,
         ITokenBundle.Token[] memory tokensToWrap,
         uint64 chainIdSelector,
@@ -392,37 +351,10 @@ contract ETFv2 is
             (DepositFundMessage)
         );
 
-        // check if the chainIdSelector is in the ETF
-        require(
-            chainSelectorIdInETF[message.sourceChainSelector],
-            "chainId not registered"
-        );
-
-        // check if the bundleId is not already closed
-        require(
-            bundleIdToETFId[depositFundMessage.bundleId] == 0,
-            "already closed"
-        );
-
-        validateTokensToWrap(
+        bool canBeClosed = validateTokensUpdateBundle(
+            depositFundMessage.bundleId,
             depositFundMessage.tokensToWrap,
             message.sourceChainSelector
-        );
-        updateBundleCount(depositFundMessage.bundleId);
-        addAddressToBundle(
-            depositFundMessage.bundleId,
-            address(bytes20(message.sender))
-        );
-
-        updateTokenToWrapQuantity2(
-            depositFundMessage.bundleId,
-            depositFundMessage.tokensToWrap,
-            message.sourceChainSelector,
-            address(bytes20(message.sender))
-        );
-
-        bool canBeClosed = checkIfBundleCanBeClosed(
-            depositFundMessage.bundleId
         );
 
         if (canBeClosed) {
@@ -471,7 +403,7 @@ contract ETFv2 is
                 getTokenOfBundle(bundleId, i).totalAmount;
         }
 
-        require(totalValue > 0, "totalValue<=0");
+        require(totalValue > 0, "val<=0");
 
         //  different account have contributed to the bundle in proportion to the value of the tokens they sent,
         //  they can have different amount of tokens
@@ -551,10 +483,13 @@ contract ETFv2 is
         uint64 destinationChainSelector,
         PayFeesIn payFeesIn
     ) public returns (bytes32 messageId) {
-        require(
-            isETFBurned(bundleIdToETFId[bundleId]),
-            "bundleId not reedemed"
-        );
+        require(isETFBurned(bundleIdToETFId[bundleId]), "notRdmd");
+
+        // TO-DO: check if the destinationChainSelector is in the chainSelectorIds
+        // require(
+        //     chainSelectorIdInETF[destinationChainSelector],
+        //     "chain err"
+        // );
 
         ReedeemETFMessage memory data = ReedeemETFMessage({
             bundleId: bundleId,
@@ -623,97 +558,8 @@ contract ETFv2 is
         }
     }
 
-    function isETFBurned(uint256 tokenId) public view returns (bool) {
-        // Ensure the token ID is valid.
-        // require(tokenId < _currentIndex, "Token ID does not exist.");
-        if (tokenId >= _currentIndex) {
-            return false;
-        }
-
-        // Check the burned flag in the ownership struct of the token.
-        return _ownerships[tokenId].burned;
-    }
-
-    function getBurnedCount() public view returns (uint256) {
-        return _burnCounter;
-    }
-
-    function _startTokenId() internal pure override returns (uint256) {
-        return 1;
-    }
-
     function nextTokenIdToMint() public view virtual returns (uint256) {
         return _currentIndex;
-    }
-
-    function returnStateOfBundles(
-        uint256 offset,
-        uint256 items
-    )
-        public
-        view
-        returns (
-            uint256[] memory bundleIds,
-            address[] memory addresses,
-            uint256[][] memory quantities,
-            uint64[] memory selectorsIds,
-            bool[] memory areETFBurned
-        )
-    {
-        bundleIds = new uint256[](items);
-        addresses = new address[](items);
-        quantities = new uint256[][](items);
-        selectorsIds = new uint64[](items);
-        areETFBurned = new bool[](items);
-        for (uint256 i = 0; i < items; i++) {
-            uint256 currentIndex = i + offset;
-            bundleIds[i] = currentIndex;
-
-            uint256 qt = getTokenCountOfBundle(bundleIds[i]);
-            uint256[] memory bundlequantities = new uint256[](qt);
-            if (qt > 0) {
-                addresses[i] = bundleIdToAddress[bundleIds[i]][0];
-                selectorsIds[i] = bundleIdToChainIdSelector[bundleIds[i]][0];
-                for (uint256 j = 0; j < qt; j++) {
-                    bundlequantities[j] = getTokenOfBundle(bundleIds[i], j)
-                        .totalAmount;
-                }
-            }
-            quantities[i] = bundlequantities;
-            areETFBurned[i] = isETFBurned(bundleIdToETFId[bundleIds[i]]);
-        }
-
-        return (bundleIds, addresses, quantities, selectorsIds, areETFBurned);
-    }
-
-    function supportsInterface(
-        bytes4 interfaceId
-    )
-        public
-        pure
-        override(CCIPReceiver, ERC1155Receiver, ERC721A)
-        returns (bool)
-    {}
-
-    function _canSetContractURI()
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {}
-
-    function _canSetOwner() internal view virtual override returns (bool) {
-        return false;
-    }
-
-    function _canSetOperatorRestriction()
-        internal
-        virtual
-        override
-        returns (bool)
-    {
-        return true;
     }
 
     function fulfillRandomWords(

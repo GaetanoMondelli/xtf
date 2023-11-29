@@ -2,6 +2,11 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
+export enum PayFeesIn {
+    Native = 0,
+    LINK = 1,
+}
+
 describe("ETFContract", () => {
     const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const etfTokenContractName = "ETFToken";
@@ -42,7 +47,7 @@ describe("ETFContract", () => {
     let priceAggregatortokenToBeWrapped2: any;
     let router: any;
     let vrFCoordinatorV2: any;
-    let subscriptionId;
+    let subscriptionId: any;
     let totalValue: any;
     let tokenPrices: any;
 
@@ -441,6 +446,7 @@ describe("ETFContract", () => {
                 //     etfContract.address,
                 //     BigNumber.from(sideChainTokenToBeWrapped1)
                 // );
+                etfTokenContract = await EtfTokenContractFactory.deploy();
 
                 const tokenAmounts = [
                     {
@@ -466,11 +472,12 @@ describe("ETFContract", () => {
                     percentageFee: fee
                 }
 
+
                 const chainLinkData = {
                     router: router.address,
                     link: tokenToBeWrapped2.address,
                     currentChainSelectorId: mockChainSelectorId,
-                    subscriptionId: 1,
+                    subscriptionId: subscriptionId,
                     vrfCoordinator: vrFCoordinatorV2.address,
                     keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
                 }
@@ -484,9 +491,9 @@ describe("ETFContract", () => {
                     chainLinkData
                 );
 
-                etfTokenContract = await EtfTokenContractFactory.deploy();
                 await etfTokenContract.connect(owner).setOwner(etfContract.address);
                 await router.connect(owner).setOnlyRouteTo(etfContract.address);
+                await vrFCoordinatorV2.addConsumer(subscriptionId, etfContract.address);
             });
 
 
@@ -544,10 +551,120 @@ describe("ETFContract", () => {
                 await tx.wait();
                 await checkMessageReceivedETFContractPromise;
                 const tokens = await etfContract.getTokensBundle(0);
+                console.log('tokens', tokens);
                 expect(tokens[0][0]).toEqual(BigNumber.from(amountOfSideChainTokenToWrap));
                 expect(tokens[1][0]).toEqual(sideChainTokenWrapped.address);
                 expect(tokens[2][0]).toEqual(BigNumber.from(mockSecondaryChainSelectorId));
             });
+
+            it("should be able to send notifaction to reedem tokens on sidechains (sendReedeemMessage)", async () => {
+                const amountOfSideChainTokenToWrap = 20;
+                const bundles = [0, 1];
+
+                const ReedemETFMessage = {
+                    bundleId: bundles[0],
+                    receiver: etfOwner.address
+                }
+
+                const tokenStruct1 = {
+                    assetContract: tokenToBeWrapped1.address,
+                    tokenType: 0,
+                    tokenId: 0,
+                    totalAmount: 10,
+                };
+
+                for (let i = 0; i < bundles.length; i++) {
+
+                    const tokenStructSide = {
+                        assetContract: sideChainTokenWrapped.address,
+                        tokenType: 0,
+                        tokenId: 0,
+                        totalAmount: amountOfSideChainTokenToWrap,
+                    };
+
+                    const depositFundMessage = {
+                        bundleId: bundles[i],
+                        tokensToWrap: [tokenStructSide],
+                    }
+
+                    const encodedData = ethers.utils.defaultAbiCoder.encode(
+                        ['tuple(uint256,tuple(address,uint256,uint256,uint256)[])'],
+                        [[depositFundMessage.bundleId, depositFundMessage.tokensToWrap.map(token => [
+                            token.assetContract,
+                            token.tokenType,
+                            token.tokenId,
+                            token.totalAmount
+                        ])]]
+                    );
+
+                    await router.ccipReceive(
+                        {
+                            messageId: mockMessageId,
+                            sourceChainSelector: mockSecondaryChainSelectorId,
+                            sender: etfOwner.address,
+                            data: encodedData,
+                            destTokenAmounts: []
+                        }
+                    );
+
+                    await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
+
+                    await tokenToBeWrapped1.connect(etfOwner).approve(etfContract.address,  tokenStruct1.totalAmount);
+
+
+                    await etfContract.connect(etfOwner).depositFunds(
+                        bundles[i],
+                        [tokenStruct1],
+                    );
+
+                    const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+                    console.log('etfTokensBalance', etfTokensBalance.toString(), etfTokenPerWrap.toString());
+                }
+
+                await etfTokenContract.connect(etfOwner).approve(etfContract.address, etfTokenPerWrap);
+
+                // need to wait lock time to reedem (1 day)
+                await ethers.provider.send("evm_increaseTime", [86400]);
+
+                // // reedem etf
+                await etfContract.connect(etfOwner).reedemETF(
+                    bundles[0]);
+
+                // // send reedem message
+                await etfContract.sendReedeemMessage(
+                    ReedemETFMessage.bundleId,
+                    mockChainSelectorId,
+                    PayFeesIn.Native
+                );
+
+
+                const checkRouterTestPromise = new Promise<void>((resolve, reject) => {
+                    router.on("RouterMessageSent", (address: string, data: any) => {
+                        try {
+                            const reedemETFMessageMessageType = ['tuple(uint256,address)'];
+                            const decoded = ethers.utils.defaultAbiCoder.decode(reedemETFMessageMessageType, data);
+                            expect(decoded).toBeDefined();
+                            expect(decoded).toBeDefined();
+                            expect(decoded.length).toEqual(1);
+                            expect(decoded[0][0]).toEqual(BigNumber.from(bundles[0]));
+                            expect(decoded[0][1]).toEqual(etfOwner.address);
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                        finally {
+                            router.removeAllListeners("RouterMessageSent");
+                        }
+                    });
+                });
+
+                await checkRouterTestPromise;
+            });
+
         });
+
+
     });
+
+
 });

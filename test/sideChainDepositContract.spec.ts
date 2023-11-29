@@ -211,7 +211,6 @@ describe("ChainLink CCIP Message layer", () => {
 
 
         it("shoudl receive a message from the primary contract to release funds when reedemed", async () => {
-            // await router.setOnlyRouteTo(sideChainDepositContract.address);
             const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
             const tokenStruct = {
                 assetContract: linkToken.address,

@@ -11,7 +11,7 @@ import "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import "@thirdweb-dev/contracts/lib/CurrencyTransferLib.sol";
 import "@thirdweb-dev/contracts/base/ERC721Base.sol";
 import "@thirdweb-dev/contracts/extension/TokenStore.sol";
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 /**
  *  @notice A generic interface to describe any ERC20, ERC721 or ERC1155 token.
@@ -258,7 +258,7 @@ contract SidechainDeposit is
             burner[reedeemMessage.bundleId] == address(0),
             "ETFContract: bundleId is already burned"
         );
-        console.log("reedeemMessage.receiver", reedeemMessage.receiver);
+        // console.log("reedeemMessage.receiver", reedeemMessage.receiver);
         _releaseTokens(reedeemMessage.receiver, reedeemMessage.bundleId);
         burner[reedeemMessage.bundleId] = reedeemMessage.receiver;
     }
