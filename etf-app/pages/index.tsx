@@ -1,15 +1,17 @@
-import { ConnectWallet, useChainId, useConnect, useContract, useSwitchChain, useWallet } from "@thirdweb-dev/react";
+import {
+  ConnectWallet, useChainId, useChain,
+  useConnectionStatus,
+  useSwitchChain, useWallet
+} from "@thirdweb-dev/react";
 import styles from '../styles/page.module.css'
 import { NextPage } from "next";
-import CONTRACTS from '../../CONTRACTS.json'
-import SEPOLIA_CONTRACTS from '../../CONTRACTS-sepolia.json'
 import ChainContext from "../context/chain";
-import { Button, Card, InputNumber, Switch } from 'antd';
+import { Select, Card, InputNumber, Switch } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
 import Prices from "../components/Prices";
-import { Chain } from "../components/utils";
+import { configs, Chain } from "../components/utils";
 
 import { useState, useEffect, useContext } from 'react';
 import { Sepolia } from "@thirdweb-dev/chains";
@@ -23,22 +25,28 @@ const Home: NextPage = () => {
 
   const [bundleId, setBundleId] = useState<number>(0);
   const [localTest, setLocalTest] = useState<boolean>(false)
-  const [contracts, setContracts] = useState<any>(CONTRACTS);
+  const [config, setConfig] = useState<any>(
+    configs.find((c: any) => c.chainId === Sepolia.chainId)
+  );
   const { selectedChain, setSelectedChain } = useContext(ChainContext);
   const chainId = useChainId();
+  const chain = useChain();
   const walletInstance = useWallet();
 
-
+  const connectionStatus = useConnectionStatus();
   const switchChain = useSwitchChain();
+
+
   useEffect(() => {
     if (!walletInstance) return
-    if (!localTest && chainId !== Sepolia.chainId) {
-      // switchChain(Sepolia.chainId)
+    let config = configs.find((c: any) => c.chainId === chainId) || {}
+    setConfig(config)
+    if (localTest) {
+      // 31337
       setLocalTest(true)
     }
-    else if (localTest && chainId !== 31337) {
+    else if (localTest) {
       setLocalTest(false)
-      // switchChain(31337)
     }
 
   }, [chainId])
@@ -46,15 +54,13 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (!walletInstance) return
     if (localTest) {
-      setContracts(CONTRACTS)
       setSelectedChain(Chain.Localhost)
       switchChain(31337)
     } else {
-      setContracts(SEPOLIA_CONTRACTS)
       setSelectedChain(Chain.Sepolia)
       switchChain(Sepolia.chainId)
     }
-  }, [localTest])
+  }, [localTest, connectionStatus])
 
 
 
@@ -75,12 +81,11 @@ const Home: NextPage = () => {
         </div>
         <Prices
 
-          address={contracts['ETFv2'][0].address} />
+          address={config?.contracts['ETFv2'][0].address} />
 
         <div>
           <ConnectWallet
             theme={'light'}
-            // className="nb-input blue"
             btnTitle="Connect"
             style={{
               backgroundColor: "White",
@@ -94,20 +99,47 @@ const Home: NextPage = () => {
         </div>
       </div>
       <div>
+
+        <div className="card"
+          style={{
+            width: "50%",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 20,
+            padding: 4,
+          }}
+        >
+          <span>&nbsp;&nbsp;{"Select Index"}</span>
+          <Select
+            style={{
+              border: "3px solid black",
+              borderRadius: "0.6rem",
+
+              width: "40%",
+              marginLeft: 20
+            }}
+            value={config.name}
+            options={configs.filter((c: any) => c.chainId === chainId)
+              .map((c: any) => ({
+                label: c.name,
+                value: c.chainId,
+              }))}
+          ></Select>
+
+        </div>
         <Card className="card"
           style={{
             width: "100%",
           }}
         >
           <div>
-
-            <p>Contracts</p>
-            <p>ETF Address</p>
-            <p>{contracts['ETFv2'][0].address}</p>
+            {/* <p>ETF Address</p>
+            <p>{config.contracts['ETFv2'][0].address}</p> */}
           </div>
-          <ETFStatsView tokenAddress={contracts['ETFToken'][0].address} address={contracts['ETFv2'][0].address} />
-          <PriceValueStats address={contracts['ETFv2'][0].address} />
-          {/* <Prices address={contracts['ETFv2'][0].address} /> */}
+          <ETFStatsView tokenAddress={config.contracts['ETFToken'][0].address} address={config.contracts['ETFv2'][0].address} />
+          <PriceValueStats address={config.contracts['ETFv2'][0].address} />
+          {/* <Prices address={config.contracts['ETFv2'][0].address} /> */}
           <br></br>
           <div className={styles.description}>
 
@@ -144,10 +176,10 @@ const Home: NextPage = () => {
         <br></br>
         <PriceChartComponent></PriceChartComponent>
 
-        <BundleView address={contracts['ETFv2'][0].address} bundleId={bundleId}
+        <BundleView address={config.contracts['ETFv2'][0].address} bundleId={bundleId}
           setBundleId={setBundleId}
-          tokenToBeWrapped1Address={contracts['FungibleToken'][0].address}
-          tokenToBeWrapped2Address={contracts['FungibleToken'][1].address}
+          tokenToBeWrapped1Address={config.contracts['FungibleToken'][0].address}
+          tokenToBeWrapped2Address={config.contracts['FungibleToken'][1].address}
 
         ></BundleView>
       </div>

@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from "ethers";
 import CONTRACTS from '../../CONTRACTS.json'
-import SEPOLIA_CONTRACTS from '../../CONTRACTS-sepolia.json'
+import SEPOLIA_CONTRACTS from '../../Sepolia-Index1.json'
 const MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
 const ETFContractv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 export const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -11,6 +11,33 @@ const tokenToBeWrapped2Address = CONTRACTS['FungibleToken'][1].address
 const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
 const SepoliaChainId = 11155111;
 const HardhatChainId = 31337;
+
+
+const ETFConfigurationIndex0 = {
+    name: "ETF-hardhat-index0",
+    chainId: HardhatChainId,
+    nativeAddress: nativeAddress,
+    nativeWrapperAddress: nativeWrapperAddress,
+    nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+    selectorId: BigNumber.from("16015286601757825753"),
+    routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
+    contracts: CONTRACTS,
+}
+
+
+const ETFConfigurationIndex1 = {
+    name: "ETF-sepolia-index1",
+    chainId: SepoliaChainId,
+    nativeAddress: nativeAddress,
+    nativeWrapperAddress: nativeWrapperAddress,
+    nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+    selectorId: BigNumber.from("16015286601757825753"),
+    routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
+    contracts: SEPOLIA_CONTRACTS,
+}
+
+export const configs: Array<any> = [ETFConfigurationIndex0, ETFConfigurationIndex1];
+
 const DAIAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][0].address, CONTRACTS['FungibleToken'][0].address];
 const LINKAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][1].address, CONTRACTS['FungibleToken'][1].address];
 const SNXAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][2].address];
@@ -223,10 +250,10 @@ export const calculateTLV = async (bundleIdQuantities: any) => {
     for (let i = 0; i < quantities.length; i++) {
         for (let j = 0; j < quantities[i].length; j++) {
             if (!areBurned[i]) {
-                try{
+                try {
                     total = total.add(BigNumber.from(quantities[i][j]).mul(prices[j]));
                 }
-                catch(err){
+                catch (err) {
                     console.log('err', err);
                 }
             }

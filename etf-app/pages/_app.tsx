@@ -1,10 +1,11 @@
 import type { AppProps } from "next/app";
-import { ThirdwebProvider } from "@thirdweb-dev/react";
+import { ThirdwebProvider, useSwitchChain } from "@thirdweb-dev/react";
 import { ConfigProvider, Typography } from "antd";
 import ChainContext from "../context/chain";
 import "../node_modules/neobrutalismcss/dist/index.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chain } from "../components/utils";
+import { Sepolia } from "@thirdweb-dev/chains";
 const activeChain = "localhost";
 const sepoliaEndpoint = "https://orbital-capable-season.ethereum-sepolia.quiknode.pro/8a961b76e01b85d94eb0568af4d471c8f46ea07c";
 
@@ -50,7 +51,8 @@ const localhostChain = {
 
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const [selectedChain, setSelectedChain] = useState(Chain.Localhost);
+  const [selectedChain, setSelectedChain] = useState(Chain.Sepolia);
+
   return (
     <ChainContext.Provider value={{ selectedChain, setSelectedChain }}>
       <ThirdwebProvider
@@ -74,3 +76,4 @@ function MyApp({ Component, pageProps }: AppProps) {
 }
 
 export default MyApp;
+

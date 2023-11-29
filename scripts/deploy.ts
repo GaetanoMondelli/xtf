@@ -13,8 +13,9 @@ async function main() {
   const fungibleTokenName = "FungibleToken";
   const priceAggregatorContractName = "MockAggregator";
   const mockRouterContractName = "MockRouterClient";
+  const mockVRFCoordinatorV2Name = "VRFCoordinatorV2Mock";
   const SidechainDepositContractName = "SidechainDeposit";
-  
+
   const ETFURI = "https://etfx.com";
   const contracts: any = {};
   const DEMO_USER_ADDRESS = "0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203";
@@ -22,7 +23,7 @@ async function main() {
   const mockChainSelectorId = BigNumber.from(0);
   const mockSecondaryChainSelectorId = BigNumber.from(1);
   const amounts = [ethers.utils.parseEther("0.5"), BigNumber.from(10).mul(BigNumber.from(10).pow(18)), BigNumber.from(20).mul(BigNumber.from(10).pow(18))];
-
+  const subID = 1;
 
 
 
@@ -34,6 +35,7 @@ async function main() {
     [priceAggregatorContractName, 196741624297, 8],
     [priceAggregatorContractName, 1345612360, 8],
     [priceAggregatorContractName, 299528477, 8],
+    [mockVRFCoordinatorV2Name, 0, 0],
 
     [etfTokenContractName],
     (owner: any, nativeTokenWrapper = contracts[nativeWrapperContractName][0],
@@ -62,15 +64,22 @@ async function main() {
     ) => [etfContractName,
         "ETF-v0.0.1",
         "ETF",
-        nativeTokenWrapper.address,
-        etfTokenContract.address,
-        etfTokenPerWrap,
-        fee,
         tokenAmounts,
-        ETFURI,
-        mockChainSelectorId,
-        router.address,
-        contracts[fungibleTokenName][0].address,
+        {
+          nativeTokenWrapper: nativeTokenWrapper.address,
+          uriETFToken: ETFURI,
+          etfTokenAddress: etfTokenContract.address,
+          etfTokenPerWrap: etfTokenPerWrap,
+          percentageFee: fee,
+        },
+        {
+          router: router.address,
+          link: contracts[fungibleTokenName][0].address,
+          currentChainSelectorId: mockChainSelectorId,
+          subscriptionId: subID,
+          vrfCoordinator: contracts[mockVRFCoordinatorV2Name][0].address,
+          keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc",
+        },
       ]
   ]
 
@@ -89,14 +98,20 @@ async function main() {
       const contractFactory = await ethers.getContractFactory(contractName as string);
       contracts[contractName] === undefined ? contracts[contractName] = [await contractFactory.deploy(...args)]
         : contracts[contractName].push(await contractFactory.deploy(...args));
-      // store the abi of the contract
-
       console.log(`${contractName} deployed to: ${contracts[contractName]
       [contracts[contractName].length - 1].address}
       `);
     }
   }
+  // post initialization
   await contracts[etfTokenContractName][0].setOwner(contracts[etfContractName][0].address);
+  // vrFCoordinatorV2.createSubscription();
+  await contracts[mockVRFCoordinatorV2Name][0].createSubscription(); // subID will be 1
+  await contracts[mockVRFCoordinatorV2Name][0].fundSubscription(subID, BigNumber.from(10).pow(18).mul(100));
+  await contracts[mockVRFCoordinatorV2Name][0].addConsumer(subID, contracts[etfContractName][0].address);
+  // router config
+  await contracts[mockRouterContractName][0].setOnlyRouteTo(contracts[etfContractName][0].address);
+
 
   await accounts[0].sendTransaction({
     to: DEMO_USER_ADDRESS,
@@ -112,6 +127,7 @@ async function main() {
   await contracts[fungibleTokenName][0].mint(DEMO_USER_ADDRESS, amounts[1].mul(100));
   await contracts[fungibleTokenName][1].mint(DEMO_USER_ADDRESS, amounts[2].mul(100));
   writeFileSync("CONTRACTS.json", JSON.stringify(contracts, null, 2));
+
 }
 
 main()

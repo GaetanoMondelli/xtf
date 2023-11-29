@@ -7,8 +7,8 @@ import { minimiseAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon } fro
 
 
 
-export default function TokenDescriptions({ address, etfAddress, bundle, index, setQuantities, requiredTokenStructs, chainSelectorId }:
-    { address: string, etfAddress?: string, bundle: any, index: number, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any }) {
+export default function TokenDescriptions({ address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId }:
+    { address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any }) {
 
     const userAddress = useAddress();
     const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
@@ -25,7 +25,7 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
         return requiredTokenStructs ? requiredTokenStructs.find((asset: any) => asset.assetContract === address) : [];
     }
 
-    const isOnExternalChain = getRequiredAsset(address)?.chainSelector.toString() !== chainSelectorId.toString();
+    const isOnExternalChain = getRequiredAsset(address)?.chainSelector.toString() !== chainSelectorId?.toString();
 
     return <Descriptions
         style={{
@@ -57,7 +57,10 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                 </div>
                 <span>{balance?.symbol}&nbsp;
                     {isOnExternalChain &&
-                        <Tag color="orange">This asset is collected on a different chain with Selector Id = {getRequiredAsset(address)?.chainSelector.toString()}</Tag>}
+                        <Tag color="orange">This asset is collected on a different chain with Selector Id = {getRequiredAsset(address)?.chainSelector.toString()} instead of {
+                            chainSelectorId?.toString()
+                        }
+                        </Tag>}
                 </span>
                 {/* over appea text see on explore */}
                 {address !== nativeAddress &&
@@ -87,11 +90,10 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                         : Number(BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).sub(BigNumber.from(bundle[0][index] || 0)).div(BigNumber.from(10).pow(18)))
 
                 }
-                onChange={(value) => {
-                    setQuantities((prev: any) => {
-                        prev.set(address, Number(value));
-                        return new Map(prev);
-                    });
+                onChange={(value: any) => {
+                    const newQuantities = { ...quantities };
+                    newQuantities[address] = value;
+                    setQuantities(newQuantities);
                 }}
             />
         </Descriptions.Item>

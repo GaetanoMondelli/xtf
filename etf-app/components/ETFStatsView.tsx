@@ -5,7 +5,6 @@ import style from '../styles/page.module.css';
 import { BigNumber, ContractInterface } from "ethers";
 import { showOnlyTwoDecimals, calculateTLV, nativeAddress } from "./utils";
 import { useEffect, useState } from "react";
-import { abi } from "../../abi/etf"
 
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 
@@ -22,7 +21,7 @@ export default function ETFStatsView(
     // use effect to calculate TLV
     // await calculateTLV()
 
-    const { contract, isLoading, error } = useContract(address, ABI as ContractInterface);
+    const { contract, isLoading, error } = useContract(address, ABI);
     const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address, ABI);
 
     // const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address, ABI);
@@ -59,7 +58,7 @@ export default function ETFStatsView(
 
     const { data: isWhiteListed, isLoading: isWhiteListedLoading, error: isWhiteListedError } = useContractRead(
         contract,
-        "isWhiteListedToken", [0, nativeAddress] 
+        "isWhiteListedToken", [0, nativeAddress]
     );
 
     const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
