@@ -1,0 +1,16 @@
+[
+  [
+    "FungibleToken",
+    "Dai Stablecoin",
+    "DAI"
+  ],
+  [
+    "FungibleToken",
+    "Chainlink",
+    "LINK"
+  ],
+  [
+    "ETFToken"
+  ],
+  null
+]
