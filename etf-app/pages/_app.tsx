@@ -8,9 +8,9 @@ import { Chain } from "../components/utils";
 import { Sepolia } from "@thirdweb-dev/chains";
 const activeChain = "localhost";
 const sepoliaEndpoint = "https://orbital-capable-season.ethereum-sepolia.quiknode.pro/8a961b76e01b85d94eb0568af4d471c8f46ea07c";
+const mumabiEndpoint = "https://rpc-mumbai.maticvigil.com";
 
-
-const SepoliaChain = {
+export const SepoliaChain = {
   // === Required information for connecting to the network === \\
   chainId: 11155111, // Chain ID of the Sepolia network
   // Array of RPC URLs to use
@@ -28,8 +28,26 @@ const SepoliaChain = {
   name: "Sepolia Testnet", // Name of the network
 };
 
+export const MumbaiChain = {
+  // === Required information for connecting to the network === \\
+  chainId: 80001, // Chain ID of the Sepolia network
+  // Array of RPC URLs to use
+  rpc: [mumabiEndpoint], // Replace with actual Sepolia RPC URL
 
-const localhostChain = {
+  nativeCurrency: {
+    decimals: 18,
+    name: "Polygon MATIC",
+    symbol: "MATIC",
+  },
+  shortName: "mumbai", // Display value shown in the wallet UI
+  slug: "mumbai", // Display value shown in the wallet UI
+  testnet: true, // Boolean indicating whether the chain is a testnet or mainnet
+  chain: "Mumbai", // Name of the network
+  name: "Mumbai Testnet", // Name of the network
+};
+
+
+export const localhostChain = {
   // === Required information for connecting to the network === \\
   chainId: 31337, // Chain ID of the network
   // Array of RPC URLs to use
@@ -58,7 +76,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       <ThirdwebProvider
         clientId={process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID}
         activeChain={
-          selectedChain === Chain.Localhost ? localhostChain : SepoliaChain
+          selectedChain === Chain.Localhost ? localhostChain : selectedChain  === Chain.Sepolia ? SepoliaChain : MumbaiChain
         }
       >
         <ConfigProvider

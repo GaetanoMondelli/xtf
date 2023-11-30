@@ -1,7 +1,6 @@
 import { useAddress, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
 
 import styles from '../styles/page.module.css'
-import ABI from '../../artifacts/contracts/ETFContractv2.sol/ETFv2.json';
 import TokenDescriptions from "./TokenDescriptionsView";
 import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result, Select } from 'antd';
 import { FireFilled } from '@ant-design/icons';
@@ -13,14 +12,18 @@ import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAs
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 
+const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+
+
 const { Countdown } = Statistic;
 
 interface CustomChartDataset extends ChartDataset<'pie', number[]> {
     customLabels?: string[];
 }
-export default function BundleView({ address, bundleId, tokenToBeWrapped1Address, tokenToBeWrapped2Address, setBundleId }: {
+export default function BundleView({ address, bundleId, tokenToBeWrapped1Address, tokenToBeWrapped2Address, setBundleId, config }: {
     address: string, bundleId: number, setBundleId: any,
-    tokenToBeWrapped1Address: string, tokenToBeWrapped2Address: string
+    tokenToBeWrapped1Address: string, tokenToBeWrapped2Address: string,
+    config: any
 }) {
 
     const [quantities, setQuantities] = useState<any>({});
@@ -30,9 +33,9 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [notifyChainSelectorId, setNotifyChainSelectorId] = useState<any>(0);
     const userAddress = useAddress();
 
-    console.log("abii: ", ABI.abi);
 
-    const { contract, isLoading, error } = useContract(address);
+    const { contract, isLoading, error } = useContract(address, ABI);
+
 
     const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
         contract,
@@ -224,8 +227,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     justifyContent: 'space-evenly', // Center horizontally
                     alignItems: 'space-between', // Center vertically
                 }}>
-                    {!requiredAssetLoading && <pre>{JSON.stringify(bundle, null, 2)}</pre>}
-                    {!requiredAssetLoading && <pre>{JSON.stringify(quantities, null, 2)}</pre>}
+                    {/* {!requiredAssetLoading && <pre>{JSON.stringify(bundle, null, 2)}</pre>}
+                    {!requiredAssetLoading && <pre>{JSON.stringify(quantities, null, 2)}</pre>} */}
 
                     <MatrixView address={address}
                         bundleState={bundleState}
@@ -335,6 +338,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     setQuantities={setQuantities}
                                     requiredTokenStructs={requiredTokenStructs}
                                     chainSelectorId={chainSelectorId}
+                                    currentConfig={config}
                                 ></TokenDescriptions>
 
                                 <Progress
@@ -400,26 +404,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                 })
                             }}
 
-                        >Deposit-{chainSelectorId.toString()}-
-
-                            {JSON.stringify(requiredTokenStructs
-                                .filter((asset: any) => {
-                                    return quantities[asset.assetContract] !== undefined && quantities[asset.assetContract]
-                                        && asset.chainSelector.toString() === chainSelectorId.toString();
-                                })
-                                .map((asset: any) => {
-                                    const tokenAddress = asset.assetContract;
-                                    let quantity = tokenAddress === nativeAddress ?
-                                        ethers.utils.parseEther(quantities[tokenAddress]?.toString() || "0") :
-                                        BigNumber.from(quantities[tokenAddress] || 0).mul(BigNumber.from(10).pow(18));
-                                    return {
-                                        assetContract: tokenAddress,
-                                        tokenType: 0,
-                                        tokenId: 0,
-                                        totalAmount: quantity,
-                                    };
-                                }))}
-                        </Button>
+                        >Deposit</Button>
                         }
                         &nbsp;
                         {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 &&

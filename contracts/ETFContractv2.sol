@@ -13,14 +13,14 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 contract ETFv2 is ETFBase {
     // current chjainIdSelector
     uint64 public currentChainSelectorId;
-    mapping(uint64 => mapping(uint256 => mapping(address => mapping(uint256 => uint256))))
-        public bundleIdToAddressToTokenAmount;
+    mapping(uint64 => mapping(uint256 => mapping(address => mapping(uint256 => uint256)))) bundleIdToAddressToTokenAmount;
     // mapping of token address to price
-    mapping(uint256 => mapping(address => uint256)) public addressToAmount;
+    mapping(uint256 => mapping(address => uint256)) addressToAmount;
     // mapping of bundleId to mapping requestId
     mapping(uint256 => uint256) public requestIdToBundleId;
     mapping(uint256 => uint) public tokenIdToExpirationTime;
     mapping(uint256 => address) public burner;
+    mapping(uint64 => address) public chainSelectorIdToSidechainAddress;
 
     constructor(
         string memory _name,
@@ -467,7 +467,9 @@ contract ETFv2 is ETFBase {
         ReedeemETFMessage memory data
     ) internal returns (bytes32 messageId) {
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(address(this)),
+            receiver: abi.encode(
+                chainSelectorIdToSidechainAddress[destinationChainSelector]
+            ),
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: "",
@@ -521,8 +523,11 @@ contract ETFv2 is ETFBase {
         }
     }
 
-    function nextTokenIdToMint() public view virtual returns (uint256) {
-        return _currentIndex;
+    function setSideChainAddress(
+        uint64 chainSelectorId,
+        address sideChainAddress
+    ) external onlyOwner {
+        chainSelectorIdToSidechainAddress[chainSelectorId] = sideChainAddress;
     }
 
     function fulfillRandomWords(

@@ -14,7 +14,9 @@
     "thirdweb:generate": "npx thirdweb generate",
     "init": "npm run stop:node & npm run start:node & npm run deploy:local",
     "checksize": "npm run build:contracts && npx ts-node scripts/checksize.ts",
-    "deploy-sepolia": "hardhat run scripts/deploy-sepolia.ts --network sepolia"
+    "deploy-primer-sepolia": "hardhat run scripts/deploy-primer-sepolia.ts --network mumbai",
+    "deploy-sepolia": "hardhat run scripts/deploy-sepolia.ts --network sepolia",
+    "deploy-sidechain-mumbai": "hardhat run scripts/deploy-side-polygon.ts --network mumbai"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",

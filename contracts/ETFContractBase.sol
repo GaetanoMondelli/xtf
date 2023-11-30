@@ -33,7 +33,6 @@ contract ETFBase is
     // data for chainlink services
     ChainLinkData chainLinkData;
 
-
     // mapping of token address to chainlink data feed
     mapping(address => AggregatorV3Interface) tokenIdToDataFeed;
     // map of whitelisted tokens per chainIdSelector
@@ -198,6 +197,10 @@ contract ETFBase is
     // Receive function
     receive() external payable {
         emit EtherReceived(msg.sender, msg.value);
+    }
+
+    function nextTokenIdToMint() public view virtual returns (uint256) {
+        return _currentIndex;
     }
 
     function _startTokenId() internal pure override returns (uint256) {
