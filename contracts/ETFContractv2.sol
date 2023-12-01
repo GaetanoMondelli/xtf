@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {ETFBase} from "./ETFContractBase.sol";
-import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
+import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, MessageDesposit, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -21,7 +21,6 @@ contract ETFv2 is ETFBase {
     mapping(uint256 => uint) public tokenIdToExpirationTime;
     mapping(uint256 => address) public burner;
     mapping(uint64 => address) public chainSelectorIdToSidechainAddress;
-    mapping(uint256 => Client.Any2EVMMessage[]) messages;
 
     constructor(
         string memory _name,
@@ -179,13 +178,6 @@ contract ETFv2 is ETFBase {
         }
     }
 
-    event MessageReceived(
-        bytes32 messageId,
-        uint64 chainId,
-        address sender,
-        bytes data
-    );
-
     function addAddressToBundle(uint256 bundleId, address _address) internal {
         if (!addressInBundleId[bundleId][_address]) {
             bundleIdToAddress[bundleId].push(_address);
@@ -300,37 +292,6 @@ contract ETFv2 is ETFBase {
         address sender,
         uint64 chainId
     );
-
-    function updateBundleAfterReceive(uint256 bundleId) public {
-        for (uint256 i; i < messages[bundleId].length; i++) {
-            Client.Any2EVMMessage memory message = messages[bundleId][i];
-            DepositFundMessage memory depositFundMessage = abi.decode(
-                message.data,
-                (DepositFundMessage)
-            );
-            bool canBeClosed = validateTokensUpdateBundle(
-                depositFundMessage.bundleId,
-                depositFundMessage.tokensToWrap,
-                message.sourceChainSelector,
-                address(bytes20(message.sender))
-            );
-
-            if (canBeClosed) {
-                closeBundle(depositFundMessage.bundleId, address(this));
-            }
-        }
-    }
-
-    function _ccipReceive(
-        Client.Any2EVMMessage memory message
-    ) internal virtual override {
-        emit MessageReceived(
-            message.messageId,
-            message.sourceChainSelector,
-            address(bytes20(message.sender)),
-            message.data
-        );
-    }
 
     function closeBundle(
         uint256 bundleId,
@@ -503,6 +464,26 @@ contract ETFv2 is ETFBase {
         }
     }
 
+    function updateBundleAfterReceive(uint256 bundleId) public {
+        for (uint256 i; i < messages[bundleId].length; i++) {
+            MessageDesposit memory message = messages[bundleId][i];
+            DepositFundMessage memory depositFundMessage = abi.decode(
+                message.depositFundMessage,
+                (DepositFundMessage)
+            );
+            bool canBeClosed = validateTokensUpdateBundle(
+                depositFundMessage.bundleId,
+                depositFundMessage.tokensToWrap,
+                message.sourceChainSelector,
+                address(bytes20(message.sender))
+            );
+
+            if (canBeClosed) {
+                closeBundle(depositFundMessage.bundleId, address(this));
+            }
+        }
+    }
+
     // this could be too much to maintain if many addresses are in the bundle
     function getAddressQuantityPerBundle(
         uint256 _bundleId,
@@ -512,7 +493,8 @@ contract ETFv2 is ETFBase {
         view
         returns (
             uint256[] memory quantities,
-            address[] memory contractAddresses
+            address[] memory contractAddresses,
+            MessageDesposit[] memory bundleMessages
         )
     {
         // get the number of tokens in the bundle
@@ -520,6 +502,7 @@ contract ETFv2 is ETFBase {
         // store the count of each token in the bundle and store in an array
         quantities = new uint256[](tokenCount);
         contractAddresses = new address[](tokenCount);
+        bundleMessages = messages[_bundleId];
         for (uint256 i = 0; i < tokenCount; i += 1) {
             address assetContract = getTokenOfBundle(_bundleId, i)
                 .assetContract;

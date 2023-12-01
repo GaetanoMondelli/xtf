@@ -216,7 +216,7 @@ contract SidechainDeposit is
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: 200_000, strict: false})
+                Client.EVMExtraArgsV1({gasLimit: 4_000_000, strict: false})
             ),
             feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
         });

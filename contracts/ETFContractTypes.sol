@@ -28,6 +28,12 @@ struct DepositFundMessage {
     ITokenBundle.Token[] tokensToWrap;
 }
 
+struct MessageDesposit {
+    bytes depositFundMessage;
+    address sender;
+    uint64 sourceChainSelector;
+}
+
 struct ChainLinkData {
     address router;
     address link;
