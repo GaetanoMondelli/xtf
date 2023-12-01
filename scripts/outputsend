@@ -1,0 +1,252 @@
+https://ccip.chain.link/msg/0xbcfc1d2dcc602c9cf9e7c91d9118885148fd4875cc69bd090dc1bca6d502c756
+
+
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai 
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10
+describe("ETFContract", () => {
+^
+ReferenceError: describe is not defined
+    at Object.<anonymous> (/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10:1)
+    at Module._compile (node:internal/modules/cjs/loader:1233:14)
+    at Module.m._compile (/Users/gaetano/dev/chainlink/xtf/node_modules/ts-node/src/index.ts:1618:23)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1287:10)
+    at Object.require.extensions.<computed> [as .ts] (/Users/gaetano/dev/chainlink/xtf/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1091:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:938:12)
+    at Module.require (node:internal/modules/cjs/loader:1115:19)
+    at require (node:internal/modules/helpers:130:18)
+    at Object.<anonymous> (/Users/gaetano/dev/chainlink/xtf/scripts/depositAndNotify.ts:5:1)
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+Deploying side contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+Deploying side contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+Deploying side contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
+contract deployed 0x45ed7F721549619b81F50d9Ec489183Ad59c273c
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+Deploying side contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
+link transfered to messanger
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10
+describe("ETFContract", () => {
+^
+ReferenceError: describe is not defined
+    at Object.<anonymous> (/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10:1)
+    at Module._compile (node:internal/modules/cjs/loader:1233:14)
+    at Module.m._compile (/Users/gaetano/dev/chainlink/xtf/node_modules/ts-node/src/index.ts:1618:23)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1287:10)
+    at Object.require.extensions.<computed> [as .ts] (/Users/gaetano/dev/chainlink/xtf/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1091:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:938:12)
+    at Module.require (node:internal/modules/cjs/loader:1115:19)
+    at require (node:internal/modules/helpers:130:18)
+    at Object.<anonymous> (/Users/gaetano/dev/chainlink/xtf/scripts/depositAndNotify.ts:5:1)
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10
+describe("ETFContract", () => {
+^
+ReferenceError: describe is not defined
+    at Object.<anonymous> (/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10:1)
+    at Module._compile (node:internal/modules/cjs/loader:1233:14)
+    at Module.m._compile (/Users/gaetano/dev/chainlink/xtf/node_modules/ts-node/src/index.ts:1618:23)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1287:10)
+    at Object.require.extensions.<computed> [as .ts] (/Users/gaetano/dev/chainlink/xtf/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1091:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:938:12)
+    at Module.require (node:internal/modules/cjs/loader:1115:19)
+    at require (node:internal/modules/helpers:130:18)
+    at Object.<anonymous> (/Users/gaetano/dev/chainlink/xtf/scripts/depositAndNotify.ts:5:1)
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10
+describe("ETFContract", () => {
+^
+ReferenceError: describe is not defined
+    at Object.<anonymous> (/Users/gaetano/dev/chainlink/xtf/test/etfContract.spec.ts:10:1)
+    at Module._compile (node:internal/modules/cjs/loader:1233:14)
+    at Module.m._compile (/Users/gaetano/dev/chainlink/xtf/node_modules/ts-node/src/index.ts:1618:23)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1287:10)
+    at Object.require.extensions.<computed> [as .ts] (/Users/gaetano/dev/chainlink/xtf/node_m
+gaetano@Gaetanos-MacBook-Pro xtf % npm run notify-mumbai
+
+> notify-mumbai
+> hardhat run scripts/depositAndNotify.ts --network mumbai
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+Deploying side contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
+link transfered to messanger
+send done
+[
+  {
+    transactionIndex: 4,
+    blockNumber: 43022634,
+    transactionHash: '0x8617f7860532df9c5f1cc7b8ac52a50468d599def0d1c7ae670718759eda4c82',
+    address: '0x326C977E6efc84E512bB9C30f76E30c160eD06FB',
+    topics: [
+      '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+      '0x00000000000000000000000045ed7f721549619b81f50d9ec489183ad59c273c',
+      '0x00000000000000000000000070499c328e1e2a3c41108bd3730f6670a44595d1'
+    ],
+    data: '0x000000000000000000000000000000000000000000000000036d91b8d2f200d8',
+    logIndex: 171,
+    blockHash: '0x91ccd95dd904ca49ee1e41480a04e87417cba266c179d916e37841dbabc473cd',
+    removeListener: [Function (anonymous)],
+    getBlock: [Function (anonymous)],
+    getTransaction: [Function (anonymous)],
+    getTransactionReceipt: [Function (anonymous)]
+  },
+  {
+    transactionIndex: 4,
+    blockNumber: 43022634,
+    transactionHash: '0x8617f7860532df9c5f1cc7b8ac52a50468d599def0d1c7ae670718759eda4c82',
+    address: '0x326C977E6efc84E512bB9C30f76E30c160eD06FB',
+    topics: [
+      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+      '0x00000000000000000000000045ed7f721549619b81f50d9ec489183ad59c273c',
+      '0x000000000000000000000000a83f2cecb391779b59022eded6ebba0d7ec01f20'
+    ],
+    data: '0x000000000000000000000000000000000000000000000000036d91b8d2f200d8',
+    logIndex: 172,
+    blockHash: '0x91ccd95dd904ca49ee1e41480a04e87417cba266c179d916e37841dbabc473cd',
+    removeListener: [Function (anonymous)],
+    getBlock: [Function (anonymous)],
+    getTransaction: [Function (anonymous)],
+    getTransactionReceipt: [Function (anonymous)]
+  },
+  {
+    transactionIndex: 4,
+    blockNumber: 43022634,
+    transactionHash: '0x8617f7860532df9c5f1cc7b8ac52a50468d599def0d1c7ae670718759eda4c82',
+    address: '0xA83f2CeCB391779B59022eDeD6EbBA0d7eC01F20',
+    topics: [
+      '0xaffc45517195d6499808c643bd4a7b0ffeedf95bea5852840d7bfcf63f59e821'
+    ],
+    data: '0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000adecc60412ce25a500000000000000000000000000000000000000000000000000000000000014dc000000000000000000000000000000000000000000000000036d91b8d2f200d800000000000000000000000045ed7f721549619b81f50d9ec489183ad59c273c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000030d400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000379f55d1c88c41cb449dc8cb664fe5a4490e9049000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001c0000000000000000000000000326c977e6efc84e512bb9c30f76e30c160ed06fbbcfc1d2dcc602c9cf9e7c91d9118885148fd4875cc69bd090dc1bca6d502c7560000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002a0000000000000000000000000000000000000000000000000000000000000000',
+    logIndex: 173,
+    blockHash: '0x91ccd95dd904ca49ee1e41480a04e87417cba266c179d916e37841dbabc473cd',
+    removeListener: [Function (anonymous)],
+    getBlock: [Function (anonymous)],
+    getTransaction: [Function (anonymous)],
+    getTransactionReceipt: [Function (anonymous)]
+  },
+  {
+    transactionIndex: 4,
+    blockNumber: 43022634,
+    transactionHash: '0x8617f7860532df9c5f1cc7b8ac52a50468d599def0d1c7ae670718759eda4c82',
+    address: '0x45ed7F721549619b81F50d9Ec489183Ad59c273c',
+    topics: [
+      '0x7b9d8fb801d8b8dfd8524633c9f2b8732cc5d5b98db2cebad68362d07be64132'
+    ],
+    data: '0xbcfc1d2dcc602c9cf9e7c91d9118885148fd4875cc69bd090dc1bca6d502c756000000000000000000000000379f55d1c88c41cb449dc8cb664fe5a4490e9049',
+    logIndex: 174,
+    blockHash: '0x91ccd95dd904ca49ee1e41480a04e87417cba266c179d916e37841dbabc473cd',
+    args: [
+      '0xbcfc1d2dcc602c9cf9e7c91d9118885148fd4875cc69bd090dc1bca6d502c756',
+      '0x379f55d1c88C41Cb449dC8Cb664fE5a4490e9049',
+      messageId: '0xbcfc1d2dcc602c9cf9e7c91d9118885148fd4875cc69bd090dc1bca6d502c756',
+      receiver: '0x379f55d1c88C41Cb449dC8Cb664fE5a4490e9049'
+    ],
+    decode: [Function (anonymous)],
+    event: 'MessageSent',
+    eventSignature: 'MessageSent(bytes32,address)',
+    removeListener: [Function (anonymous)],
+    getBlock: [Function (anonymous)],
+    getTransaction: [Function (anonymous)],
+    getTransactionReceipt: [Function (anonymous)]
+  },
+  {
+    transactionIndex: 4,
+    blockNumber: 43022634,
+    transactionHash: '0x8617f7860532df9c5f1cc7b8ac52a50468d599def0d1c7ae670718759eda4c82',
+    address: '0x0000000000000000000000000000000000001010',
+    topics: [
+      '0x4dfe1bbbcf077ddc3e01291eea2d5c70c2b422b415d95645b9adcfd678cb1d63',
+      '0x0000000000000000000000000000000000000000000000000000000000001010',
+      '0x0000000000000000000000002a1f5eb3e84e58e6f1e565306298b9de1273f203',
+      '0x0000000000000000000000005082f249cdb2f2c1ee035e4f423c46ea2dab3ab1'
+    ],
+    data: '0x0000000000000000000000000000000000000000000000000000cb103704cdac000000000000000000000000000000000000000000000000024a2b42cb617cca0000000000000000000000000000000000000000000003fd50f5f2f03cfea7af00000000000000000000000000000000000000000000000002496032945caf1e0000000000000000000000000000000000000000000003fd50f6be007403755b',
+    logIndex: 175,
+    blockHash: '0x91ccd95dd904ca49ee1e41480a04e87417cba266c179d916e37841dbabc473cd',
+    removeListener: [Function (anonymous)],
+    getBlock: [Function (anonymous)],
+    getTransaction: [Function (anonymous)],
+    getTransactionReceipt: [Function (anonymous)]
+  }
+]
+gaetano@Gaetanos-MacBook-Pro xtf % 

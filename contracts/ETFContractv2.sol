@@ -21,6 +21,7 @@ contract ETFv2 is ETFBase {
     mapping(uint256 => uint) public tokenIdToExpirationTime;
     mapping(uint256 => address) public burner;
     mapping(uint64 => address) public chainSelectorIdToSidechainAddress;
+    mapping(uint256 => Client.Any2EVMMessage[]) messages;
 
     constructor(
         string memory _name,
@@ -43,17 +44,18 @@ contract ETFv2 is ETFBase {
     function validateTokensUpdateBundle(
         uint256 _bundleId,
         Token[] memory _tokensToWrap,
-        uint64 chainSelectorId
+        uint64 chainSelectorId,
+        address depositAddress
     ) internal returns (bool canBeClosed) {
-        validateTokensToWrap(_tokensToWrap, chainSelectorId);
+        // validateTokensToWrap(_tokensToWrap, chainSelectorId);
         updateBundleCount(_bundleId);
-        addAddressToBundle(_bundleId, msg.sender);
+        addAddressToBundle(_bundleId, depositAddress);
 
         _tokensToWrap = updateTokenToWrapQuantity(
             _bundleId,
             _tokensToWrap,
             chainSelectorId,
-            msg.sender
+            depositAddress
         );
 
         canBeClosed = checkIfBundleCanBeClosed(_bundleId);
@@ -69,7 +71,8 @@ contract ETFv2 is ETFBase {
         canBeClosed = validateTokensUpdateBundle(
             _bundleId,
             _tokensToWrap,
-            chainLinkData.currentChainSelectorId
+            chainLinkData.currentChainSelectorId,
+            msg.sender
         );
 
         _transferTokenBatch(msg.sender, address(this), _tokensToWrap);
@@ -176,7 +179,6 @@ contract ETFv2 is ETFBase {
         }
     }
 
-    // Event to log the received Ether
     event MessageReceived(
         bytes32 messageId,
         uint64 chainId,
@@ -293,6 +295,32 @@ contract ETFv2 is ETFBase {
         return canBeClosed;
     }
 
+    event DepositFundMessageReceived(
+        uint256 messageId,
+        address sender,
+        uint64 chainId
+    );
+
+    function updateBundleAfterReceive(uint256 bundleId) public {
+        for (uint256 i; i < messages[bundleId].length; i++) {
+            Client.Any2EVMMessage memory message = messages[bundleId][i];
+            DepositFundMessage memory depositFundMessage = abi.decode(
+                message.data,
+                (DepositFundMessage)
+            );
+            bool canBeClosed = validateTokensUpdateBundle(
+                depositFundMessage.bundleId,
+                depositFundMessage.tokensToWrap,
+                message.sourceChainSelector,
+                address(bytes20(message.sender))
+            );
+
+            if (canBeClosed) {
+                closeBundle(depositFundMessage.bundleId, address(this));
+            }
+        }
+    }
+
     function _ccipReceive(
         Client.Any2EVMMessage memory message
     ) internal virtual override {
@@ -302,27 +330,6 @@ contract ETFv2 is ETFBase {
             address(bytes20(message.sender)),
             message.data
         );
-
-        // TO-DO: Need to check the sender is the router getting from sidechain address
-        // require(
-        //     address(bytes20(message.sender)) == chainLinkData.router,
-        //     "sender is not among the registered sidechains contracts"
-        // );
-
-        DepositFundMessage memory depositFundMessage = abi.decode(
-            message.data,
-            (DepositFundMessage)
-        );
-
-        bool canBeClosed = validateTokensUpdateBundle(
-            depositFundMessage.bundleId,
-            depositFundMessage.tokensToWrap,
-            message.sourceChainSelector
-        );
-
-        if (canBeClosed) {
-            closeBundle(depositFundMessage.bundleId, address(this));
-        }
     }
 
     function closeBundle(

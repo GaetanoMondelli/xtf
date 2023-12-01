@@ -82,31 +82,6 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                 <Button type="primary" size="small" onClick={() => {
                     // switchChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
                     setModalVisible(true);
-                    // Modal.confirm({
-                    //     title: 'Do you want to open the side chain?',
-                    //     content: <>
-                    //         <p>Chain Selector: {getRequiredAsset(address)?.chainSelector.toString()}</p>
-                    //         <p>Chain Id: {SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]}</p>
-                    //         <p>Chain Explorer: {chainSelectorIdToExplorerAddress[getRequiredAsset(address)?.chainSelector.toString()]}</p>
-                    //         <p>Address contract {currentConfig.sideChainContracts[getRequiredAsset(address)?.chainSelector.toString()]['FungibleToken'][0].address}</p>
-                    //         <SideChainTokenDescriptions
-                    //            address={address}
-                    //            etfAddress={etfAddress}
-                    //             bundle={bundle}
-                    //             requiredTokenStruct={getRequiredAsset(address)}
-                    //             chainSelectorId={getRequiredAsset(address)?.chainSelector}
-                    //         />
-                    //     </>,
-                    //     closable: false,
-                    //     okText: 'Yes',
-                    //     cancelText: 'Back',
-                    //     onOk: () => {
-                    //         window.open(`${chainSelectorIdToExplorerAddress[getRequiredAsset(address)?.chainSelector.toString()]}`, "_blank");
-                    //     },
-                    //     onCancel: () => {
-                    //         switchChain(SelectorIdToChainId[chainSelectorId?.toString()]);
-                    //     },
-                    // });
                 }}
                 >Open Side Chain
                 </Button>

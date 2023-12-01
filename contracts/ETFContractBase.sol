@@ -168,8 +168,6 @@ contract ETFBase is
     }
 
     function validateTokensToWrap(
-        // mapping(uint64 => mapping(address => bool)) storage isWhiteListedToken,
-        // mapping(uint64 => bool) storage chainSelectorIdInETF,
         ITokenBundle.Token[] memory tokensToWrap,
         uint64 chainSelectorId
     ) internal view {
@@ -214,7 +212,9 @@ contract ETFBase is
         pure
         override(CCIPReceiver, ERC1155Receiver, ERC721A)
         returns (bool)
-    {}
+    {
+        return CCIPReceiver.supportsInterface(interfaceId);
+    }
 
     function _canSetContractURI()
         internal
@@ -234,7 +234,7 @@ contract ETFBase is
         override
         returns (bool)
     {
-        return true;
+        return false;
     }
 
     function _ccipReceive(

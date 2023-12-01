@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 import { writeFileSync } from 'fs';
 import { BigNumber } from "ethers";
+import { PayFeesIn } from "../test/etfContract.spec";
 // import { preDeployedSNXContractOnMumbai, amountSNX } from "./deploy-sepolia";
 
 const preDeployedSNXContractOnMumbai = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
@@ -9,7 +10,7 @@ const amountSNX = BigNumber.from(6).mul(BigNumber.from(10).pow(18));
 const DEMO_USER_ADDRESS = "0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203";
 const DEM0_USER_ADDRESS_2 = "0x001385E75cfc5563a925981F8501916D7Efb4344";
 
-const primaryETFContractAddress = "0xfd454Ea2186E1f355c08ef98b9B66dfDC1ed7f8B";
+const primaryETFContractAddress = "0xb5969A5e0f10B56aE4e9B349C5edE226b7B9e3bA";
 
 
 async function main() {
@@ -23,7 +24,7 @@ async function main() {
     const primaryChainSelectorIdSepolia = BigNumber.from("16015286601757825753");
     const chainIdSelectorIdMumbai = BigNumber.from("12532609583862916517");
     const routerAddressMumbai = "0x70499c328e1e2a3c41108bd3730f6670a44595d1";
-    const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
+    const linkAddressMumbai = "0x326c977e6efc84e512bb9c30f76e30c160ed06fb";
 
     contracts[fungibleTokenName] = [{
         address: preDeployedSNXContractOnMumbai
@@ -36,7 +37,7 @@ async function main() {
                     chainIdSelector: chainIdSelectorIdMumbai,
                     assetContract: preDeployedSNXContractOnMumbai,
                     amount: amountSNX,
-                    oracleAddress: linkAddressMumbai,
+                    oracleAddress: linkAddressMumbai, // not used
                 },
             ]
         ) => [sideChainContractName,
@@ -71,6 +72,10 @@ async function main() {
           `);
         }
     }
+
+    // approve link token to contract
+    
+
 
     writeFileSync("CONTRACTS-mumbai.json", JSON.stringify(contracts, null, 2));
 }

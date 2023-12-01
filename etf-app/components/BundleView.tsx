@@ -220,6 +220,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
             <div className={styles.description}>
                 <h3>Vault {bundleId}</h3>
+                {bundle && <p>{JSON.stringify(bundle)}</p>}
                 <br></br>
 
                 <div style={{

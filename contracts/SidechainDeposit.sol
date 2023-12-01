@@ -39,6 +39,7 @@ contract SidechainDeposit is
         Native,
         LINK
     }
+    error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees);
     address public constant NATIVE_TOKEN =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -98,7 +99,9 @@ contract SidechainDeposit is
 
     function depositFundsAndNotify(
         uint256 _bundleId,
-        Token[] memory _tokensToWrap
+        Token[] memory _tokensToWrap,
+        PayFeesIn _payFeesIn,
+        bool debug
     ) external payable returns (bytes32 messageId) {
         require(
             burner[_bundleId] == address(0),
@@ -190,13 +193,16 @@ contract SidechainDeposit is
             bundleId: _bundleId,
             tokensToWrap: _tokensToWrap
         });
-        return
-            send(
-                primaryChainSelectorId,
-                primaryEtfContract,
-                message,
-                PayFeesIn.Native
-            );
+        if (debug) {
+            return bytes32(0);
+        } else
+            return
+                send(
+                    primaryChainSelectorId,
+                    primaryEtfContract,
+                    message,
+                    _payFeesIn
+                );
     }
 
     function send(
@@ -209,7 +215,9 @@ contract SidechainDeposit is
             receiver: abi.encode(receiver),
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({gasLimit: 200_000, strict: false})
+            ),
             feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
         });
 
@@ -219,12 +227,20 @@ contract SidechainDeposit is
         );
 
         if (payFeesIn == PayFeesIn.LINK) {
-            // LinkTokenInterface(i_link).approve(router, fee);
+            if (fee > IERC20(i_link).balanceOf(address(this)))
+                revert NotEnoughBalance(
+                    IERC20(i_link).balanceOf(address(this)),
+                    fee
+                );
+            LinkTokenInterface(i_link).approve(i_router, fee);
             messageId = IRouterClient(i_router).ccipSend(
                 destinationChainSelector,
                 message
             );
         } else {
+            if (fee > address(this).balance)
+                revert NotEnoughBalance(address(this).balance, fee);
+
             messageId = IRouterClient(i_router).ccipSend{value: fee}(
                 destinationChainSelector,
                 message
@@ -244,6 +260,25 @@ contract SidechainDeposit is
         bytes4 interfaceId
     ) public pure override(CCIPReceiver, ERC1155Receiver) returns (bool) {}
 
+    function getBundleInfo(
+        uint256 bundleId
+    )
+        public
+        view
+        returns (
+            address[] memory bundle_addresses,
+            uint256[] memory bundle_quantities
+        )
+    {
+        uint256 count = getTokenCountOfBundle(bundleId);
+        bundle_addresses = new address[](count);
+        bundle_quantities = new uint256[](count);
+        for (uint256 i = 0; i < count; i += 1) {
+            bundle_addresses[i] = getTokenOfBundle(bundleId, i).assetContract;
+            bundle_quantities[i] = getTokenOfBundle(bundleId, i).totalAmount;
+        }
+    }
+
     function _ccipReceive(
         Client.Any2EVMMessage memory message
     ) internal virtual override {
@@ -251,8 +286,6 @@ contract SidechainDeposit is
             message.data,
             (ReedeemETFMessage)
         );
-
-
 
         require(
             burner[reedeemMessage.bundleId] == address(0),

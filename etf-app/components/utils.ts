@@ -3,6 +3,10 @@ import CONTRACTS from '../../CONTRACTS.json'
 import SEPOLIA_CONTRACTS from '../../Sepolia-Index1.json'
 import SEPOLIA_MUMBAI_CONTRACTS from '../../Sepolia-index2.json'
 import SEPOLIA_MUMBAI_SIDECHAIN_CONTRACTS from '../../Mumbai-Side-index2.json';
+
+import PRIMARY_SEPOLIA from '../../CONTRACTS-sepolia.json'
+import SECONDARY_MUMBAI from '../../CONTRACTS-mumbai.json'
+
 const MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
 const ETFContractv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 export const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -14,7 +18,6 @@ const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
 const SepoliaChainId = 11155111;
 const HardhatChainId = 31337;
 const MumbaiChainId = 80001;
-
 
 
 export const chainSelectorIdToExplorerAddress: any = {
@@ -34,26 +37,26 @@ const ETFConfigurationIndex0 = {
 }
 
 
-const ETFConfigurationIndex1 = {
-    name: "ETF-sepolia-idx1",
-    chainId: SepoliaChainId,
-    nativeAddress: nativeAddress,
-    nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
-    selectorId: BigNumber.from("16015286601757825753"),
-    routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
-    contracts: SEPOLIA_CONTRACTS,
-}
+// const ETFConfigurationIndex1 = {
+//     name: "ETF-sepolia-idx1",
+//     chainId: SepoliaChainId,
+//     nativeAddress: nativeAddress,
+//     nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+//     selectorId: BigNumber.from("16015286601757825753"),
+//     routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
+//     contracts: SEPOLIA_CONTRACTS,
+// }
 
 const ETFConfigurationIndex2 = {
     name: "ETF-sepolia-mumbai-idx2",
     chainId: SepoliaChainId,
-    nativeAddress: nativeAddress,
-    nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
-    selectorId: BigNumber.from("16015286601757825753"),
-    routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
-    contracts: SEPOLIA_MUMBAI_CONTRACTS,
+    // nativeAddress: nativeAddress,
+    // nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+    // selectorId: BigNumber.from("16015286601757825753"),
+    // routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
+    contracts: PRIMARY_SEPOLIA,
     sideChainContracts: {
-        "12532609583862916517": SEPOLIA_MUMBAI_SIDECHAIN_CONTRACTS,
+        "12532609583862916517": SECONDARY_MUMBAI,
     }
 }
 
@@ -65,7 +68,7 @@ export const SelectorIdToChainId: any = {
 }
 
 
-export const configs: Array<any> = [ETFConfigurationIndex0, ETFConfigurationIndex1, ETFConfigurationIndex2];
+export const configs: Array<any> = [ETFConfigurationIndex0, ETFConfigurationIndex2];
 
 const DAIAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][0].address, CONTRACTS['FungibleToken'][0].address, SEPOLIA_MUMBAI_CONTRACTS['FungibleToken'][0].address];
 const LINKAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][1].address, CONTRACTS['FungibleToken'][1].address, SEPOLIA_MUMBAI_CONTRACTS['FungibleToken'][1].address];

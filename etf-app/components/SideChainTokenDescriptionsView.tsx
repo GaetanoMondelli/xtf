@@ -2,14 +2,15 @@ import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useC
 import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
-import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain } from "./utils";
+import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain, PayFeesIn } from "./utils";
 import { useContext, useEffect, useState } from "react";
 import { MumbaiChain } from "../pages/_app";
 import ChainContext from "../context/chain";
 const SIDE_ABI = require("../.././artifacts/contracts/SidechainDeposit.sol/SidechainDeposit").abi;
+import SIDE_ABI2 from "../../artifacts/contracts/SidechainDeposit.sol/SidechainDeposit.json";
+import { ContractInterface } from "ethers/lib/ethers";
 
 console.log("MumbaiChain", SIDE_ABI);
-
 export default function SideChainTokenDescriptions({ address, etfAddress, bundle, requiredTokenStruct, chainSelectorId }:
     { address: string, etfAddress?: string, bundle: any, requiredTokenStruct: any, chainSelectorId: any, }): JSX.Element {
     const { selectedChain, setSelectedChain } = useContext(ChainContext);
@@ -19,7 +20,13 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const switchChain = useSwitchChain();
     const userAddress = useAddress();
     const [quantities, setQuantities] = useState<any>({});
-    const { contract: sideChainContract, isLoading: isSideChainContractLoading, error: isSideChainContractError } = useContract(address, SIDE_ABI);
+    const { contract: sideChainContract, isLoading: isSideChainContractLoading, error: isSideChainContractError } = useContract(etfAddress, SIDE_ABI as ContractInterface);
+
+    const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
+
+    address = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
+    etfAddress = "0x13F5e337ea0fe2ff0470a6e29E4D10D6B0Da2c58";
+    // etfAddress = "0xf33EDdcc0F79232DE20fbE59F1D814678161D79c"; //old
 
     const { mutateAsync: depositFundsAndNotify, isLoading: isLoadingDeposit, error: errorDeposit } = useContractWrite(
         sideChainContract,
@@ -30,7 +37,11 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
         address,
     );
     const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address);
+    const { contract: linkContract, isLoading: isLinkContractLoading, error: isLinkContractError } = useContract(linkAddressMumbai);
+
     const { mutateAsync: approve, isLoading, error } = useContractWrite(contract, "approve");
+
+    const { mutateAsync: approveLink, isLoading: linkLoading, error: linkError } = useContractWrite(linkContract, "approve");
 
     useContract
 
@@ -48,7 +59,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
             width: 850,
         }}
 
-        column={2}
+        column={1}
         title={
             <div
                 style={{
@@ -78,30 +89,43 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                         </Tooltip>
                     }
                 </span> */}
-                {/* over appea text see on explore */}
-
-                <Button
-                    onClick={() =>
-                        depositFundsAndNotify({
-                            args: [0, [
-                                {
-                                    assetContract: requiredTokenStruct.assetContract,
-                                    tokenType: 0,
-                                    tokenId: 0,
-                                    totalAmount: requiredTokenStruct.totalAmount,
-                                }
-                            ]],
-                            overrides: {
-                                value: ethers.utils.parseEther(quantities[nativeAddress]?.toString() || "0"),
-                            }
-                        })
-                    }
-                >
-                    Deposit & Notify
-                </Button>
-
             </div>
         }>
+        {/* over appea text see on explore */}
+        <Descriptions.Item label="Token">
+            <Button
+                onClick={() =>
+                    depositFundsAndNotify({
+                        args: [23,
+                            [
+                                {
+                                    assetContract: "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d",
+                                    tokenType: 0,
+                                    tokenId: 0,
+                                    totalAmount: BigNumber.from(6).mul(BigNumber.from(10).pow(18)),
+                                },
+                            ],
+                            PayFeesIn.LINK,
+                            false,
+                        ],
+                        overrides: {
+                            value: ethers.utils.parseEther(quantities[nativeAddress]?.toString() || "0"),
+                        }
+                    })
+                }
+            >
+                Deposit & Notify
+            </Button>
+        </Descriptions.Item>
+
+        <Descriptions.Item label="Link Approve">
+            <Button type="link" size="small" onClick={() => {
+                approveLink({
+                    args: [etfAddress, BigNumber.from(2).mul(BigNumber.from(10).pow(18))]
+                })
+            }
+            }>Approve Link Tokens</Button>
+        </Descriptions.Item>
         {/* <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item> */}
 
 
@@ -131,19 +155,19 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                 }}
             />
         </Descriptions.Item> */}
-        {/* <Descriptions.Item label="Allowance">
+        <Descriptions.Item label="Allowance">
             {nativeAddress === address && <Tag color="blue">∞</Tag>}
             {nativeAddress !== address && isAllowanceLoading && <Tag color="processing">Loading...</Tag>}
             {!nameError && !isAllowanceLoading && allowance && <Tag color="blue">{showOnlyTwoDecimals(utils.formatUnits(allowance, 18))}</Tag>}
             {nativeAddress !== address && !nameError && !isAllowanceLoading && allowance && <Button type="link" size="small" onClick={() => {
                 approve({
-                    args: [etfAddress, 100
+                    args: [etfAddress, BigNumber.from(20).mul(BigNumber.from(10).pow(18))
                         // BigNumber.from(getRequiredAsset(address)?.totalAmount || 0)
                     ]
                 })
             }
             }>Approve More Tokens</Button>
             }
-        </Descriptions.Item> */}
+        </Descriptions.Item>
     </Descriptions>
 }

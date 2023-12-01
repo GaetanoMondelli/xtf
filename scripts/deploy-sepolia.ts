@@ -19,6 +19,7 @@ async function main() {
     const contracts: any = {};
     const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const fee = 0;
+    // 0x326c977e6efc84e512bb9c30f76e30c160ed06fb
     const sepLinkToken = "0x779877A7B0D9E8603169DdbD7836e478b4624789"
     const etfTokenPerWrap = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
@@ -30,10 +31,10 @@ async function main() {
 
     //   Sepolia router address
     const sepRouterAddress = "0xd0daae2231e9cb96b94c8512223533293c3693bf";
-    const subID = 7338; //https://vrf.chain.link/sepolia/7338
 
     // const maticRouterAddress = "0x70499c328e1e2a3c41108bd3730f6670a44595d1";
     const vrfCoordinatorAddress = "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625"
+    const subID = 7338; //https://vrf.chain.link/sepolia/7338
     const keyHash150gwei = "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
     // const Sepolia native token wrapper address
     const sepNativeTokenWrapperAddress = "0x7b79995e5f793a07bc00c21412e50ecae098e7f9";
@@ -130,9 +131,56 @@ async function main() {
 
     await contracts[fungibleTokenName][0].mint(DEMO_USER_ADDRESS, amounts[1].mul(1000));
     await contracts[fungibleTokenName][1].mint(DEMO_USER_ADDRESS, amounts[2].mul(1000));
+    const linkContract = await ethers.getContractAt("FungibleToken", sepLinkToken);
+    const linkAmount = BigNumber.from(5).mul(BigNumber.from(10).pow(17));
+    const linkTransfer = await linkContract.transfer(contracts[etfContractName][0].address, linkAmount);
+
     writeFileSync("CONTRACTS-sepolia.json", JSON.stringify(contracts, null, 2));
     // write the args file for verification
-    writeFileSync("ARGS-sepolia.json", JSON.stringify(contractNamesDeployParams, null, 2));
+    writeFileSync("ARGS-sepolia.json", JSON.stringify(["ETF-v0.0.3",
+        "ETF",
+        [
+            {
+                chainIdSelector: sepSelectorId,
+                assetContract: nativeAddress,
+                amount: amounts[0],
+                oracleAddress: sepETHUSDDataFeedAddress,
+            },
+            {
+                chainIdSelector: sepSelectorId,
+                assetContract: contracts[fungibleTokenName][0].address,
+                amount: amounts[1],
+                oracleAddress: sepDAIUSDDataFeedAddress,
+            },
+            {
+                chainIdSelector: sepSelectorId,
+                assetContract: contracts[fungibleTokenName][1].address,
+                amount: amounts[2],
+                oracleAddress: sepLINKUSDDataFeedAddress,
+            },
+            {
+                chainIdSelector: mumbaiSelectorId,
+                assetContract: preDeployedSNXContractOnMumbai,
+                amount: amountSNX,
+                oracleAddress: sepSNXUSDDataFeedAddress,
+            },
+        ],
+        {
+            nativeTokenWrapper: sepNativeTokenWrapperAddress,
+            uriETFToken: ETFURI,
+            etfTokenAddress: contracts[etfTokenContractName][0].address,
+            etfTokenPerWrap: etfTokenPerWrap,
+            percentageFee: fee,
+        },
+        {
+            router: sepRouterAddress,
+            link: sepLinkToken,
+            currentChainSelectorId: sepSelectorId,
+            subscriptionId: subID,
+            vrfCoordinator: vrfCoordinatorAddress,
+            keyHash: keyHash150gwei,
+        },
+    ], null, 2));
 
 }
 

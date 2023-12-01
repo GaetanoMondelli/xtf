@@ -1,16 +1,75 @@
 [
+  "ETF-v0.0.3",
+  "ETF",
   [
-    "FungibleToken",
-    "Dai Stablecoin",
-    "DAI"
+    {
+      "chainIdSelector": {
+        "type": "BigNumber",
+        "hex": "0xde41ba4fc9d91ad9"
+      },
+      "assetContract": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+      "amount": {
+        "type": "BigNumber",
+        "hex": "0xb1a2bc2ec50000"
+      },
+      "oracleAddress": "0x694AA1769357215DE4FAC081bf1f309aDC325306"
+    },
+    {
+      "chainIdSelector": {
+        "type": "BigNumber",
+        "hex": "0xde41ba4fc9d91ad9"
+      },
+      "assetContract": "0xb59ef3BAB1Df64d721BCD957B2CACfB98B7aa9A6",
+      "amount": {
+        "type": "BigNumber",
+        "hex": "0xd02ab486cedc0000"
+      },
+      "oracleAddress": "0x14866185B1962B63C3Ea9E03Bc1da838bab34C19"
+    },
+    {
+      "chainIdSelector": {
+        "type": "BigNumber",
+        "hex": "0xde41ba4fc9d91ad9"
+      },
+      "assetContract": "0x913E7e74e809FdC1C444cb341C5b6D8Ec465386B",
+      "amount": {
+        "type": "BigNumber",
+        "hex": "0x29a2241af62c0000"
+      },
+      "oracleAddress": "0xc59E3633BAAC79493d908e63626716e204A45EdF"
+    },
+    {
+      "chainIdSelector": {
+        "type": "BigNumber",
+        "hex": "0xadecc60412ce25a5"
+      },
+      "assetContract": "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d",
+      "amount": {
+        "type": "BigNumber",
+        "hex": "0x53444835ec580000"
+      },
+      "oracleAddress": "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC"
+    }
   ],
-  [
-    "FungibleToken",
-    "Chainlink",
-    "LINK"
-  ],
-  [
-    "ETFToken"
-  ],
-  null
+  {
+    "nativeTokenWrapper": "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+    "uriETFToken": "https://cryptotrade.fund",
+    "etfTokenAddress": "0x45ce8e34daA30D951Df8A3f6FB5263716c0495E1",
+    "etfTokenPerWrap": {
+      "type": "BigNumber",
+      "hex": "0x056bc75e2d63100000"
+    },
+    "percentageFee": 0
+  },
+  {
+    "router": "0xd0daae2231e9cb96b94c8512223533293c3693bf",
+    "link": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+    "currentChainSelectorId": {
+      "type": "BigNumber",
+      "hex": "0xde41ba4fc9d91ad9"
+    },
+    "subscriptionId": 7338,
+    "vrfCoordinator": "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625",
+    "keyHash": "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
+  }
 ]
