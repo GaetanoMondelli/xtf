@@ -267,6 +267,7 @@ contract ETFBase is
             (DepositFundMessage)
         );
         MessageDesposit memory messageDesposit = MessageDesposit({
+            messageId: message.messageId,
             depositFundMessage: message.data,
             sender: abi.decode(message.sender, (address)),
             sourceChainSelector: message.sourceChainSelector

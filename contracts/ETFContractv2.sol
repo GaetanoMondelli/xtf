@@ -478,6 +478,9 @@ contract ETFv2 is ETFBase {
                 address(bytes20(message.sender))
             );
 
+            // remove all the message from the array
+            delete messages[bundleId][i];
+
             if (canBeClosed) {
                 closeBundle(depositFundMessage.bundleId, address(this));
             }

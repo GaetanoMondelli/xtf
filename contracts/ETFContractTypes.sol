@@ -30,6 +30,7 @@ struct DepositFundMessage {
 
 struct MessageDesposit {
     bytes depositFundMessage;
+    bytes32 messageId;
     address sender;
     uint64 sourceChainSelector;
 }
