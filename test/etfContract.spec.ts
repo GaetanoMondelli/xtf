@@ -550,6 +550,7 @@ describe("ETFContract", () => {
 
                 await tx.wait();
                 await checkMessageReceivedETFContractPromise;
+                await etfContract.updateBundleAfterReceive(0);
                 const tokens = await etfContract.getTokensBundle(0);
                 console.log('tokens', tokens);
                 expect(tokens[0][0]).toEqual(BigNumber.from(amountOfSideChainTokenToWrap));
@@ -606,6 +607,8 @@ describe("ETFContract", () => {
                             destTokenAmounts: []
                         }
                     );
+
+                    await etfContract.updateBundleAfterReceive(bundles[i]);
 
                     await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
 

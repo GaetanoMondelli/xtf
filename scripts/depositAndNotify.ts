@@ -79,12 +79,12 @@ async function main() {
     // const receiver = messangerSepolia;
     // 0xC02764BbB073F877561B306708c6E7ABCCcf0a2A
     // const receiver = "0xb5969A5e0f10B56aE4e9B349C5edE226b7B9e3bA";
-    const receiver = "0xc5a0C64598233e6D1f32BBf88B804922FE27dE2C";
+    const receiver = "0xadff5f6c2b221e49b8f31514d295b6658d85d5a5";
     const preDeployedSNXContractOnMumbai = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
     const amountSNX = BigNumber.from(6).mul(BigNumber.from(10).pow(18));
 
     const depositFundMessage = {
-        bundleId: 1,
+        bundleId: 0,
         tokensToWrap: [
             {
                 assetContract: preDeployedSNXContractOnMumbai,

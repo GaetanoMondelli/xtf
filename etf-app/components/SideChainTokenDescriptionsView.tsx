@@ -25,7 +25,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
 
     address = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
-    etfAddress = "0x13F5e337ea0fe2ff0470a6e29E4D10D6B0Da2c58";
+    etfAddress = "0x4c0a47b0c3a16291AC32040740687dd5F06a42F3";
     // etfAddress = "0xf33EDdcc0F79232DE20fbE59F1D814678161D79c"; //old
 
     const { mutateAsync: depositFundsAndNotify, isLoading: isLoadingDeposit, error: errorDeposit } = useContractWrite(

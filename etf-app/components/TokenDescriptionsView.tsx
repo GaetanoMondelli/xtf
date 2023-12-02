@@ -7,8 +7,8 @@ import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
 import { useState } from "react";
 
 
-export default function TokenDescriptions({ address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig }:
-    { address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any }) {
+export default function TokenDescriptions({ address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig, messages }:
+    { address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, messages: any }) {
 
     const switchChain = useSwitchChain();
     const userAddress = useAddress();
@@ -78,14 +78,23 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                 </div>
             }>
             <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item>
-            {isOnExternalChain && <Descriptions.Item label="Open Side Chain">
+            {isOnExternalChain && 
+            <>
+            <Descriptions.Item label="Open Side Chain">
                 <Button type="primary" size="small" onClick={() => {
                     // switchChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
                     setModalVisible(true);
                 }}
                 >Open Side Chain
                 </Button>
-            </Descriptions.Item>}
+            </Descriptions.Item>
+            <Descriptions.Item label="Side Chain Balance">
+
+                {JSON.stringify(messages)}
+            </Descriptions.Item>
+            
+                </>
+            }
 
             {!isOnExternalChain && <Descriptions.Item label="Balance">
                 {balanceLoading && <Tag color="processing">Loading...</Tag>}

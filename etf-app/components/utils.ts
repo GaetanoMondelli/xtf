@@ -314,3 +314,62 @@ export const getETFStatus = (etfIdLoading: any, etfId: any, isETFBurnedLoading: 
         return ETFState.MINTED;
     }
 }
+
+
+interface Token {
+    assetContract: string; // Ethereum address
+    tokenType: number;
+    tokenId: BigNumber;
+    totalAmount: BigNumber;
+}
+
+interface DepositFundMessage {
+    bundleId: BigNumber;
+    tokensToWrap: Token[];
+}
+
+interface MessageDeposit {
+    depositFundMessage: string; // Assuming this is a hex string
+    sender: string; // Ethereum address
+    sourceChainSelector: BigNumber;
+}
+
+
+
+
+export function decodeMessageDepositArray(messageDeposits: any[]): MessageDeposit[] | any[] {
+    return messageDeposits.map((messageDeposit) => {
+        const depositFundMessageEncoded = messageDeposit[0];
+        const sender = messageDeposit[1];
+        const sourceChainSelector = BigNumber.from(messageDeposit[2]);
+
+        // Decoding depositFundMessage
+        // This assumes depositFundMessage is ABI-encoded and follows a specific format
+        // The specific decoding logic will depend on how depositFundMessage is structured
+        const depositFundMessageDecoded = ethers.utils.defaultAbiCoder.decode(
+            // Provide the expected types of DepositFundMessage here
+            ["tuple(uint256,tuple(address,uint256,uint256,uint256)[])"], // Example types, adjust according to actual structure
+            depositFundMessageEncoded
+        );
+
+        // Constructing the DepositFundMessage object
+        const depositFundMessage: DepositFundMessage = {
+            // Populate based on the decoded data
+            bundleId: depositFundMessageDecoded[0][0],
+            tokensToWrap: depositFundMessageDecoded[0][1].map((asset: string) => ({
+                // Assuming each token is just an address, adjust as necessary
+                assetContract: asset[0],
+                tokenType: asset[1],
+                tokenId: asset[2],
+                totalAmount: asset[3]
+                // Add other properties of the Token struct here
+            })),
+        };
+
+        return {
+            depositFundMessage, // Updated type from string to DepositFundMessage
+            sender,
+            sourceChainSelector,
+        };
+    });
+}

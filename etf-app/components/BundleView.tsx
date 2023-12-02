@@ -8,7 +8,7 @@ import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn } from "./utils";
+import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, decodeMessageDepositArray } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 
@@ -179,7 +179,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
             totalValue += (BigNumber.from(getRequiredAsset(addresses[i])?.totalAmount || 0).mul(BigNumber.from(prices[i]).div(BigNumber.from(10).pow(8))).div(BigNumber.from(10).pow(18))).toNumber();
             userDepositArrayBN.push(value);
         }
-        console.log("userDepositArrayBN: ", userDepositArrayBN, "totalValue: ", totalValue, "contribution: ", contribution);
         userDepositArrayBN.push(totalValue - contribution);
         return [[...addresses, 'Others'], userDepositArrayBN]
     }
@@ -208,6 +207,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     ];
 
 
+
+
     return <Badge.Ribbon
         className="badge"
         {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
@@ -220,6 +221,23 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
             <div className={styles.description}>
                 <h3>Vault {bundleId}</h3>
+                {/* {userDeposit && <pre
+                    style={
+                        {
+                            width: '200px',
+                            marginBottom: '20px'
+                        }
+                    }
+
+                >{JSON.stringify(decodeMessageDepositArray(userDeposit[2]), null, 1)}</pre>} */}
+                {/* {bundleState && <pre
+                    style={
+                        {
+                            width: '200px',
+                            marginBottom: '20px'
+                        }
+                    }
+                >{JSON.stringify(bundleState, null, 2)}</pre>} */}
                 {bundle && <p>{JSON.stringify(bundle)}</p>}
                 <br></br>
 
@@ -311,7 +329,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         width: "95%",
                     }}>
 
-
                     {bundle && bundle[0] && !chainSelectorIdLoading && requiredTokenStructs.map((asset: any) => {
                         const tokenAddress = asset.assetContract;
                         const index = bundle[1].indexOf(tokenAddress);
@@ -340,6 +357,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     requiredTokenStructs={requiredTokenStructs}
                                     chainSelectorId={chainSelectorId}
                                     currentConfig={config}
+                                    messages={decodeMessageDepositArray(userDeposit[2])}
                                 ></TokenDescriptions>
 
                                 <Progress
