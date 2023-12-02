@@ -329,15 +329,31 @@ interface DepositFundMessage {
 }
 
 interface MessageDeposit {
-    depositFundMessage: string; // Assuming this is a hex string
+    depositFundMessage: any; // Assuming this is a hex string
     sender: string; // Ethereum address
     sourceChainSelector: BigNumber;
 }
 
 
+export function matchDepositFundMessage(messageDeposit: MessageDeposit[], bundleId: BigNumber, assetAddress: string): any {
+
+    const decodedArray = decodeMessageDepositArray(messageDeposit);
+    const matchedMessageDeposit = decodedArray.filter((messageDeposit: any) => {
+        return messageDeposit.depositFundMessage.bundleId.eq(bundleId) && messageDeposit.depositFundMessage.tokensToWrap.find((token: any) => token.assetContract === assetAddress)
+    });
+    // sum all big numbers
+    const sumMatchedMessageDeposit =
+        matchedMessageDeposit.reduce((accumulator: BigNumber, currentValue: any) => {
+            return accumulator.add(currentValue.depositFundMessage.tokensToWrap.find((token: any) => token.assetContract === assetAddress).totalAmount || BigNumber.from(0));
+        }, BigNumber.from(0));
 
 
-export function decodeMessageDepositArray(messageDeposits: any[]): MessageDeposit[] | any[] {
+    return { messages: matchedMessageDeposit, sum: sumMatchedMessageDeposit };
+}
+
+
+
+export function decodeMessageDepositArray(messageDeposits: any[]): any[] | any[] {
     return messageDeposits.map((messageDeposit) => {
         const depositFundMessageEncoded = messageDeposit[0];
         const sender = messageDeposit[1];

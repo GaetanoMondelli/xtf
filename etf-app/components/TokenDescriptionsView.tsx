@@ -1,24 +1,38 @@
 import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead, useSwitchChain } from "@thirdweb-dev/react";
-import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal } from 'antd';
+import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Progress, Carousel, Card, List } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
-import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId } from "./utils";
+import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, matchDepositFundMessage, minimiseAddress } from "./utils";
 import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
-export default function TokenDescriptions({ address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig, messages }:
-    { address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, messages: any }) {
+export default function TokenDescriptions({ bundleId, address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig, userDeposit }:
+    { bundleId: number, address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, userDeposit: any }) {
 
     const switchChain = useSwitchChain();
     const userAddress = useAddress();
 
     const [modalVisible, setModalVisible] = useState(false);
+    const [messages, setMessages] = useState<any>();
+
+
+    useEffect(() => {
+        const getMessages = () => {
+            if (!userDeposit) return;
+            const messages: any = matchDepositFundMessage(userDeposit[2], BigNumber.from(bundleId), address);
+            setMessages(messages);
+        }
+        getMessages();
+    }, [userDeposit]);
 
     const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
         address,
     );
     const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address);
+    const { contract: etfContract, isLoading: isEtfContractLoading, error: isEtfContractError } = useContract(etfAddress);
+    const { mutateAsync: updateBundleAfterReceive, isLoading: updateBundleAfterReceiveLoading, error: updateBundleAfterReceiveError } = useContractWrite(etfContract, "updateBundleAfterReceive");
+
     const { mutateAsync: approve, isLoading, error } = useContractWrite(contract, "approve");
 
     const { data: allowance, isLoading: isAllowanceLoading, error: nameError } = useContractRead(contract, "allowance", [userAddress, etfAddress]);
@@ -78,9 +92,7 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                 </div>
             }>
             <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item>
-            {isOnExternalChain && 
-            <>
-            <Descriptions.Item label="Open Side Chain">
+            {isOnExternalChain && <Descriptions.Item label="Open Side Chain">
                 <Button type="primary" size="small" onClick={() => {
                     // switchChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
                     setModalVisible(true);
@@ -88,12 +100,64 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                 >Open Side Chain
                 </Button>
             </Descriptions.Item>
-            <Descriptions.Item label="Side Chain Balance">
-
-                {JSON.stringify(messages)}
+            }
+            {isOnExternalChain && <><Descriptions.Item span={2} label="Quantity Locked on Side Chain"><></>
             </Descriptions.Item>
-            
-                </>
+                <Descriptions.Item span={2} >
+                    <br></br>
+                    <Progress
+                        style={{ width: '94%' }}
+                        strokeColor={"orange"}
+                        percent={
+                            Number(BigNumber.from(messages?.sum || 0))
+                        }></Progress>
+                    {/* {JSON.stringify(messages)} */}
+                </Descriptions.Item>
+                <Descriptions.Item span={2} label="Side Chain Messages">
+                    <Button type="primary" size="small"
+                        onClick={() => {
+                            updateBundleAfterReceive({
+                                args: [bundleId]
+                            })
+                        }
+                        }
+                    >Commit Messages on Primary Chain</Button>
+                </Descriptions.Item>
+
+                <Descriptions.Item span={2}>
+                    <List
+                        // grey background
+                        style={{
+                            width: '94%',
+                            padding: '3%',
+                            overflowY: 'auto',
+                            backgroundColor: '#f7f7f7'
+                        }}
+                        dataSource={messages?.messages || []}
+                        renderItem={(item: any) => (
+                            <List.Item>
+                                <Card
+                                    size="small"
+                                    title={`Sender: ${minimiseAddress(item.sender)}`}>
+                                    <p>MessageId:</p> <a href={`https://ccip.chain.link/msg/${item?.messageId
+                                        }`} target="_blank" rel="noreferrer">{item?.messageId}</a>
+                                    <p>{`Bundle ID: ${item.depositFundMessage.bundleId}`}</p>
+                                    {
+                                        item.depositFundMessage.tokensToWrap.map((token: any, index: number) => {
+                                            return <p>{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
+                                                BigNumber.from(10).pow(18)
+                                            ).toString()}`}</p>
+                                        })
+                                    }
+                                    {/* <p>{`Amount: ${item.depositFundMessage.totalAmount?.toString()}`}</p> */}
+
+                                </Card>
+                            </List.Item>
+                        )}
+                    />
+                </Descriptions.Item>
+            </>
+
             }
 
             {!isOnExternalChain && <Descriptions.Item label="Balance">
@@ -139,7 +203,7 @@ export default function TokenDescriptions({ address, etfAddress, bundle, index, 
                 }
             </Descriptions.Item>
             }
-        </Descriptions>
+        </Descriptions >
 
 
 

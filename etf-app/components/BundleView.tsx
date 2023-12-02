@@ -8,7 +8,7 @@ import { BigNumber, ethers } from "ethers";
 import { useState, useEffect } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, decodeMessageDepositArray } from "./utils";
+import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 
@@ -238,7 +238,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         }
                     }
                 >{JSON.stringify(bundleState, null, 2)}</pre>} */}
-                {bundle && <p>{JSON.stringify(bundle)}</p>}
+                {/* {bundle && <p>{JSON.stringify(bundle)}</p>} */}
                 <br></br>
 
                 <div style={{
@@ -348,6 +348,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                 }
                             >
                                 <TokenDescriptions
+                                    bundleId={bundleId}
                                     address={tokenAddress}
                                     etfAddress={address}
                                     bundle={bundle}
@@ -357,9 +358,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     requiredTokenStructs={requiredTokenStructs}
                                     chainSelectorId={chainSelectorId}
                                     currentConfig={config}
-                                    messages={decodeMessageDepositArray(userDeposit[2])}
+                                    userDeposit={userDeposit}
                                 ></TokenDescriptions>
-
                                 <Progress
                                     percent={
                                         Number(BigNumber.from(bundle[0][index] || 100).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 1)))
