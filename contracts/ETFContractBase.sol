@@ -38,7 +38,7 @@ contract ETFBase is
     // mapping of token address to chainlink data feed
     mapping(address => AggregatorV3Interface) tokenIdToDataFeed;
     // map of whitelisted tokens per chainIdSelector
-    mapping(uint64 => mapping(address => bool)) isWhiteListedToken;
+    mapping(uint64 => mapping(address => bool)) public isWhiteListedToken;
     // whitelist of token addresses for the ETF
     mapping(uint64 => address[]) whitelistedTokens;
     // ChainSelectorId in the ETF

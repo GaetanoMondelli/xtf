@@ -529,6 +529,36 @@ contract ETFv2 is ETFBase {
     ) internal virtual override {
         // TO-DO: the winning probability should be based on the amount of ETFs that the user has deposited
         // let's transform the randomWord into a number between 0 and address[bundleId].length
+
+        // uint256 totalContributions = 0;
+        // for (
+        //     uint256 i = 0;
+        //     i < bundleIdToAddress[requestIdToBundleId[requestId]].length;
+        //     i++
+        // ) {
+        //     totalContributions += addressToAmount[
+        //         requestIdToBundleId[requestId]
+        //     ][bundleIdToAddress[requestIdToBundleId[requestId]][i]];
+        // }
+
+        // uint256 randomIndex = randomWords[0] % totalContributions;
+        // uint256 runningSum = 0;
+        // address winner;
+
+        // for (
+        //     uint256 i = 0;
+        //     i < bundleIdToAddress[requestIdToBundleId[requestId]].length;
+        //     i++
+        // ) {
+        //     runningSum += addressToAmount[requestIdToBundleId[requestId]][
+        //         bundleIdToAddress[requestIdToBundleId[requestId]][i]
+        //     ];
+        //     if (randomIndex < runningSum) {
+        //         winner = bundleIdToAddress[requestIdToBundleId[requestId]][i];
+        //         break;
+        //     }
+        // }
+
         address winner = bundleIdToAddress[requestIdToBundleId[requestId]][
             randomWords[0] %
                 bundleIdToAddress[requestIdToBundleId[requestId]].length

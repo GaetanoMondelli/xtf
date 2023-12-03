@@ -238,7 +238,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         }
                     }
                 >{JSON.stringify(bundleState, null, 2)}</pre>} */}
-                {/* {bundle && <p>{JSON.stringify(bundle)}</p>} */}
+                {bundle && <p>{JSON.stringify(bundle)}</p>}
                 <br></br>
 
                 <div style={{
