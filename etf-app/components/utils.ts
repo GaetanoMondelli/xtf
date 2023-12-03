@@ -67,6 +67,12 @@ export const SelectorIdToChainId: any = {
     "0": HardhatChainId,
 }
 
+export const ChainIdToSelectorId: any = {
+    [SepoliaChainId]: "16015286601757825753",
+    [MumbaiChainId]: "12532609583862916517",
+    [HardhatChainId]: "1",
+}
+
 
 export const configs: Array<any> = [ETFConfigurationIndex0, ETFConfigurationIndex2];
 
@@ -78,13 +84,19 @@ const sepoliaPriceDataFeed = ["0x694AA1769357215DE4FAC081bf1f309aDC325306",
     "0xc59E3633BAAC79493d908e63626716e204A45EdF",
     "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC"]
 
-
-
-export enum Chain {
-    Sepolia = "sepolia",
-    Localhost = "localhost",
-    Mumbai = "mumbai",
+    export enum Chain {
+    Sepolia = 11155111,
+    Localhost = 31337,
+    Mumbai = 80001
 }
+
+export const networkToSelectorId: any = {
+    [Chain.Sepolia]: "16015286601757825753",
+    [Chain.Localhost]: "1",
+    [Chain.Mumbai]: "12532609583862916517",
+}
+
+
 
 export enum PayFeesIn {
     Native = 0,

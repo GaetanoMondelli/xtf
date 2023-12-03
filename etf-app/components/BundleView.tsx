@@ -1,16 +1,18 @@
-import { useAddress, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
+import { useAddress, useContract, useContractRead, useContractWrite, useSwitchChain } from "@thirdweb-dev/react";
 
 import styles from '../styles/page.module.css'
 import TokenDescriptions from "./TokenDescriptionsView";
 import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result, Select } from 'antd';
 import { FireFilled } from '@ant-design/icons';
 import { BigNumber, ethers } from "ethers";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn } from "./utils";
+import { Chain, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, ChainIdToSelectorId, networkToSelectorId } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
+import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
+import ChainContext from "../context/chain";
 
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 
@@ -31,8 +33,12 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [values, setValues] = useState<any>();
     const [requiredTokenStructs, setRequiredTokenStructs] = useState<any>([]);
     const [notifyChainSelectorId, setNotifyChainSelectorId] = useState<any>(0);
-    const userAddress = useAddress();
+    const { selectedChain, setSelectedChain } = useContext(ChainContext);
 
+
+
+    const userAddress = useAddress();
+    const switchChain = useSwitchChain();
 
     const { contract, isLoading, error } = useContract(address, ABI);
 
@@ -209,325 +215,347 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
 
 
-    return <Badge.Ribbon
-        className="badge"
-        {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
-    >
-        <Card
-            className="card"
-            style={{
-                width: "100%",
-            }}>
 
-            <div className={styles.description}>
-                <h3>Vault {bundleId}</h3>
-                {/* {userDeposit && <pre
-                    style={
-                        {
-                            width: '200px',
-                            marginBottom: '20px'
-                        }
-                    }
+    return <>
 
-                >{JSON.stringify(decodeMessageDepositArray(userDeposit[2]), null, 1)}</pre>} */}
-                {/* {bundleState && <pre
-                    style={
-                        {
-                            width: '200px',
-                            marginBottom: '20px'
-                        }
-                    }
-                >{JSON.stringify(bundleState, null, 2)}</pre>} */}
-                {bundle && <p>{JSON.stringify(bundle)}</p>}
-                <br></br>
-
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-evenly', // Center horizontally
-                    alignItems: 'space-between', // Center vertically
+        {selectedChain === config.chainId && < Badge.Ribbon
+            className="badge"
+            {...getRibbonProps(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned)}
+        >
+            && <Card
+                className="card"
+                style={{
+                    width: "100%",
                 }}>
-                    {/* {!requiredAssetLoading && <pre>{JSON.stringify(bundle, null, 2)}</pre>}
-                    {!requiredAssetLoading && <pre>{JSON.stringify(quantities, null, 2)}</pre>} */}
 
-                    <MatrixView address={address}
-                        bundleState={bundleState}
-                        setBundleId={setBundleId}
-                        bundleStateLoading={bundleStateLoading}
-                        bundleStateError={bundleStateError}
-                        requiredTokenStructs={requiredTokenStructs}
-                    />
-                    <div style={{ width: '400px', height: '300px', marginBottom: '20px' }}>
-                        {values && <Pie
-                            options={
+                <div className={styles.description}>
+                    <h3>Vault {bundleId}</h3>
+                    <br></br>
 
-                                {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                        legend: {
-                                            position: 'right',
-                                            labels: {
-                                                generateLabels(chart) {
-                                                    const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
-                                                    const labelsOriginal: any = original.call(this, chart);
-                                                    for (let i = 0; i < labelsOriginal.length; i++) {
-                                                        labelsOriginal[i].text = getAssetName(labelsOriginal[i].text);
-                                                    }
-
-                                                    const userDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
-                                                    const otherDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
-
-                                                    if (userDeposit && userDeposit[0].length !== 0) {
-                                                        userDeposits.text = "User's Deposits";
-                                                        userDeposits.fillStyle = 'rgba(75, 192, 192, 0.5)';
-                                                        labelsOriginal.push(userDeposits);
-
-                                                        otherDeposits.text = "Other's Deposits";
-                                                        otherDeposits.fillStyle = 'rgba(255, 99, 132, 0.5)';
-                                                        labelsOriginal.push(otherDeposits);
-                                                    }
-
-                                                    return labelsOriginal;
-                                                },
-                                            },
-                                        }
-                                    },
-                                }
-                            }
-                            data={
-                                userDeposit == undefined || userDeposit[0].length == 0 ?
-                                    {
-                                        labels: values[0] || [],
-                                        datasets: [
-                                            {
-                                                data: values[1],
-                                                borderColor: 'black',
-                                                backgroundColor: [
-                                                    'rgba(153, 102, 255)',
-                                                    'rgba(255, 206, 86)',
-                                                    'rgba(54, 162, 235)',
-                                                    'rgba(28, 24, 64)',
-                                                    'rgba(255, 99, 132)',
-                                                ],
-                                                borderWidth: 2
-
-                                            },
-                                        ]
-                                    } :
-                                    {
-                                        labels: values[0] || [],
-                                        datasets: datasets(),
-                                    }
-                            }
-                        />}
-                    </div>
-                </div>
-
-                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) == ETFState.OPEN && <Card
-                    className="card"
-                    style={{
-                        width: "95%",
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-evenly', // Center horizontally
+                        alignItems: 'space-between', // Center vertically
                     }}>
+                        {/* {!requiredAssetLoading && <pre>{JSON.stringify(bundle, null, 2)}</pre>}
+                    {!requiredAssetLoading && <pre>{JSON.stringify(quantities, null, 2)}</pre>} */}
+                        <MatrixView address={address}
+                            bundleState={bundleState}
+                            setBundleId={setBundleId}
+                            bundleStateLoading={bundleStateLoading}
+                            bundleStateError={bundleStateError}
+                            requiredTokenStructs={requiredTokenStructs}
+                        />
+                        <div style={{ width: '400px', height: '300px', marginBottom: '20px' }}>
+                            {values && <Pie
+                                options={
 
-                    {bundle && bundle[0] && !chainSelectorIdLoading && requiredTokenStructs.map((asset: any) => {
-                        const tokenAddress = asset.assetContract;
-                        const index = bundle[1].indexOf(tokenAddress);
-                        return <div
+                                    {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                position: 'right',
+                                                labels: {
+                                                    generateLabels(chart) {
+                                                        const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
+                                                        const labelsOriginal: any = original.call(this, chart);
+                                                        for (let i = 0; i < labelsOriginal.length; i++) {
+                                                            labelsOriginal[i].text = getAssetName(labelsOriginal[i].text);
+                                                        }
+
+                                                        const userDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
+                                                        const otherDeposits = { ...labelsOriginal[labelsOriginal.length - 1] };
+
+                                                        if (userDeposit && userDeposit[0].length !== 0) {
+                                                            userDeposits.text = "User's Deposits";
+                                                            userDeposits.fillStyle = 'rgba(75, 192, 192, 0.5)';
+                                                            labelsOriginal.push(userDeposits);
+
+                                                            otherDeposits.text = "Other's Deposits";
+                                                            otherDeposits.fillStyle = 'rgba(255, 99, 132, 0.5)';
+                                                            labelsOriginal.push(otherDeposits);
+                                                        }
+
+                                                        return labelsOriginal;
+                                                    },
+                                                },
+                                            }
+                                        },
+                                    }
+                                }
+                                data={
+                                    userDeposit == undefined || userDeposit[0].length == 0 ?
+                                        {
+                                            labels: values[0] || [],
+                                            datasets: [
+                                                {
+                                                    data: values[1],
+                                                    borderColor: 'black',
+                                                    backgroundColor: [
+                                                        'rgba(153, 102, 255)',
+                                                        'rgba(255, 206, 86)',
+                                                        'rgba(54, 162, 235)',
+                                                        'rgba(28, 24, 64)',
+                                                        'rgba(255, 99, 132)',
+                                                    ],
+                                                    borderWidth: 2
+
+                                                },
+                                            ]
+                                        } :
+                                        {
+                                            labels: values[0] || [],
+                                            datasets: datasets(),
+                                        }
+                                }
+                            />}
+                        </div>
+                    </div>
+
+                    {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) == ETFState.MINTED && <Card
+                        className="card"
+                        style={{
+                            width: "95%",
+                        }}>
+
+                        {bundle && bundle[0] && !chainSelectorIdLoading && requiredTokenStructs.map((asset: any) => {
+
+                            // if(asset.chainSelector.toString() !== chainSelectorId.toString()) return;
+
+                            const tokenAddress = asset.assetContract;
+                            const index = bundle[1].indexOf(tokenAddress);
+                            return <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'center', // Center horizontally
+                                    alignItems: 'center', // Center vertically
+                                }}
+                            >
+                                <div
+                                    style={
+                                        {
+                                            width: '90%',
+                                            marginBottom: '20px'
+                                        }
+                                    }
+                                >
+                                    <TokenDescriptions
+                                        bundleId={bundleId}
+                                        address={tokenAddress}
+                                        etfAddress={address}
+                                        bundle={bundle}
+                                        index={index}
+                                        quantities={quantities}
+                                        setQuantities={setQuantities}
+                                        requiredTokenStructs={requiredTokenStructs}
+                                        chainSelectorId={chainSelectorId}
+                                        currentConfig={config}
+                                        userDeposit={userDeposit}
+                                        setChain={setSelectedChain}
+                                    ></TokenDescriptions>
+                                    <Progress
+                                        percent={
+                                            Number(BigNumber.from(bundle[0][index] || 100).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 1)))
+                                        } success={
+                                            {
+                                                percent:
+                                                    userDeposit && userDeposit[0][index] != undefined && userDeposit[0].length > 0 ?
+                                                        Number(BigNumber.from(userDeposit[0][index]).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 1)))
+                                                        : 0
+                                            }
+                                        }
+                                    ></Progress>
+                                </div >
+                                <br></br>
+                                <br></br>
+                            </div>
+                        })}
+                        <Divider />
+                        <div
+
                             style={{
+                                // align at the right side
                                 display: 'flex',
-                                justifyContent: 'center', // Center horizontally
-                                alignItems: 'center', // Center vertically
+                                justifyContent: 'flex-end',
+                                alignItems: 'center',
+                                marginRight: '30px'
                             }}
                         >
-                            <div
-                                style={
-                                    {
-                                        width: '90%',
-                                        marginBottom: '20px'
-                                    }
-                                }
-                            >
-                                <TokenDescriptions
-                                    bundleId={bundleId}
-                                    address={tokenAddress}
-                                    etfAddress={address}
-                                    bundle={bundle}
-                                    index={index}
-                                    quantities={quantities}
-                                    setQuantities={setQuantities}
-                                    requiredTokenStructs={requiredTokenStructs}
-                                    chainSelectorId={chainSelectorId}
-                                    currentConfig={config}
-                                    userDeposit={userDeposit}
-                                ></TokenDescriptions>
-                                <Progress
-                                    percent={
-                                        Number(BigNumber.from(bundle[0][index] || 100).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 1)))
-                                    } success={
-                                        {
-                                            percent:
-                                                userDeposit && userDeposit[0][index] != undefined && userDeposit[0].length > 0 ?
-                                                    Number(BigNumber.from(userDeposit[0][index]).mul(BigNumber.from(100)).div(BigNumber.from(getRequiredAsset(tokenAddress)?.totalAmount || 1)))
-                                                    : 0
-                                        }
-                                    }
-                                ></Progress>
-                            </div >
-                            <br></br>
-                            <br></br>
-                        </div>
-                    })}
-                    <Divider />
-                    <div
 
-                        style={{
-                            // align at the right side
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            alignItems: 'center',
-                            marginRight: '30px'
-                        }}
-                    >
-
-                        {!etfIdLoading && !chainSelectorIdLoading && etfId && BigNumber.from(etfId)?.toNumber() == 0 && <Button
-                            type="primary"
-                            disabled={
-                                requiredTokenStructs.every((asset: any) => {
-                                    const tokenAddress = asset.assetContract;
-                                    return quantities[tokenAddress] === undefined || quantities[tokenAddress] === 0;
-                                })
-                            }
-                            onClick={() => {
-                                const structArray = requiredTokenStructs
-                                    .filter((asset: any) => {
-                                        return quantities[asset.assetContract] !== undefined && quantities[asset.assetContract]
-                                            && asset.chainSelector.toString() === chainSelectorId.toString();
-                                    })
-                                    .map((asset: any) => {
+                            {!etfIdLoading && !chainSelectorIdLoading && etfId && BigNumber.from(etfId)?.toNumber() == 0 && <Button
+                                type="primary"
+                                disabled={
+                                    requiredTokenStructs.every((asset: any) => {
                                         const tokenAddress = asset.assetContract;
-                                        let quantity = tokenAddress === nativeAddress ?
-                                            ethers.utils.parseEther(quantities[tokenAddress]?.toString() || "0") :
-                                            BigNumber.from(quantities[tokenAddress] || 0).mul(BigNumber.from(10).pow(18));
-                                        return {
-                                            assetContract: tokenAddress,
-                                            tokenType: 0,
-                                            tokenId: 0,
-                                            totalAmount: quantity,
-                                        };
-                                    });
-                                depositFunds({
-                                    args: [bundleId, structArray],
-                                    overrides: {
-                                        value: ethers.utils.parseEther(quantities[nativeAddress]?.toString() || "0"),
-                                    }
-                                })
-                            }}
+                                        return quantities[tokenAddress] === undefined || quantities[tokenAddress] === 0;
+                                    })
+                                }
+                                onClick={() => {
+                                    const structArray = requiredTokenStructs
+                                        .filter((asset: any) => {
+                                            return quantities[asset.assetContract] !== undefined && quantities[asset.assetContract]
+                                                && asset.chainSelector.toString() === chainSelectorId.toString();
+                                        })
+                                        .map((asset: any) => {
+                                            const tokenAddress = asset.assetContract;
+                                            let quantity = tokenAddress === nativeAddress ?
+                                                ethers.utils.parseEther(quantities[tokenAddress]?.toString() || "0") :
+                                                BigNumber.from(quantities[tokenAddress] || 0).mul(BigNumber.from(10).pow(18));
+                                            return {
+                                                assetContract: tokenAddress,
+                                                tokenType: 0,
+                                                tokenId: 0,
+                                                totalAmount: quantity,
+                                            };
+                                        });
+                                    depositFunds({
+                                        args: [bundleId, structArray],
+                                        overrides: {
+                                            value: ethers.utils.parseEther(quantities[nativeAddress]?.toString() || "0"),
+                                        }
+                                    })
+                                }}
 
-                        >Deposit</Button>
-                        }
-                        &nbsp;
-                        {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 &&
-                            <Button type="primary" onClick={() => {
+                            >Deposit</Button>
+                            }
+                            &nbsp;
+                            {!etfIdLoading && BigNumber.from(etfId).toNumber() > 0 &&
+                                <Button type="primary" onClick={() => {
+
+                                    reedem({
+                                        args: [bundleId],
+                                    })
+
+                                }}>Reedem</Button>
+                            }
+                        </div >
+                    </Card>
+                    }
+                    {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.MINTED && <Card
+                        className="card"
+                        style={{
+                            width: "95%",
+                        }}>
+                        <Countdown value={
+                            expirationTimeLoading ? 0 : expirationTimeError ? 0 : expirationTime ? expirationTime.toNumber() * 1000 : 0
+
+                        }></Countdown>
+                        <Result
+                            status="success"
+                            title="The Bundle has been locked and ETF tokens have been minted"
+                            subTitle={"You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets " + bundleId + " " + etfId}
+                            extra={[<Button type="primary" onClick={() => {
 
                                 reedem({
                                     args: [bundleId],
                                 })
 
                             }}>Reedem</Button>
-                        }
-                    </div >
-                </Card>
-                }
-                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.MINTED && <Card
-                    className="card"
-                    style={{
-                        width: "95%",
-                    }}>
-                    <Countdown value={
-                        expirationTimeLoading ? 0 : expirationTimeError ? 0 : expirationTime ? expirationTime.toNumber() * 1000 : 0
+                            ]}
+                        />
 
-                    }></Countdown>
-                    <Result
-                        status="success"
-                        title="The Bundle has been locked and ETF tokens have been minted"
-                        subTitle={"You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets " + bundleId + " " + etfId}
-                        extra={[<Button type="primary" onClick={() => {
+                    </Card>
+                    }
+                    {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.BURNED && <Card
 
-                            reedem({
-                                args: [bundleId],
-                            })
-
-                        }}>Reedem</Button>
-                        ]}
-                    />
-
-                </Card>
-                }
-                {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) === ETFState.BURNED && <Card
-
-                    className="card"
-                    style={{
-                        width: "95%",
-                    }}>
-                    <Result
-                        icon={<FireFilled />}
-                        status={"error"}
-                        title="The ETF has been burned and the tokens have been redeemed"
-                        subTitle="You can trade your tokens again"
-                    />
-                    {/* Check if there are external chain assets and list all the chains
+                        className="card"
+                        style={{
+                            width: "95%",
+                        }}>
+                        <Result
+                            icon={<FireFilled />}
+                            status={"error"}
+                            title="The ETF has been burned and the tokens have been redeemed"
+                            subTitle="You can trade your tokens again"
+                        />
+                        {/* Check if there are external chain assets and list all the chains
                         and propose to send a notification to the user to withdraw the asset
                         there will be a select box with the chain selector id and a button to send the notification
                     */}
 
-                    {!isLoadingsendReedeemMessage && requiredTokenStructs.some((asset: any) => {
-                        return asset.chainSelector !== chainSelectorId;
-                    }) && <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            margin: '0 20px 0 20px'
-                        }}
-                    >
-                            <h3>There are assets on other chains (not this chain selector Id: {chainSelectorId?.toString()})</h3>
+                        {!isLoadingsendReedeemMessage && requiredTokenStructs.some((asset: any) => {
+                            return asset.chainSelector !== chainSelectorId;
+                        }) && <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                margin: '0 20px 0 20px'
+                            }}
+                        >
+                                <h3>There are assets on other chains (not this chain selector Id: {chainSelectorId?.toString()})</h3>
 
-                            <Select
-                                onChange={(value) => {
-                                    setNotifyChainSelectorId(value);
-                                }}
-                                options={requiredTokenStructs.filter((asset: any) => {
-                                    return asset.chainSelector.toString() !== chainSelectorId.toString();
-                                }).map((asset: any) => {
-                                    return {
-                                        value: asset.chainSelector.toString(),
-                                        label: asset.chainSelector.toString()
+                                <Select
+                                    onChange={(value) => {
+                                        setNotifyChainSelectorId(value);
+                                    }}
+                                    options={requiredTokenStructs.filter((asset: any) => {
+                                        return asset.chainSelector.toString() !== chainSelectorId.toString();
+                                    }).map((asset: any) => {
+                                        return {
+                                            value: asset.chainSelector.toString(),
+                                            label: asset.chainSelector.toString()
+                                        }
                                     }
-                                }
-                                )}
-                                style={{ width: 160 }}
-                                placeholder="Select a chain"
-                            />
-                            <br></br>
-                            <Button
-                                className="button"
-                                type="primary"
-                                onClick={() => {
-                                    sendReedeemMessage({
-                                        args: [bundleId, notifyChainSelectorId, PayFeesIn.Native],
-                                    })
-                                }}
-                            >Notify</Button>
-                        </div>
+                                    )}
+                                    style={{ width: 160 }}
+                                    placeholder="Select a chain"
+                                />
+                                <br></br>
+                                <Button
+                                    className="button"
+                                    type="primary"
+                                    onClick={() => {
+                                        sendReedeemMessage({
+                                            args: [bundleId, notifyChainSelectorId, PayFeesIn.Native],
+                                        })
+                                    }}
+                                >Notify</Button>
+                            </div>
+                        }
+
+                    </Card>
                     }
+                </div>
 
-                </Card>
-                }
+            </Card >
+        </Badge.Ribbon >
+        }
+        {
+            selectedChain !== config.chainId && <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    margin: '0 20px 0 20px'
+                }}
+            >
+                <h3>This bundle is on another chain (not this chain selector Id: {chainSelectorId?.toString()})</h3>
+
+                {config.sideChainContracts && <SideChainTokenDescriptions
+                    address={address}
+                    etfAddress={config.sideChainContracts[
+                        networkToSelectorId[selectedChain]
+                    ]['SidechainDeposit'][0].address}
+                    bundle={bundle}
+                    requiredTokenStruct={getRequiredAsset(address)}
+                    chainSelectorId={getRequiredAsset(address)?.chainSelector}
+                />}
+                <Button
+                    className="button"
+                    type="primary"
+                    onClick={() => {
+                        setSelectedChain(config.chainId);
+                        switchChain(config.chainId)
+                    }}
+                >Go back to the main chain
+                </Button>
             </div>
+        }
 
-        </Card >
-
-    </Badge.Ribbon >
+    </>
 
 }

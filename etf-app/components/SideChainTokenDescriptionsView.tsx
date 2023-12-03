@@ -1,4 +1,4 @@
-import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead, useSwitchChain, ThirdwebProvider } from "@thirdweb-dev/react";
+import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead, useSwitchChain, ThirdwebProvider, useConnectionStatus, useNetworkMismatch } from "@thirdweb-dev/react";
 import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
@@ -14,7 +14,8 @@ console.log("MumbaiChain", SIDE_ABI);
 export default function SideChainTokenDescriptions({ address, etfAddress, bundle, requiredTokenStruct, chainSelectorId }:
     { address: string, etfAddress?: string, bundle: any, requiredTokenStruct: any, chainSelectorId: any, }): JSX.Element {
     const { selectedChain, setSelectedChain } = useContext(ChainContext);
-
+    const isMismatched = useNetworkMismatch();
+    const connectionStatus = useConnectionStatus();
     //  Refactor this to use the new requiredTokenStructs and match addresses to the requiredTokenStructs on primary chain
     const index = 0;
     const switchChain = useSwitchChain();
@@ -49,10 +50,14 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const { data: allowance, isLoading: isAllowanceLoading, error: nameError } = useContractRead(contract, "allowance", [userAddress, etfAddress]);
 
     useEffect(() => {
-        // switchChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
+// export declare function useSetConnectionStatus(): (status: "unknown" | "connected" | "disconnected" | "connecting") => void;
+
+        if(!isMismatched) return;
+        if(connectionStatus !== "connected") return;
+        // if(selectedChain === Chain.Mumbai) return;
         setSelectedChain(Chain.Mumbai);
-        switchChain(SelectorIdToChainId[chainSelectorId])
-    }, [])
+        switchChain(Chain.Mumbai);
+    }, [connectionStatus, selectedChain, switchChain, setSelectedChain])
 
     return <Descriptions
         style={{

@@ -150,7 +150,6 @@ const Home: NextPage = () => {
 
               <span>Vault Viewer {selectedChain}</span>
               <InputNumber
-
                 style={{
                   color: "black",
                   border: "2px solid black",

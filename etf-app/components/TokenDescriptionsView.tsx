@@ -7,8 +7,8 @@ import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
 import { useEffect, useState } from "react";
 
 
-export default function TokenDescriptions({ bundleId, address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig, userDeposit }:
-    { bundleId: number, address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, userDeposit: any }) {
+export default function TokenDescriptions({ bundleId, address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig, userDeposit, setChain }:
+    { bundleId: number, address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, userDeposit: any, setChain: any }) {
 
     const switchChain = useSwitchChain();
     const userAddress = useAddress();
@@ -96,6 +96,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                 <Button type="primary" size="small" onClick={() => {
                     // switchChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
                     setModalVisible(true);
+                    setChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
                 }}
                 >Open Side Chain
                 </Button>
@@ -206,7 +207,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
         </Descriptions >
 
 
-
+{/* 
         {modalVisible && <Modal
             title="Open Side Chain"
             visible={modalVisible}
@@ -236,6 +237,6 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                 chainSelectorId={getRequiredAsset(address)?.chainSelector}
             />
         </Modal>
-        }
+        } */}
     </>
 }
