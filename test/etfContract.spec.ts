@@ -526,7 +526,8 @@ describe("ETFContract", () => {
                     {
                         messageId: mockMessageId,
                         sourceChainSelector: mockSecondaryChainSelectorId,
-                        sender: etfOwner2.address,
+                        // sender: etfOwner2.address,
+                        sender: ethers.utils.defaultAbiCoder.encode(['address'], [etfOwner2.address]),
                         data: encodedData,
                         destTokenAmounts: []
                     }
@@ -602,7 +603,7 @@ describe("ETFContract", () => {
                         {
                             messageId: mockMessageId,
                             sourceChainSelector: mockSecondaryChainSelectorId,
-                            sender: etfOwner.address,
+                            sender: ethers.utils.defaultAbiCoder.encode(['address'], [etfOwner.address]),
                             data: encodedData,
                             destTokenAmounts: []
                         }

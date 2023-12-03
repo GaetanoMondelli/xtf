@@ -27,12 +27,12 @@ contract BasicMessageReceiver is CCIPReceiver {
         latestMessageId = message.messageId;
         latestSourceChainSelector = message.sourceChainSelector;
 
-        latestSender = address(bytes20(message.sender));
+        latestSender = abi.decode(message.sender, (address));
         latestMessage = message.data;
 
         emit MessageReceived(
             message.messageId,
-            address(bytes20(message.sender)),
+            abi.decode(message.sender, (address)),
             message.data
         );
     }

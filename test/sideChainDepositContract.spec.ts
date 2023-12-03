@@ -251,7 +251,7 @@ describe("ChainLink CCIP Message layer", () => {
                 {
                     messageId: mockMessageId,
                     sourceChainSelector: mockSecondaryChainSelectorId,
-                    sender: etfPrimaryContract.address,
+                    sender: ethers.utils.defaultAbiCoder.encode(['address'], [etfPrimaryContract.address]),
                     data: encodedData,
                     destTokenAmounts: []
                 }

@@ -29,7 +29,7 @@ contract MockRouterClient is IRouterClient {
     function ccipReceive(Client.Any2EVMMessage memory message) external {
         emit RouterReceivedMessage(
             message.messageId,
-            address(bytes20(message.sender)),
+            abi.decode(message.sender, (address)),
             message.data
         );
 
