@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 
 
-
 const { Meta } = Card;
 
 export default function ETFStatsView(

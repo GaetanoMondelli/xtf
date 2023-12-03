@@ -1,17 +1,18 @@
-import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead, useSwitchChain } from "@thirdweb-dev/react";
+import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead } from "@thirdweb-dev/react";
 import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Progress, Carousel, Card, List } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
 import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, matchDepositFundMessage, minimiseAddress } from "./utils";
 import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import ChainContext from "../context/chain";
 
 
-export default function TokenDescriptions({ bundleId, address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig, userDeposit, setChain }:
-    { bundleId: number, address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, userDeposit: any, setChain: any }) {
+export default function TokenDescriptions({ bundleId, address, etfAddress, bundle, index, quantities, setQuantities, requiredTokenStructs, chainSelectorId, currentConfig, userDeposit }:
+    { bundleId: number, address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, userDeposit: any }) {
 
-    const switchChain = useSwitchChain();
     const userAddress = useAddress();
+    const { selectedChain, setSelectedChain } = useContext(ChainContext);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [messages, setMessages] = useState<any>();
@@ -94,9 +95,8 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
             <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item>
             {isOnExternalChain && <Descriptions.Item label="Open Side Chain">
                 <Button type="primary" size="small" onClick={() => {
-                    // switchChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
-                    setModalVisible(true);
-                    setChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
+                    // setModalVisible(true);
+                    setSelectedChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
                 }}
                 >Open Side Chain
                 </Button>
@@ -207,7 +207,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
         </Descriptions >
 
 
-{/* 
+        {/* 
         {modalVisible && <Modal
             title="Open Side Chain"
             visible={modalVisible}

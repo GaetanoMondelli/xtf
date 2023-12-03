@@ -1,5 +1,5 @@
 import type { AppProps } from "next/app";
-import { ThirdwebProvider, useSwitchChain } from "@thirdweb-dev/react";
+import { ThirdwebProvider } from "@thirdweb-dev/react";
 import { ConfigProvider, Typography } from "antd";
 import ChainContext from "../context/chain";
 import "../node_modules/neobrutalismcss/dist/index.css";

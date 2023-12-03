@@ -1,4 +1,4 @@
-import { useAddress, useContract, useContractRead, useContractWrite, useSwitchChain } from "@thirdweb-dev/react";
+import { useAddress, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
 
 import styles from '../styles/page.module.css'
 import TokenDescriptions from "./TokenDescriptionsView";
@@ -38,7 +38,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
 
     const userAddress = useAddress();
-    const switchChain = useSwitchChain();
 
     const { contract, isLoading, error } = useContract(address, ABI);
 
@@ -352,7 +351,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                         chainSelectorId={chainSelectorId}
                                         currentConfig={config}
                                         userDeposit={userDeposit}
-                                        setChain={setSelectedChain}
                                     ></TokenDescriptions>
                                     <Progress
                                         percent={
@@ -533,7 +531,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     margin: '0 20px 0 20px'
                 }}
             >
-                <h3>This bundle is on another chain (not this chain selector Id: {chainSelectorId?.toString()})</h3>
+                {/* <h3>This bundle is on another chain (not this chain selector Id: {chainSelectorId?.toString()})</h3> */}
 
                 {config.sideChainContracts && <SideChainTokenDescriptions
                     address={address}
@@ -549,7 +547,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     type="primary"
                     onClick={() => {
                         setSelectedChain(config.chainId);
-                        switchChain(config.chainId)
                     }}
                 >Go back to the main chain
                 </Button>
