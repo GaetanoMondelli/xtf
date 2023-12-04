@@ -45,6 +45,7 @@ contract SidechainDeposit is
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant UNWRAP_ROLE = keccak256("UNWRAP_ROLE");
     bytes32 private constant ASSET_ROLE = keccak256("ASSET_ROLE");
+    uint256 tokensToWrapQuantity;
     address immutable primaryEtfContract;
     address immutable i_link;
     // address immutable i_router;
@@ -91,6 +92,7 @@ contract SidechainDeposit is
         primaryChainSelectorId = _primaryChainSelectorId;
         primaryEtfContract = _primaryEtfContract;
         chainSelectorId = _chainSelectorId;
+        tokensToWrapQuantity = _whitelistedTokenAmounts.length;
     }
 
     receive() external payable {
@@ -294,5 +296,91 @@ contract SidechainDeposit is
         // console.log("reedeemMessage.receiver", reedeemMessage.receiver);
         _releaseTokens(reedeemMessage.receiver, reedeemMessage.bundleId);
         burner[reedeemMessage.bundleId] = reedeemMessage.receiver;
+    }
+
+    function returnStateOfBundles(
+        uint256 offset,
+        uint256 items
+    )
+        public
+        view
+        returns (
+            uint256[] memory bundleIds,
+            address[] memory addresses,
+            uint256[][] memory quantities
+        )
+    {
+        bundleIds = new uint256[](items);
+        addresses = new address[](items);
+        quantities = new uint256[][](items);
+        // selectorsIds = new uint64[](items);
+        for (uint256 i = 0; i < items; i++) {
+            uint256 currentIndex = i + offset;
+            bundleIds[i] = currentIndex;
+
+            uint256 qt = getTokenCountOfBundle(bundleIds[i]);
+            uint256[] memory bundlequantities = new uint256[](qt);
+
+            if (qt > 0) {
+                addresses[i] = bundleIdToAddress[bundleIds[i]][0];
+                // selectorsIds[i] = bundleIdToChainIdSelector[bundleIds[i]][0];
+                for (uint256 j = 0; j < qt; j++) {
+                    bundlequantities[j] = getTokenOfBundle(bundleIds[i], j)
+                        .totalAmount;
+                }
+            }
+            quantities[i] = bundlequantities;
+        }
+
+        return (bundleIds, addresses, quantities);
+    }
+
+    //  get all required tokens for a bundle
+    function getRequiredAssets()
+        public
+        view
+        returns (
+            uint256[] memory quantities,
+            address[] memory addresses,
+            uint64[] memory selectorsIds
+        )
+    {
+        // store the count of each token in the bundle and store in an array
+        quantities = new uint256[](tokensToWrapQuantity);
+        addresses = new address[](tokensToWrapQuantity);
+        uint256 index = 0;
+
+        for (uint256 i = 0; i < tokensToWrapQuantity; i += 1) {
+            addresses[index] = whitelistedTokens[i];
+            quantities[index] = tokenQuantities[whitelistedTokens[i]];
+            selectorsIds[index] = chainSelectorId;
+            index += 1;
+        }
+    }
+
+    function getAddressQuantityPerBundle(
+        uint256 _bundleId,
+        address _address
+    )
+        public
+        view
+        returns (
+            uint256[] memory quantities,
+            address[] memory contractAddresses
+        )
+    {
+        // get the number of tokens in the bundle
+        uint256 tokenCount = getTokenCountOfBundle(_bundleId);
+        // store the count of each token in the bundle and store in an array
+        quantities = new uint256[](tokenCount);
+        contractAddresses = new address[](tokenCount);
+        for (uint256 i = 0; i < tokenCount; i += 1) {
+            address assetContract = getTokenOfBundle(_bundleId, i)
+                .assetContract;
+            quantities[i] = bundleIdToAddressToTokenAmount[_bundleId][_address][
+                i
+            ];
+            contractAddresses[i] = assetContract;
+        }
     }
 }
