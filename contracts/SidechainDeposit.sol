@@ -5,14 +5,15 @@ import {LinkTokenInterface} from "./LinkTokenInterface.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {MessageDesposit, ReedeemETFMessage, NATIVE_TOKEN, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@thirdweb-dev/contracts/base/ERC721Multiwrap.sol";
 import "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import "@thirdweb-dev/contracts/lib/CurrencyTransferLib.sol";
 import "@thirdweb-dev/contracts/base/ERC721Base.sol";
 import "@thirdweb-dev/contracts/extension/TokenStore.sol";
-// import "hardhat/console.sol";
 
+// TO-DO: Need to use the structure from the ETFContractTypes.sol */
 /**
  *  @notice A generic interface to describe any ERC20, ERC721 or ERC1155 token.
  *
@@ -24,24 +25,13 @@ struct TokenAmounts {
     uint256 amount;
 }
 
-struct ReedeemETFMessage {
-    uint256 bundleId;
-    address receiver;
-}
-
 contract SidechainDeposit is
     Ownable,
     TokenStore,
     PermissionsEnumerable,
     CCIPReceiver
 {
-    enum PayFeesIn {
-        Native,
-        LINK
-    }
     error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees);
-    address public constant NATIVE_TOKEN =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant UNWRAP_ROLE = keccak256("UNWRAP_ROLE");
     bytes32 private constant ASSET_ROLE = keccak256("ASSET_ROLE");
@@ -58,13 +48,14 @@ contract SidechainDeposit is
     mapping(uint256 => mapping(address => mapping(uint256 => uint256)))
         public bundleIdToAddressToTokenAmount;
     mapping(uint256 => address) public burner;
+    mapping(uint256 => MessageDesposit[]) messages;
+    uint64 public currentChainSelectorId;
+    mapping(uint256 => bool) openedBundle;
+    mapping(uint256 => uint256) bundleIdToETFId;
+    uint256 public bundleCount = 0;
+    uint256 private _burnCounter = 0;
 
     event MessageSent(bytes32 messageId);
-
-    struct DepositFundMessage {
-        uint256 bundleId;
-        Token[] tokensToWrap;
-    }
 
     constructor(
         uint64 _primaryChainSelectorId,
@@ -92,6 +83,7 @@ contract SidechainDeposit is
         primaryChainSelectorId = _primaryChainSelectorId;
         primaryEtfContract = _primaryEtfContract;
         chainSelectorId = _chainSelectorId;
+        currentChainSelectorId = _chainSelectorId;
         tokensToWrapQuantity = _whitelistedTokenAmounts.length;
     }
 
@@ -191,7 +183,10 @@ contract SidechainDeposit is
         }
 
         _transferTokenBatch(msg.sender, address(this), _tokensToWrap);
+        updateBundleCount(_bundleId);
+
         DepositFundMessage memory message = DepositFundMessage({
+            userSender: msg.sender,
             bundleId: _bundleId,
             tokensToWrap: _tokensToWrap
         });
@@ -218,7 +213,7 @@ contract SidechainDeposit is
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: 4_000_000, strict: false})
+                Client.EVMExtraArgsV1({gasLimit: CALLBACK_GAS_LIMIT, strict: false})
             ),
             feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
         });
@@ -249,6 +244,14 @@ contract SidechainDeposit is
             );
         }
 
+        messages[data.bundleId].push(
+            MessageDesposit({
+                depositFundMessage: abi.encode(data),
+                messageId: messageId,
+                sender: msg.sender,
+                sourceChainSelector: chainSelectorId
+            })
+        );
         emit MessageSent(messageId);
     }
 
@@ -293,6 +296,7 @@ contract SidechainDeposit is
             burner[reedeemMessage.bundleId] == address(0),
             "ETFContract: bundleId is already burned"
         );
+        _burnCounter += 1;
         // console.log("reedeemMessage.receiver", reedeemMessage.receiver);
         _releaseTokens(reedeemMessage.receiver, reedeemMessage.bundleId);
         burner[reedeemMessage.bundleId] = reedeemMessage.receiver;
@@ -307,19 +311,24 @@ contract SidechainDeposit is
         returns (
             uint256[] memory bundleIds,
             address[] memory addresses,
-            uint256[][] memory quantities
+            uint256[][] memory quantities,
+            bool[] memory areMessagesIn,
+            bool[] memory areETFBurned
         )
     {
         bundleIds = new uint256[](items);
         addresses = new address[](items);
         quantities = new uint256[][](items);
         // selectorsIds = new uint64[](items);
+        areMessagesIn = new bool[](items);
+        areETFBurned = new bool[](items);
         for (uint256 i = 0; i < items; i++) {
             uint256 currentIndex = i + offset;
             bundleIds[i] = currentIndex;
 
             uint256 qt = getTokenCountOfBundle(bundleIds[i]);
             uint256[] memory bundlequantities = new uint256[](qt);
+            areMessagesIn[i] = messages[bundleIds[i]].length > 0;
 
             if (qt > 0) {
                 addresses[i] = bundleIdToAddress[bundleIds[i]][0];
@@ -330,20 +339,33 @@ contract SidechainDeposit is
                 }
             }
             quantities[i] = bundlequantities;
+            areETFBurned[i] = isETFBurned(bundleIds[i]);
         }
 
-        return (bundleIds, addresses, quantities);
+        return (bundleIds, addresses, quantities, areMessagesIn, areETFBurned);
+    }
+
+    function isETFBurned(uint256 tokenId) public view returns (bool) {
+        return burner[tokenId] != address(0);
+    }
+
+    function updateBundleCount(uint256 _bundleId) internal {
+        // require(bundleIdToETFId[_bundleId] == 0, "cl");
+        if (!openedBundle[_bundleId]) {
+            bundleCount += 1;
+            openedBundle[_bundleId] = true;
+        }
+    }
+
+    function getBurnedCount() public view returns (uint256) {
+        return _burnCounter;
     }
 
     //  get all required tokens for a bundle
     function getRequiredAssets()
         public
         view
-        returns (
-            uint256[] memory quantities,
-            address[] memory addresses,
-            uint64[] memory selectorsIds
-        )
+        returns (uint256[] memory quantities, address[] memory addresses)
     {
         // store the count of each token in the bundle and store in an array
         quantities = new uint256[](tokensToWrapQuantity);
@@ -353,8 +375,30 @@ contract SidechainDeposit is
         for (uint256 i = 0; i < tokensToWrapQuantity; i += 1) {
             addresses[index] = whitelistedTokens[i];
             quantities[index] = tokenQuantities[whitelistedTokens[i]];
-            selectorsIds[index] = chainSelectorId;
             index += 1;
+        }
+    }
+
+    function getTokensBundle(
+        uint256 _bundleId
+    )
+        public
+        view
+        returns (
+            uint256[] memory quantities,
+            address[] memory addresses,
+            MessageDesposit[] memory bundleMessages
+        )
+    {
+        // get the number of tokens in the bundle
+        bundleMessages = messages[_bundleId];
+        uint256 tokenCount = getTokenCountOfBundle(_bundleId);
+        // store the count of each token in the bundle and store in an array
+        quantities = new uint256[](tokenCount);
+        addresses = new address[](tokenCount);
+        for (uint256 i = 0; i < tokenCount; i += 1) {
+            quantities[i] = getTokenOfBundle(_bundleId, i).totalAmount;
+            addresses[i] = getTokenOfBundle(_bundleId, i).assetContract;
         }
     }
 
