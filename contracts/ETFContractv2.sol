@@ -469,6 +469,9 @@ contract ETFv2 is ETFBase {
     function updateBundleAfterReceive(uint256 bundleId) public {
         for (uint256 i; i < messages[bundleId].length; i++) {
             MessageDesposit memory message = messages[bundleId][i];
+
+            // check messages address(bytes20(message.sender)) are from sidechain vetted addresses
+
             DepositFundMessage memory depositFundMessage = abi.decode(
                 message.depositFundMessage,
                 (DepositFundMessage)
@@ -477,7 +480,7 @@ contract ETFv2 is ETFBase {
                 depositFundMessage.bundleId,
                 depositFundMessage.tokensToWrap,
                 message.sourceChainSelector,
-                address(bytes20(message.sender))
+                depositFundMessage.userSender
             );
 
             // remove all the message from the array
