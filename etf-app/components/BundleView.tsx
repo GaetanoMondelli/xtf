@@ -312,7 +312,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         </div>
                     </div>
 
-                    {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) == ETFState.MINTED && <Card
+                    {getETFStatus(etfIdLoading, etfId, isETFBurnedLoading, isETFBurned) == ETFState.OPEN && <Card
                         className="card"
                         style={{
                             width: "95%",
@@ -533,7 +533,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
             >
                 {/* <h3>This bundle is on another chain (not this chain selector Id: {chainSelectorId?.toString()})</h3> */}
 
-                {config.sideChainContracts && <SideChainTokenDescriptions
+                <SideChainTokenDescriptions
                     address={address}
                     etfAddress={config.sideChainContracts[
                         networkToSelectorId[selectedChain]
@@ -541,7 +541,9 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                     bundleId={bundleId}
                     requiredTokenStruct={getRequiredAsset(address)}
                     chainSelectorId={getRequiredAsset(address)?.chainSelector}
-                />}
+                />
+
+                <br></br>
                 <Button
                     className="button"
                     type="primary"

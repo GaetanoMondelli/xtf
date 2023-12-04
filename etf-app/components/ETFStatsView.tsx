@@ -142,7 +142,9 @@ export default function ETFStatsView(
                     connectionStatus === "connected" ? "ETF Tokens Balance" : "ETF Token Supply"
                 }
                     suffix={connectionStatus === "connected" ?
-                        "/ " + showOnlyTwoDecimals(balance?.displayValue as string) : ""}
+                        totalSupplyLoading ? "Loading..." : totalSupplyError ?
+                            "Error" :
+                            "/ " + showOnlyTwoDecimals(BigNumber.from(totalSupply).mul(100).toString() as string) : ""}
                     value={
                         connectionStatus === "connected" ?
                             balanceLoading ? "Loading..." : balanceError ?
