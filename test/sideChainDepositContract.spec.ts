@@ -166,13 +166,13 @@ describe("ChainLink CCIP Message layer", () => {
             const checkRouterTestPromise = new Promise<void>((resolve, reject) => {
                 router.on("RouterMessageSent", (address: string, data: any) => {
                     try {
-                        const depositFundMessageType = ['tuple(uint256,tuple(address,uint8,uint256,uint256)[])'];
+                        const depositFundMessageType = ['tuple(uint256,address,tuple(address,uint8,uint256,uint256)[])'];
                         const decoded = ethers.utils.defaultAbiCoder.decode(depositFundMessageType, data);
                         expect(decoded).toBeDefined();
                         expect(decoded).toBeDefined();
                         expect(decoded.length).toEqual(1);
                         expect(decoded[0][0]).toEqual(BigNumber.from(bundleId));
-                        const token = decoded[0][1][0];
+                        const token = decoded[0][2][0];
                         const decodedTokenStruct = {
                             assetContract: token[0],
                             tokenType: token[1],

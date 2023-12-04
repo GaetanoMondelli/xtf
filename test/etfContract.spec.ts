@@ -328,6 +328,11 @@ describe("ETFContract", () => {
                 // expect(etfOwnerAddress).toEqual(etfContract.address);
 
                 // need to wait lock time to reedem (1 day)
+
+
+                const uri = await etfContract.connect(owner).tokenURI(1);
+                expect(uri).toEqual(ETFURI);
+
                 await ethers.provider.send("evm_increaseTime", [86400]);
 
                 await etfContract.connect(etfOwner).reedemETF(bundleId);
@@ -513,8 +518,8 @@ describe("ETFContract", () => {
                 }
 
                 const encodedData = ethers.utils.defaultAbiCoder.encode(
-                    ['tuple(uint256,tuple(address,uint256,uint256,uint256)[])'],
-                    [[depositFundMessage.bundleId, depositFundMessage.tokensToWrap.map(token => [
+                    ['tuple(uint256,address,tuple(address,uint256,uint256,uint256)[])'],
+                    [[depositFundMessage.bundleId, etfOwner.address, depositFundMessage.tokensToWrap.map(token => [
                         token.assetContract,
                         token.tokenType,
                         token.tokenId,
@@ -586,12 +591,13 @@ describe("ETFContract", () => {
 
                     const depositFundMessage = {
                         bundleId: bundles[i],
+                        userSender: etfOwner.address,
                         tokensToWrap: [tokenStructSide],
                     }
 
                     const encodedData = ethers.utils.defaultAbiCoder.encode(
-                        ['tuple(uint256,tuple(address,uint256,uint256,uint256)[])'],
-                        [[depositFundMessage.bundleId, depositFundMessage.tokensToWrap.map(token => [
+                        ['tuple(uint256,address, tuple(address,uint256,uint256,uint256)[])'],
+                        [[depositFundMessage.bundleId, depositFundMessage.userSender, depositFundMessage.tokensToWrap.map(token => [
                             token.assetContract,
                             token.tokenType,
                             token.tokenId,
@@ -613,7 +619,7 @@ describe("ETFContract", () => {
 
                     await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
 
-                    await tokenToBeWrapped1.connect(etfOwner).approve(etfContract.address,  tokenStruct1.totalAmount);
+                    await tokenToBeWrapped1.connect(etfOwner).approve(etfContract.address, tokenStruct1.totalAmount);
 
 
                     await etfContract.connect(etfOwner).depositFunds(
