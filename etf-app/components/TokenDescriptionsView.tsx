@@ -140,9 +140,17 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                                 <Card
                                     className="customcard"
                                     size="small"
-                                    title={`Sender: ${minimiseAddress(item.sender)}`}>
-                                    <p>MessageId:</p> <a href={`https://ccip.chain.link/msg/${item?.messageId
-                                        }`} target="_blank" rel="noreferrer">{item?.messageId}</a>
+                                    title={
+                                        <>
+                                            {`CCIP MessageId:`}<a
+                                                style={{
+                                                    color: 'blue'
+                                                }}
+                                                href={`https://ccip.chain.link/msg/${item?.messageId}`}
+                                                target="_blank" rel="noreferrer">{minimiseAddress(item?.messageId)}</a>
+                                        </>
+                                    }>
+                                    <p>{`Sender: ${minimiseAddress(item.sender)}`}</p>
                                     <p>{`Bundle ID: ${item.depositFundMessage.bundleId}`}</p>
                                     {
                                         item.depositFundMessage.tokensToWrap.map((token: any, index: number) => {
