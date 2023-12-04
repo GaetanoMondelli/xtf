@@ -76,15 +76,15 @@ export const ChainIdToSelectorId: any = {
 
 export const configs: Array<any> = [ETFConfigurationIndex0, ETFConfigurationIndex2];
 
-const DAIAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][0].address, CONTRACTS['FungibleToken'][0].address, SEPOLIA_MUMBAI_CONTRACTS['FungibleToken'][0].address];
-const LINKAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][1].address, CONTRACTS['FungibleToken'][1].address, SEPOLIA_MUMBAI_CONTRACTS['FungibleToken'][1].address];
+const DAIAddresses = [PRIMARY_SEPOLIA['FungibleToken'][0].address, SEPOLIA_CONTRACTS['FungibleToken'][0].address, CONTRACTS['FungibleToken'][0].address, SEPOLIA_MUMBAI_CONTRACTS['FungibleToken'][0].address];
+const LINKAddresses = [PRIMARY_SEPOLIA['FungibleToken'][1].address, SEPOLIA_CONTRACTS['FungibleToken'][1].address, CONTRACTS['FungibleToken'][1].address, SEPOLIA_MUMBAI_CONTRACTS['FungibleToken'][1].address];
 const SNXAddresses = [SEPOLIA_CONTRACTS['FungibleToken'][2].address, "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d"];
 const sepoliaPriceDataFeed = ["0x694AA1769357215DE4FAC081bf1f309aDC325306",
     "0x14866185B1962B63C3Ea9E03Bc1da838bab34C19",
     "0xc59E3633BAAC79493d908e63626716e204A45EdF",
     "0xc0F82A46033b8BdBA4Bb0B0e28Bc2006F64355bC"]
 
-    export enum Chain {
+export enum Chain {
     Sepolia = 11155111,
     Localhost = 31337,
     Mumbai = 80001
@@ -368,7 +368,8 @@ export function matchDepositFundMessage(messageDeposit: MessageDeposit[], bundle
 export function decodeMessageDepositArray(messageDeposits: any[]): any[] | any[] {
     return messageDeposits.map((messageDeposit) => {
         const depositFundMessageEncoded = messageDeposit[0];
-        const sender = messageDeposit[1];
+        const messageId = messageDeposit[1];
+        const sender = messageDeposit[2];
         const sourceChainSelector = BigNumber.from(messageDeposit[2]);
 
         // Decoding depositFundMessage
@@ -396,6 +397,7 @@ export function decodeMessageDepositArray(messageDeposits: any[]): any[] | any[]
 
         return {
             depositFundMessage, // Updated type from string to DepositFundMessage
+            messageId,  
             sender,
             sourceChainSelector,
         };
