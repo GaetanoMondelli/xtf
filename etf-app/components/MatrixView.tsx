@@ -32,7 +32,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
         return color;
     }
 
-    function getColor(quantities: any, isBurned: any, requiredAmounts: any) {
+    function getColor(quantities: any, isBurned: any, requiredAmounts: any, areMessagesInBundle: any) {
         let allZero = true;
         let allEqual = true;
         let atLeastOneNotZero = false;
@@ -49,6 +49,11 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
 
         if (quantities.length !== requiredAmounts.length) {
             allEqual = false;
+        }
+
+        if(areMessagesInBundle){
+            // return orange
+            return "#FEB019";
         }
 
         if (isBurned) {
@@ -75,6 +80,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
     let bundleIds: any = [];
     let addresses: any = [];
     let quantities: any = [];
+    let areMessagesInBundles: any = [];
     let areBurned: any = [];
 
 
@@ -82,6 +88,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
         bundleIds = [...bundleState[0]]
         addresses = [...bundleState[1]] // Assuming these are already in the correct format
         quantities = [...bundleState[2]]
+        areMessagesInBundles = [...bundleState[3]]
         areBurned = [...bundleState[4]]
     }
     for (let rowIndex = 0; rowIndex < numberOfRows; rowIndex++) {
@@ -96,10 +103,11 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
             if (bundleIds && bundleIds.length > 0) {
                 const bundleId = bundleIds.shift();
                 const quantity = quantities.shift();
+                const areMessagesInBundle = areMessagesInBundles.shift();
                 const isBurned = areBurned.shift();
                 const cellValue = rowIndex * numberOfColumns + colIndex;;
-                console.log("bundleId", bundleId, quantity, requiredTokenStructs.map((token: any) => token.totalAmount));
-                const cellColor = getColor(quantity, isBurned, requiredTokenStructs.map((token: any) => token.totalAmount));
+                // console.log("bundleId", bundleId, quantity, requiredTokenStructs.map((token: any) => token.totalAmount));
+                const cellColor = getColor(quantity, isBurned, requiredTokenStructs.map((token: any) => token.totalAmount), areMessagesInBundle);
                 rowData.data.push({
                     x: `Col ${colIndex + 1}`,
                     y: cellValue,
