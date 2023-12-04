@@ -1,5 +1,5 @@
 import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead, ThirdwebProvider, useConnectionStatus, useNetworkMismatch } from "@thirdweb-dev/react";
-import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Divider, Layout } from 'antd';
+import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Divider, Layout, Progress } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
 import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain, PayFeesIn } from "./utils";
@@ -24,8 +24,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
 
     address = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
-    etfAddress = "0x4c0a47b0c3a16291AC32040740687dd5F06a42F3";
-    // etfAddress = "0xf33EDdcc0F79232DE20fbE59F1D814678161D79c"; //old
+    // etfAddress = "0x4c0a47b0c3a16291AC32040740687dd5F06a42F3";
 
 
     const { data: bundle, isLoading: countLoading, error: countError } = useContractRead(
@@ -33,7 +32,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
         "getTokensBundle", [bundleId]
     );
 
-    const { data: requiredAsset, isLoading: requiredAssetLoading, error: requiredAssetError } = useContractRead(
+    const { data: requiredAssets, isLoading: requiredAssetLoading, error: requiredAssetError } = useContractRead(
         sideChainContract,
         "getRequiredAssets", []
     );
@@ -97,207 +96,216 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
 
             <h3>Vault {bundleId}</h3>
             <br></br>
-            {JSON.stringify(bundle)}
-            {JSON.stringify(requiredAsset)}
+            {<p>
+                sxa{JSON.stringify(requiredAssets)}
+                {JSON.stringify(bundle)}
+                {/* {Number(BigNumber.from(bundle[0][index] || 0))} */}
+            </p>}
+            etf: {etfAddress}
             <br></br>
         </Layout.Content>
 
-        <div
-            className="card"
-            style={{
-                width: "95%",
-                paddingLeft: 30,
-                paddingRight: 20,
-            }
-            }
-        >
-            <Descriptions
-                column={2}
-                title={
-                    <div
-                        style={{
-                            marginTop: "4%",
-                            display: "flex",
-                            gap: 5,
-                            alignItems: "center",
-                        }}
-                    >
-                        <div>
-                            <Avatar
-                                size={40}
-                                src={getAssetIcon(address)}
-                                className="avatar"
-                                style={
-                                    {
-                                        marginRight: 12,
-                                        marginLeft: 10,
-                                        marginBottom: 10,
-                                    }
-                                }
-                            >{balance?.symbol}</Avatar>
-                        </div>
-                        <span>{balance?.symbol}&nbsp;
-                            {address !== nativeAddress &&
-                                <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
-                                    <SelectOutlined style={{ fontSize: '14px', color: '#08c' }} onClick={() => { window.open(`${chainSelectorIdToExplorerAddress[chainSelectorId.toString()]}/${address}`, "_blank") }} />
-                                </Tooltip>
-                            }
-                        </span>
-                    </div>
-                }>
-                {/* over appea text see on explore */}
-
-                <Descriptions.Item label="Quantity Locked">
-                    Fecthing
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Balance">
-                    {balanceLoading && <Tag color="processing">Loading...</Tag>}
-                    {!balanceError && !balanceLoading && balance && <Tag color="success">{showOnlyTwoDecimals(balance.displayValue)} {balance.symbol}</Tag>}
-                </Descriptions.Item>
-
-
-                {<Descriptions.Item label="Quantity to Deposit">
-                    <InputNumber
-
-                        style={{
-                            marginLeft: 20
-                        }}
-                        defaultValue={0}
-                        min={0}
-                        // max={
-                        //     address === nativeAddress ?
-                        //         Number(ethers.utils.formatEther(BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).sub(BigNumber.from(bundle[0][index] || 0))))
-                        //         : Number(BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).sub(BigNumber.from(bundle[0][index] || 0)).div(BigNumber.from(10).pow(18)))
-
-                        // }
-                        onChange={(value: any) => {
-                            // const newQuantities = { ...quantities };
-                            // newQuantities[address] = value;
-                            // setQuantities(newQuantities);
-                            quantities[address] = value;
-                        }}
-
-                    />
-                    {/* {JSON.stringify(bundle)} */}
-                </Descriptions.Item>
-                }
-                <Descriptions.Item label="Allowance">
-                    {nativeAddress === address && <Tag color="blue">∞</Tag>}
-                    {nativeAddress !== address && isAllowanceLoading && <Tag color="processing">Loading...</Tag>}
-                    {!nameError && !isAllowanceLoading && allowance && <Tag color="blue">{showOnlyTwoDecimals(utils.formatUnits(allowance, 18))}</Tag>}
-                    {nativeAddress !== address && !nameError && !isAllowanceLoading && allowance && <Button type="link" size="small" onClick={() => {
-                        approve({
-                            args: [etfAddress, BigNumber.from(20).mul(BigNumber.from(10).pow(18))
-                                // BigNumber.from(getRequiredAsset(address)?.totalAmount || 0)
-                            ]
-                        })
-                    }
-                    }>Approve More {balance?.symbol} Tokens</Button>
-                    }
-                </Descriptions.Item>
-            </Descriptions>
-            <Layout.Content>
-                ⓘ Deposit Link and Notify action will deposit the link tokens to the sidechain contract and
-                notify ETF contract on the primary chain.
-                Communication between the two contracts is done via Chainlink CCIP and requires LINK tokens.
-            </Layout.Content>
-            <Divider />
-            <Descriptions
-                column={2}
-            >
-                {/* <Descriptions.Item label="Link Approve">
-                <Button type="link" size="small" onClick={() => {
-                    approveLink({
-                        args: [etfAddress, BigNumber.from(2).mul(BigNumber.from(10).pow(18))]
-                    })
-                }
-                }>Approve Link Tokens</Button>
-            </Descriptions.Item> */}
-
-                <Descriptions.Item label="Link Transfer">
-                    <Button type="link" size="small" onClick={() => {
-                        // transfer link tokens to etf contract
-                        transferLink({
-                            args: [etfAddress, BigNumber.from(1).mul(BigNumber.from(10).pow(18))]
-                        })
-
-                    }
-                    }>Transfer LINK Tokens</Button>
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Your Link Balance">
-                    {linkBalanceLoading && <Tag color="processing">Loading...</Tag>}
-                    {!linkBalanceError && !linkBalanceLoading && linkBalance && <Tag color="success">{showOnlyTwoDecimals(linkBalance.displayValue)} {linkBalance.symbol}</Tag>}
-                </Descriptions.Item>
-                {/* <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item> */}
-
-
-                <Descriptions.Item label="ETF Side Contract Balance">
-                    {linkContractBalanceLoading && <Tag color="processing">Loading...</Tag>}
-                    {!linkContractBalanceError && !linkContractBalanceLoading && linkContractBalance && <Tag color="success">
-                        {linkContractBalance.div(BigNumber.from(10).pow(16)).toNumber() / 100} {linkBalance?.symbol}
-                    </Tag>}
-                </Descriptions.Item>
-
-
-
-
-                {/* 
-        <Descriptions.Item label="Quantity to Deposit">
-            <InputNumber
+        {requiredAssets && bundle && requiredAssets[1].map((requiredAsset: any, index: number) => {
+            return <div
+                className="card"
                 style={{
-                    marginLeft: 20
-                }}
-                defaultValue={0}
-                min={0}
-                max={
-                    address === nativeAddress ?
-                        Number(ethers.utils.formatEther(BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).sub(BigNumber.from(bundle[0][index] || 0))))
-                        : Number(BigNumber.from(getRequiredAsset(address)?.totalAmount || 0).sub(BigNumber.from(bundle[0][index] || 0)).div(BigNumber.from(10).pow(18)))
-
+                    width: "95%",
+                    paddingLeft: 30,
+                    paddingRight: 20,
                 }
-                onChange={(value: any) => {
-                    const newQuantities = { ...quantities };
-                    newQuantities[address] = value;
-                    setQuantities(newQuantities);
-                }}
-            />
-        </Descriptions.Item> */}
-
-                <Descriptions.Item label="Token">
-                    <Button
-                        style={{
-                            marginLeft: 20
-                        }}
-                        type="primary"
-                        size="small"
-                        onClick={() =>
-                            depositFundsAndNotify({
-                                args: [bundleId,
-                                    [
+                }
+            >
+                <Descriptions
+                    column={2}
+                    title={
+                        <div
+                            style={{
+                                marginTop: "4%",
+                                display: "flex",
+                                gap: 5,
+                                alignItems: "center",
+                            }}
+                        >
+                            <div>
+                                <Avatar
+                                    size={40}
+                                    src={getAssetIcon(requiredAsset)}
+                                    className="avatar"
+                                    style={
                                         {
-                                            assetContract: "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d",
-                                            tokenType: 0,
-                                            tokenId: 0,
-                                            // totalAmount: BigNumber.from(6).mul(BigNumber.from(10).pow(18)),
-                                            totalAmount: BigNumber.from(quantities[nativeAddress] || 6).mul(BigNumber.from(10).pow(18)),
-                                        },
-                                    ],
-                                    PayFeesIn.LINK,
-                                    false,
-                                ],
-                                overrides: {
-                                    value: ethers.utils.parseEther(quantities[nativeAddress]?.toString() || "0"),
+                                            marginRight: 12,
+                                            marginLeft: 10,
+                                            marginBottom: 10,
+                                        }
+                                    }
+                                >{balance?.symbol}</Avatar>
+                            </div>
+                            <span>{balance?.symbol}&nbsp;
+                                {address !== nativeAddress &&
+                                    <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
+                                        <SelectOutlined style={{ fontSize: '14px', color: '#08c' }} onClick={() => { window.open(`${chainSelectorIdToExplorerAddress[chainSelectorId.toString()]}/${address}`, "_blank") }} />
+                                    </Tooltip>
                                 }
+                            </span>
+                        </div>
+                    }>
+                    {/* over appea text see on explore */}
+
+                    <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(requiredAssets[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item>
+
+                    <Descriptions.Item label="Balance">
+                        {balanceLoading && <Tag color="processing">Loading...</Tag>}
+                        {!balanceError && !balanceLoading && balance && <Tag color="success">{showOnlyTwoDecimals(balance.displayValue)} {balance.symbol}</Tag>}
+                    </Descriptions.Item>
+
+
+                    {<Descriptions.Item label="Quantity to Deposit">
+                        <InputNumber
+
+                            style={{
+                                marginLeft: 20
+                            }}
+                            defaultValue={0}
+                            min={0}
+                            max={
+                                address === nativeAddress ?
+                                    Number(ethers.utils.formatEther(BigNumber.from(requiredAssets[0][index] || 0).sub(BigNumber.from(bundle[0][index] || 0))))
+                                    : Number(BigNumber.from(requiredAssets[0][index] || 0).sub(BigNumber.from(bundle[0][index] || 0)).div(BigNumber.from(10).pow(18)))
+
+                            }
+                            onChange={(value: any) => {
+                                const newQuantities = { ...quantities };
+                                newQuantities[address] = value;
+                                setQuantities(newQuantities);
+                                // quantities[address] = value;
+                            }}
+
+                        />
+                        {/* {JSON.stringify(bundle)} */}
+                    </Descriptions.Item>
+                    }
+                    <Descriptions.Item label="Allowance">
+                        {nativeAddress === address && <Tag color="blue">∞</Tag>}
+                        {nativeAddress !== address && isAllowanceLoading && <Tag color="processing">Loading...</Tag>}
+                        {!nameError && !isAllowanceLoading && allowance && <Tag color="blue">{showOnlyTwoDecimals(utils.formatUnits(allowance, 18))}</Tag>}
+                        {nativeAddress !== address && !nameError && !isAllowanceLoading && allowance && <Button type="link" size="small" onClick={() => {
+                            approve({
+                                args: [etfAddress, BigNumber.from(20).mul(BigNumber.from(10).pow(18))
+                                    // BigNumber.from(requiredAssets[0][index] || 0)
+                                ]
                             })
                         }
-                    >
-                        Deposit & Notify
-                    </Button>
-                </Descriptions.Item>
-            </Descriptions >
-        </div>
-    </ div>
+                        }>Approve More {balance?.symbol} Tokens</Button>
+                        }
+                    </Descriptions.Item>
+                </Descriptions>
+                <Layout.Content>
+                    ⓘ Deposit Link and Notify action will deposit the link tokens to the sidechain contract and
+                    notify ETF contract on the primary chain.
+                    Communication between the two contracts is done via Chainlink CCIP and requires LINK tokens.
+                </Layout.Content>
+                <Divider />
+                <Descriptions
+                    column={2}
+                >
+                    {/* <Descriptions.Item label="Link Approve">
+                        <Button type="link" size="small" onClick={() => {
+                            approveLink({
+                                args: [etfAddress, BigNumber.from(2).mul(BigNumber.from(10).pow(18))]
+                            })
+                        }
+                        }>Approve Link Tokens</Button>
+                    </Descriptions.Item> */}
 
+                    <Descriptions.Item label="Link Transfer">
+                        <Button type="link" size="small" onClick={() => {
+                            // transfer link tokens to etf contract
+                            transferLink({
+                                args: [etfAddress, BigNumber.from(1).mul(BigNumber.from(10).pow(18))]
+                            })
+
+                        }
+                        }>Transfer LINK Tokens</Button>
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Your Link Balance">
+                        {linkBalanceLoading && <Tag color="processing">Loading...</Tag>}
+                        {!linkBalanceError && !linkBalanceLoading && linkBalance && <Tag color="success">{showOnlyTwoDecimals(linkBalance.displayValue)} {linkBalance.symbol}</Tag>}
+                    </Descriptions.Item>
+                    {/* <Descriptions.Item label="Quantity Locked">{BigNumber.from(bundle[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100} / {BigNumber.from(requiredAssets[0][index] || 0).div(BigNumber.from(10).pow(16)).toNumber() / 100}</Descriptions.Item> */}
+
+
+                    <Descriptions.Item label="ETF Side Contract Balance">
+                        {linkContractBalanceLoading && <Tag color="processing">Loading...</Tag>}
+                        {!linkContractBalanceError && !linkContractBalanceLoading && linkContractBalance && <Tag color="success">
+                            {linkContractBalance.div(BigNumber.from(10).pow(16)).toNumber() / 100} {linkBalance?.symbol}
+                        </Tag>}
+                    </Descriptions.Item>
+
+
+
+
+                    {/* 
+                    <Descriptions.Item label="Quantity to Deposit">
+                        <InputNumber
+                            style={{
+                                marginLeft: 20
+                            }}
+                            defaultValue={0}
+                            min={0}
+                            max={
+                                address === nativeAddress ?
+                                    Number(ethers.utils.formatEther(BigNumber.from(requiredAssets[0][index] || 0).sub(BigNumber.from(bundle[0][index] || 0))))
+                                    : Number(BigNumber.from(requiredAssets[0][index] || 0).sub(BigNumber.from(bundle[0][index] || 0)).div(BigNumber.from(10).pow(18)))
+
+                            }
+                            onChange={(value: any) => {
+                                const newQuantities = { ...quantities };
+                                newQuantities[address] = value;
+                                setQuantities(newQuantities);
+                            }}
+                        />
+                    </Descriptions.Item> */}
+
+                    <Descriptions.Item label="Token">
+                        <Button
+                            style={{
+                                marginLeft: 20
+                            }}
+                            type="primary"
+                            size="small"
+                            onClick={() =>
+                                depositFundsAndNotify({
+                                    args: [bundleId,
+                                        [
+                                            {
+                                                assetContract: "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d",
+                                                tokenType: 0,
+                                                tokenId: 0,
+                                                // totalAmount: BigNumber.from(6).mul(BigNumber.from(10).pow(18)),
+                                                totalAmount: BigNumber.from(quantities[nativeAddress] || 6).mul(BigNumber.from(10).pow(18)),
+                                            },
+                                        ],
+                                        PayFeesIn.LINK,
+                                        false,
+                                    ],
+                                    overrides: {
+                                        value: ethers.utils.parseEther(quantities[nativeAddress]?.toString() || "0"),
+                                    }
+                                })
+                            }
+                        >
+                            Deposit & Notify
+                        </Button>
+                    </Descriptions.Item>
+                </Descriptions >
+                <Progress
+                    // orange
+                    strokeColor={"#ff7f00"}
+                    percent={
+                        BigNumber.from(bundle[0][index] || 0).mul(BigNumber.from(100)).div(BigNumber.from(requiredAssets[0][index] || 0)).toNumber()}
+                ></Progress>
+            </div>
+        })}
+    </div>
 }
