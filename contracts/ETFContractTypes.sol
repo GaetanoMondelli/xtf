@@ -25,6 +25,7 @@ address constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
 struct DepositFundMessage {
     uint256 bundleId;
+    address userSender;
     ITokenBundle.Token[] tokensToWrap;
 }
 
@@ -50,7 +51,9 @@ enum PayFeesIn {
     Native,
     LINK
 }
-uint32 constant CALLBACK_GAS_LIMIT = 100000;
+uint32 constant CALLBACK_GAS_LIMIT = 4_000_000;
+
+uint32 constant VRG_GAS_LIMIT = 2_500_000;
 
 uint16 constant REQUEST_CONFIRMATIONS = 3;
 

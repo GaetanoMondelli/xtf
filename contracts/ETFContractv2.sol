@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {ETFBase} from "./ETFContractBase.sol";
-import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, MessageDesposit, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
+import {TokenAmounts, ReedeemETFMessage, NATIVE_TOKEN, MessageDesposit, DepositFundMessage, ETFTokenOptions, ChainLinkData, lockTime, PayFeesIn, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, VRG_GAS_LIMIT, NUM_WORDS} from "./ETFContractTypes.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -65,7 +65,7 @@ contract ETFv2 is ETFBase {
         Token[] memory _tokensToWrap
     ) external payable returns (bool canBeClosed) {
         // check if the bundleId is not already used
-        require(bundleIdToETFId[_bundleId] == 0, "cls");
+        require(bundleIdToETFId[_bundleId] == 0, "cl");
 
         canBeClosed = validateTokensUpdateBundle(
             _bundleId,
@@ -186,7 +186,7 @@ contract ETFv2 is ETFBase {
     }
 
     function updateBundleCount(uint256 _bundleId) internal {
-        require(bundleIdToETFId[_bundleId] == 0, "cls");
+        require(bundleIdToETFId[_bundleId] == 0, "cl");
         if (!openedBundle[_bundleId]) {
             bundleCount += 1;
             openedBundle[_bundleId] = true;
@@ -287,11 +287,11 @@ contract ETFv2 is ETFBase {
         return canBeClosed;
     }
 
-    event DepositFundMessageReceived(
-        uint256 messageId,
-        address sender,
-        uint64 chainId
-    );
+    // event DepositFundMessageReceived(
+    //     uint256 messageId,
+    //     address sender,
+    //     uint64 chainId
+    // );
 
     function closeBundle(
         uint256 bundleId,
@@ -334,7 +334,7 @@ contract ETFv2 is ETFBase {
                 getTokenOfBundle(bundleId, i).totalAmount;
         }
 
-        require(totalValue > 0, "val<=0");
+        // require(totalValue > 0, "tl");
 
         //  different account have contributed to the bundle in proportion to the value of the tokens they sent,
         //  they can have different amount of tokens
@@ -395,7 +395,7 @@ contract ETFv2 is ETFBase {
                 chainLinkData.keyHash,
                 chainLinkData.subscriptionId,
                 REQUEST_CONFIRMATIONS,
-                CALLBACK_GAS_LIMIT,
+                VRG_GAS_LIMIT,
                 NUM_WORDS
             )
         ] = bundleId;
@@ -440,7 +440,9 @@ contract ETFv2 is ETFBase {
             ),
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({gasLimit: CALLBACK_GAS_LIMIT, strict: false})
+            ),
             feeToken: payFeesIn == PayFeesIn.LINK
                 ? chainLinkData.link
                 : address(0)
