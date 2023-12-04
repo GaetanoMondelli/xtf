@@ -80,11 +80,11 @@ contract ETFBase is
         _setupOwner(msg.sender);
         _setOperatorRestriction(true);
 
-        bool containNativeTokenAmount = false;
+        // bool containNativeTokenAmount = false;
         for (uint256 i = 0; i < _whitelistedTokenAmounts.length; i += 1) {
-            if (_whitelistedTokenAmounts[i].assetContract == NATIVE_TOKEN) {
-                containNativeTokenAmount = true;
-            }
+            // if (_whitelistedTokenAmounts[i].assetContract == NATIVE_TOKEN) {
+            //     containNativeTokenAmount = true;
+            // }
             uint64 chainIdSelector = _whitelistedTokenAmounts[i]
                 .chainIdSelector;
             if (!chainSelectorIdInETF[chainIdSelector]) {
@@ -179,7 +179,7 @@ contract ETFBase is
         uint64 chainSelectorId
     ) internal view {
         // check if the chainIdSelector is in the ETF
-        require(chainSelectorIdInETF[chainSelectorId], "chain");
+        require(chainSelectorIdInETF[chainSelectorId], "chin");
 
         for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
             // check each assetContract is whitelisted
@@ -187,7 +187,7 @@ contract ETFBase is
                 isWhiteListedToken[chainSelectorId][
                     tokensToWrap[i].assetContract
                 ],
-                "blklst"
+                "blkls"
             );
             for (uint256 j = i + 1; j < tokensToWrap.length; j += 1) {
                 require(
@@ -201,7 +201,7 @@ contract ETFBase is
 
     // Receive function
     receive() external payable {
-        emit EtherReceived(msg.sender, msg.value);
+        // emit EtherReceived(msg.sender, msg.value);
     }
 
     function nextTokenIdToMint() public view virtual returns (uint256) {
@@ -231,10 +231,29 @@ contract ETFBase is
         virtual
         override
         returns (bool)
-    {}
+    {
+        return true;
+    }
 
     function _canSetOwner() internal view virtual override returns (bool) {
         return false;
+    }
+
+    // function _baseURI() internal view override returns (string memory) {
+    //     return etfOptions.uriETFToken;
+    // }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return etfOptions.uriETFToken;
+    }
+
+    function setBaseURI(string memory baseURI) public onlyOwner {
+        etfOptions.uriETFToken = baseURI;
     }
 
     function _canSetOperatorRestriction()
@@ -243,7 +262,7 @@ contract ETFBase is
         override
         returns (bool)
     {
-        return false;
+        // return false;
     }
 
     event MessageReceived(
