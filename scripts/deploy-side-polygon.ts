@@ -11,7 +11,7 @@ const DEMO_USER_ADDRESS = "0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203";
 const DEM0_USER_ADDRESS_2 = "0x001385E75cfc5563a925981F8501916D7Efb4344";
 
 // const primaryETFContractAddress = "0xAdFf5f6C2B221E49b8F31514d295b6658d85d5A5";
-const primaryETFContractAddress = "0xEafA5B2447E0Aa9cabf3e538d5b2e6F6f024bb9C";
+const primaryETFContractAddress = "0x2bf47bE46b90758532F39BeCDF6AEE827CB21688";
 
 
 async function main() {
