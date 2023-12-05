@@ -33,10 +33,10 @@ JPG, PNG or GIF format, 5 MB max file size. For best results, use a 3:2 ratio.
 
 ```
 Deploying side contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
-FungibleToken deployed to: 0xFf0BD6Fd281A6fb51b586E97ae4bc152D60dE65c
-FungibleToken deployed to: 0xCCd8465C8bc41E523372123C4e64b24ddC45222B
-ETFToken deployed to: 0x41F3A0e775889897e2cfc5b535C0aEBB06C4a9F2
-ETFv2 deployed to: 0xEafA5B2447E0Aa9cabf3e538d5b2e6F6f024bb9C
+FungibleToken deployed to: 0xcdf1913b4027D49596b935C0020d4671B3bbc3EA
+FungibleToken deployed to: 0xd5BD4B6EfDCB3151291395B549444Fcc9e5E09fD
+ETFToken deployed to: 0x5065510427b04E199c61dEeE91fD600520eA76Dd
+ETFv2 deployed to: 0xb973c1ff930f796Afe8fe25e50FFF59e986517Fa
 ```
 2. replace primary etf on side chain script, you can reuse the pre-deployed token from the primer
 ```
@@ -47,7 +47,7 @@ const primaryETFContractAddress = "0xC40E953DB5f27d077Cb1019B379131529c8D0E0D";
 ```
 Deploying side contracts with the account: 0x2E9891eC8C58986da8dC4173041cB9B1cdbaa35A
 Deploying side contracts with the account: 0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203
-SidechainDeposit deployed to: 0x106d24F579D77fbe71CBBF169f6Dc376208e25b5
+SidechainDeposit deployed to: 0x58F99A23d66Fe0546DA6e5e2C0174285681fc47e
 ```
 4. Add consumers to VRF 
 `https://vrf.chain.link/sepolia/7338` add 0xC40E953DB5f27d077Cb1019B379131529c8D0E0D
