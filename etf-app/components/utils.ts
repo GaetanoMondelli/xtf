@@ -337,6 +337,7 @@ interface Token {
 
 interface DepositFundMessage {
     bundleId: BigNumber;
+    userSender: string; // Ethereum address
     tokensToWrap: Token[];
 }
 
@@ -351,7 +352,7 @@ export function matchDepositFundMessage(messageDeposit: MessageDeposit[], bundle
 
     const decodedArray = decodeMessageDepositArray(messageDeposit);
     const matchedMessageDeposit = decodedArray.filter((messageDeposit: any) => {
-        return messageDeposit.depositFundMessage.bundleId.eq(bundleId) && messageDeposit.depositFundMessage.tokensToWrap.find((token: any) => token.assetContract === assetAddress)
+        return messageDeposit?.depositFundMessage.bundleId.eq(bundleId) && messageDeposit.depositFundMessage.tokensToWrap.find((token: any) => token.assetContract === assetAddress)
     });
     // sum all big numbers
     const sumMatchedMessageDeposit =
@@ -369,37 +370,45 @@ export function decodeMessageDepositArray(messageDeposits: any[]): any[] | any[]
     return messageDeposits.map((messageDeposit) => {
         const depositFundMessageEncoded = messageDeposit[0];
         const messageId = messageDeposit[1];
-        const sender = messageDeposit[2];
+        const contractSender = messageDeposit[2];
         const sourceChainSelector = BigNumber.from(messageDeposit[2]);
 
         // Decoding depositFundMessage
         // This assumes depositFundMessage is ABI-encoded and follows a specific format
         // The specific decoding logic will depend on how depositFundMessage is structured
-        const depositFundMessageDecoded = ethers.utils.defaultAbiCoder.decode(
-            // Provide the expected types of DepositFundMessage here
-            ["tuple(uint256,tuple(address,uint256,uint256,uint256)[])"], // Example types, adjust according to actual structure
-            depositFundMessageEncoded
-        );
+        try {
+            const depositFundMessageDecoded = ethers.utils.defaultAbiCoder.decode(
+                // Provide the expected types of DepositFundMessage here
+                ["tuple(uint256,address,tuple(address,uint256,uint256,uint256)[])"], // Example types, adjust according to actual structure
+                depositFundMessageEncoded
+            );
+            const depositFundMessage: DepositFundMessage = {
+                // Populate based on the decoded data
+                bundleId: depositFundMessageDecoded[0][0],
+                userSender: depositFundMessageDecoded[0][1],
+                tokensToWrap: depositFundMessageDecoded[0][2].map((asset: string) => ({
+                    // Assuming each token is just an address, adjust as necessary
+                    assetContract: asset[0],
+                    tokenType: asset[1],
+                    tokenId: asset[2],
+                    totalAmount: asset[3]
+                    // Add other properties of the Token struct here
+                })),
+            };
+
+            return {
+                depositFundMessage, // Updated type from string to DepositFundMessage
+                messageId,
+                sender: depositFundMessage.userSender,
+                sourceChainSelector,
+            };
+        }
+        catch (err) {
+            console.log('err', err);
+            return undefined;
+        }
 
         // Constructing the DepositFundMessage object
-        const depositFundMessage: DepositFundMessage = {
-            // Populate based on the decoded data
-            bundleId: depositFundMessageDecoded[0][0],
-            tokensToWrap: depositFundMessageDecoded[0][1].map((asset: string) => ({
-                // Assuming each token is just an address, adjust as necessary
-                assetContract: asset[0],
-                tokenType: asset[1],
-                tokenId: asset[2],
-                totalAmount: asset[3]
-                // Add other properties of the Token struct here
-            })),
-        };
 
-        return {
-            depositFundMessage, // Updated type from string to DepositFundMessage
-            messageId,  
-            sender,
-            sourceChainSelector,
-        };
     });
 }
