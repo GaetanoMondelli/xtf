@@ -20,7 +20,7 @@ contract ETFv2 is ETFBase {
     mapping(uint256 => uint) public tokenIdToExpirationTime;
     mapping(uint256 => address) burner;
     mapping(uint64 => address) public chainSelectorIdToSidechainAddress;
-    mapping(uint256 => uint256) public requestIdToBundleId;
+    mapping(uint256 => uint256) requestIdToBundleId;
     mapping(uint256 => address) public bundleIdToRandomWinner;
 
     constructor(
@@ -407,11 +407,11 @@ contract ETFv2 is ETFBase {
         IETFToken(etfOptions.etfTokenAddress).mint(owner(), fee);
     }
 
-    function getAllAddressesForBundleId(
-        uint256 bundleId
-    ) public view returns (address[] memory) {
-        return bundleIdToAddress[bundleId];
-    }
+    // function getAllAddressesForBundleId(
+    //     uint256 bundleId
+    // ) public view returns (address[] memory) {
+    //     return bundleIdToAddress[bundleId];
+    // }
 
     function sendReedeemMessage(
         uint256 bundleId,
@@ -474,7 +474,7 @@ contract ETFv2 is ETFBase {
     }
 
     function updateBundleAfterReceive(uint256 bundleId) public {
-        for (uint256 i; i < messages[bundleId].length; i++) {
+        for (uint256 i; i < messageCount[bundleId]; i++) {
             MessageDesposit memory message = messages[bundleId][i];
 
             // check messages address(bytes20(message.sender)) are from sidechain vetted addresses
@@ -492,11 +492,13 @@ contract ETFv2 is ETFBase {
 
             // remove all the message from the array
             delete messages[bundleId][i];
+            // update the message count
 
             if (canBeClosed) {
                 closeBundle(depositFundMessage.bundleId, address(this));
             }
         }
+        messageCount[bundleId] = 0;
     }
 
     // this could be too much to maintain if many addresses are in the bundle
@@ -536,11 +538,10 @@ contract ETFv2 is ETFBase {
     }
 
     function reeedNFTVote(uint256 bundleId) public {
-        transferFrom(
-            address(this),
-            bundleIdToRandomWinner[bundleId],
-            bundleIdToETFId[bundleId]
-        );
+        uint256 etfId = bundleIdToETFId[bundleId];
+        _burn(etfId);
+        bundleIdToETFId[bundleId] = nextTokenIdToMint();
+        _safeMint(msg.sender, 1);
     }
 
     function fulfillRandomWords(

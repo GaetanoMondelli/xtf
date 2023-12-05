@@ -63,6 +63,8 @@ contract ETFBase is
     mapping(uint256 => uint256) public bundleIdToETFId;
     // messages from other chains through the CCIP
     mapping(uint256 => MessageDesposit[]) messages;
+    // count of messages from other chains through the CCIP
+    mapping(uint256 => uint256) messageCount;
 
     constructor(
         string memory _name,
@@ -157,7 +159,7 @@ contract ETFBase is
 
             uint256 qt = getTokenCountOfBundle(bundleIds[i]);
             uint256[] memory bundlequantities = new uint256[](qt);
-            areMessagesIn[i] = messages[bundleIds[i]].length > 0;
+            areMessagesIn[i] = messageCount[bundleIds[i]] > 0;
 
             if (qt > 0) {
                 addresses[i] = bundleIdToAddress[bundleIds[i]][0];
@@ -243,12 +245,9 @@ contract ETFBase is
     //     return etfOptions.uriETFToken;
     // }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override
-        returns (string memory)
-    {
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
         return etfOptions.uriETFToken;
     }
 
@@ -292,6 +291,7 @@ contract ETFBase is
             sourceChainSelector: message.sourceChainSelector
         });
         messages[depositFundMessage.bundleId].push(messageDesposit);
+        messageCount[depositFundMessage.bundleId] += 1;
     }
 
     function fulfillRandomWords(
