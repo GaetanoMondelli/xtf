@@ -19,7 +19,7 @@
         "type": "BigNumber",
         "hex": "0xde41ba4fc9d91ad9"
       },
-      "assetContract": "0xeC55089610216F34430f593FdD1251e94E4362a0",
+      "assetContract": "0xFf0BD6Fd281A6fb51b586E97ae4bc152D60dE65c",
       "amount": {
         "type": "BigNumber",
         "hex": "0xd02ab486cedc0000"
@@ -31,7 +31,7 @@
         "type": "BigNumber",
         "hex": "0xde41ba4fc9d91ad9"
       },
-      "assetContract": "0x107A3dfc854565f29BAF17fD4bc7d698276e9f38",
+      "assetContract": "0xCCd8465C8bc41E523372123C4e64b24ddC45222B",
       "amount": {
         "type": "BigNumber",
         "hex": "0x29a2241af62c0000"
@@ -54,7 +54,7 @@
   {
     "nativeTokenWrapper": "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
     "uriETFToken": "https://cryptotrade.fund",
-    "etfTokenAddress": "0x6eed84AEEfAa04D45f1746737a801F4582719E8b",
+    "etfTokenAddress": "0x41F3A0e775889897e2cfc5b535C0aEBB06C4a9F2",
     "etfTokenPerWrap": {
       "type": "BigNumber",
       "hex": "0x056bc75e2d63100000"
