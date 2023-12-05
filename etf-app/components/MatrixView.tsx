@@ -33,48 +33,50 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
     }
 
     function getColor(quantities: any, isBurned: any, requiredAmounts: any, areMessagesInBundle: any) {
-        let allZero = true;
-        let allEqual = true;
+        let allZero = false;
+        let allEqual = false;
         let atLeastOneNotZero = false;
 
-        for (let i = 0; i < Math.min(quantities.length, requiredAmounts.length); i++) {
-            if (!BigNumber.from(quantities[i]).eq(BigNumber.from(0))) {
-                allZero = false;
-                atLeastOneNotZero = true;
-            }
-            if (!BigNumber.from(quantities[i]).eq(BigNumber.from(requiredAmounts[i]))) {
-                allEqual = false;
-            }
+
+        const qt = quantities.map((q: any) => BigNumber.from(q).toString());
+        const ra = requiredAmounts.map((q: any) => BigNumber.from(q).toString());
+        qt.sort();
+        ra.sort();
+
+        if (qt.length !== ra.length && qt.length !== 0) {
+            atLeastOneNotZero = true;
         }
 
-        if (quantities.length !== requiredAmounts.length) {
-            allEqual = false;
+        if (''.concat(...qt) === ''.concat(...ra)) {
+            allEqual = true;
         }
 
-        if(areMessagesInBundle){
-            // return orange
-            return "#FEB019";
+        if (qt.length === 0 || qt[qt.length - 1] === "0") {
+            allZero = true;
         }
+
 
         if (isBurned) {
             // red
             return "#FF4560";
         }
         else if (allZero) {
-            console.log("allZero", allZero);
+            // console.log("allZero", allZero);
             return "#D3D3D3";
         }
         else if (allEqual) {
-            console.log("allEqual", allEqual);
+            // console.log("allEqual", allEqual);
             return "#00E396";
         }
         else if (atLeastOneNotZero) {
-            console.log("atLeastOneNotZero", atLeastOneNotZero);
+            // console.log("atLeastOneNotZero", atLeastOneNotZero);
             return "#008FFB";
         }
-        else {
-            return "#FF4560";
+        else if (areMessagesInBundle) {
+            // return orange
+            return "#FEB019";
         }
+
     }
 
     let bundleIds: any = [];
