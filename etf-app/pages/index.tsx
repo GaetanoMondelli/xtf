@@ -203,7 +203,7 @@ const Home: NextPage = () => {
 
         {selectedTab === '3' && chainId === config.chainId &&
           <div className={styles.description}>
-            <span>Vault Viewer {selectedChain}</span>
+            <span>Vault Viewer</span>
             <InputNumber
               style={{
                 color: "black",
@@ -212,7 +212,7 @@ const Home: NextPage = () => {
                 boxShadow: "2px 2px 0px 0px #000",
                 marginLeft: 20
               }}
-              defaultValue={0}
+              value={bundleId}
               min={0}
               onChange={(value) => setBundleId(Number(value))}
             />

@@ -17,7 +17,7 @@ export default function ETFStatsView(
     const [TLV, setTLV] = useState<any>("Loading...s");
     const offsetMintedBeforeChangingOwenrs = 150;
     const connectionStatus = useConnectionStatus();
-    const addres = useAddress();
+    const userAddress = useAddress();
 
     const { contract, isLoading, error } = useContract(address, ABI);
     const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address, ABI);
@@ -40,7 +40,7 @@ export default function ETFStatsView(
 
     const { data: voteBalance, isLoading: voteBalanceLoading, error: voteBalanceError } = useContractRead(
         contract,
-        "balanceOf", [address]
+        "balanceOf", [userAddress]
     );
 
     const { data: burnedCount, isLoading: burnedCountLoading, error: burnedCountError } = useContractRead(

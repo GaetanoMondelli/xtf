@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic'
-import React, { Component, useState } from "react";
+import React from "react";
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 // import { requiredTokenStructs } from "./utils";
@@ -13,16 +13,13 @@ async function fetchBundleInfo(bundleId: string) {
 }
 
 
-export default function MatrixView({ address, bundleState, bundleStateLoading, bundleStateError, setBundleId, requiredTokenStructs }: {
-    address: string, bundleState: any, bundleStateLoading: any, bundleStateError: any, setBundleId: any, requiredTokenStructs: any
+export default function MatrixView({ address, bundleState, bundleId, bundleStateLoading, bundleStateError, setBundleId, requiredTokenStructs }: {
+    address: string, bundleState: any, bundleStateLoading: any, bundleId: any, bundleStateError: any, setBundleId: any, requiredTokenStructs: any
 }) {
     // const [selectedBundle, setSelectedBundle] = useState<string>();
     const numberOfColumns = 16; // Previously numberOfRows
     const numberOfRows = 6;     // Previously numberOfColumns
     const series = [];
-
-    // returnStateOfBundles
-
     function getRandomColor() {
         const letters = '0123456789ABCDEF';
         let color = '#';
@@ -32,7 +29,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
         return color;
     }
 
-    function getColor(quantities: any, isBurned: any, requiredAmounts: any, areMessagesInBundle: any) {
+    function getColor(quantities: any, isBurned: any, requiredAmounts: any, areMessagesInBundle: any, isSelected: any) {
         let allZero = false;
         let allEqual = false;
         let atLeastOneNotZero = false;
@@ -55,27 +52,29 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
             allZero = true;
         }
 
+        // if is Selected i need to return make it darker
+
+        // black, red, orange, green, blue
+        // 0c0c0d", "#00E396", "#FEB019", "#FF4560", "#775DD0
 
         if (isBurned) {
-            // red
-            return "#FF4560";
+            return isSelected ? "#800013" : "#FF4560";
+        }
+        else if (allEqual) {
+            return isSelected ? "#00291b" : "#00E396";
+        }
+        else if (areMessagesInBundle) {
+            return isSelected ? "#694601" : "#FEB019";
         }
         else if (allZero) {
             // console.log("allZero", allZero);
-            return "#D3D3D3";
-        }
-        else if (allEqual) {
-            // console.log("allEqual", allEqual);
-            return "#00E396";
+            return isSelected ? "#000000" : "#D3D3D3";
         }
         else if (atLeastOneNotZero) {
             // console.log("atLeastOneNotZero", atLeastOneNotZero);
-            return "#008FFB";
+            return isSelected ? "#024170" : "#008FFB";
         }
-        else if (areMessagesInBundle) {
-            // return orange
-            return "#FEB019";
-        }
+
 
     }
 
@@ -103,13 +102,12 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
             // Invert the row index to start from the bottom
 
             if (bundleIds && bundleIds.length > 0) {
-                const bundleId = bundleIds.shift();
+                const currBundleId = bundleIds.shift();
                 const quantity = quantities.shift();
                 const areMessagesInBundle = areMessagesInBundles.shift();
                 const isBurned = areBurned.shift();
                 const cellValue = rowIndex * numberOfColumns + colIndex;;
-                // console.log("bundleId", bundleId, quantity, requiredTokenStructs.map((token: any) => token.totalAmount));
-                const cellColor = getColor(quantity, isBurned, requiredTokenStructs.map((token: any) => token.totalAmount), areMessagesInBundle);
+                const cellColor = getColor(quantity, isBurned, requiredTokenStructs.map((token: any) => token.totalAmount), areMessagesInBundle, currBundleId.eq(bundleId));
                 rowData.data.push({
                     x: `Col ${colIndex + 1}`,
                     y: cellValue,
@@ -134,7 +132,7 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
 
 
     const handleCellClick = (event: any, chartContext: any, { seriesIndex, dataPointIndex }: any) => {
-        console.log("seriesIndex", seriesIndex, "dataPointIndex", dataPointIndex);
+        console.log('event', seriesIndex, dataPointIndex)
         const bundleId = seriesIndex * numberOfColumns + dataPointIndex;
         console.log(setBundleId)
         setBundleId(bundleId);
@@ -144,6 +142,36 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
 
     const state = {
         options: {
+            states: {
+                normal: {
+                    filter: {
+                        type: 'none',
+                        value: 0,
+                    }
+                },
+                hover: {
+                    filter: {
+                        type: 'lighten',
+                        value: 0.15,
+                    }
+                },
+                active: {
+                    allowMultipleDataPointsSelection: false,
+                    filter: {
+                        type: 'darken',
+                        value: 1,
+                    }
+                },
+            },
+            legend: {
+                show: false,
+                onItemClick: {
+                    toggleDataSeries: true
+                },
+                onItemHover: {
+                    highlightDataSeries: false
+                },
+            },
             chart: {
                 events: {
                     dataPointSelection: handleCellClick
@@ -163,9 +191,6 @@ export default function MatrixView({ address, bundleState, bundleStateLoading, b
                 width: 2,
                 colors: ["black"],
 
-            },
-            legend: {
-                show: false
             },
             plotOptions: {
                 heatmap: {
