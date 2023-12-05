@@ -17,10 +17,11 @@ contract ETFv2 is ETFBase {
     // mapping of token address to price
     mapping(uint256 => mapping(address => uint256)) addressToAmount;
     // mapping of bundleId to mapping requestId
-    mapping(uint256 => uint256) public requestIdToBundleId;
     mapping(uint256 => uint) public tokenIdToExpirationTime;
-    mapping(uint256 => address) public burner;
+    mapping(uint256 => address) burner;
     mapping(uint64 => address) public chainSelectorIdToSidechainAddress;
+    mapping(uint256 => uint256) public requestIdToBundleId;
+    mapping(uint256 => address) public bundleIdToRandomWinner;
 
     constructor(
         string memory _name,
@@ -201,7 +202,7 @@ contract ETFv2 is ETFBase {
     ) internal returns (ITokenBundle.Token[] memory) {
         for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
             uint256 tokenIndex;
-
+            bool wrappedTokenUpdated = false;
             for (
                 tokenIndex = 0;
                 tokenIndex < getTokenCountOfBundle(bundleId);
@@ -222,7 +223,7 @@ contract ETFv2 is ETFBase {
                             chainIdSelector
                         ][getTokenOfBundle(bundleId, tokenIndex).assetContract];
                     }
-
+                    wrappedTokenUpdated = true;
                     _updateTokenInBundle(
                         Token(
                             tokensToWrap[i].assetContract,
@@ -239,6 +240,9 @@ contract ETFv2 is ETFBase {
                     ][tokenIndex] += tokensToWrap[i].totalAmount;
                     continue;
                 }
+            }
+            if (wrappedTokenUpdated) {
+                continue;
             }
             _addTokenInBundle(
                 Token(
@@ -441,7 +445,10 @@ contract ETFv2 is ETFBase {
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: CALLBACK_GAS_LIMIT, strict: false})
+                Client.EVMExtraArgsV1({
+                    gasLimit: CALLBACK_GAS_LIMIT,
+                    strict: false
+                })
             ),
             feeToken: payFeesIn == PayFeesIn.LINK
                 ? chainLinkData.link
@@ -528,6 +535,14 @@ contract ETFv2 is ETFBase {
         chainSelectorIdToSidechainAddress[chainSelectorId] = sideChainAddress;
     }
 
+    function reeedNFTVote(uint256 bundleId) public {
+        transferFrom(
+            address(this),
+            bundleIdToRandomWinner[bundleId],
+            bundleIdToETFId[bundleId]
+        );
+    }
+
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] memory randomWords
@@ -563,16 +578,16 @@ contract ETFv2 is ETFBase {
         //         break;
         //     }
         // }
-
         address winner = bundleIdToAddress[requestIdToBundleId[requestId]][
             randomWords[0] %
                 bundleIdToAddress[requestIdToBundleId[requestId]].length
         ];
-        approve(winner, bundleIdToETFId[requestIdToBundleId[requestId]]);
-        transferFrom(
-            address(this),
-            winner,
-            bundleIdToETFId[requestIdToBundleId[requestId]]
-        );
+        bundleIdToRandomWinner[requestIdToBundleId[requestId]] = winner;
+
+        // transferFrom(
+        //     address(this),
+        //     winner,
+        //     bundleIdToETFId[requestIdToBundleId[requestId]]
+        // );
     }
 }

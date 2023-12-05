@@ -314,7 +314,9 @@ describe("ETFContract", () => {
                     }
                 )
 
-
+                let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+                expect(BigNumber.from(etfTokensBalance).gt(BigNumber.from(0))).toBeTruthy();
+                
 
                 let token1Balance = await tokenToBeWrapped1.balanceOf(etfOwner.address);
                 expect(token1Balance).toEqual(BigNumber.from(0));
@@ -351,11 +353,15 @@ describe("ETFContract", () => {
 
             });
 
-            it("should be able to deposit", async () => {
 
+
+            it("should be able to  and mint in two or more steps", async () => {
+                const bundleId = 0;
                 const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
                 const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
                 const ethersToWrap = ethers.utils.parseEther("0.5");
+
+                const halfAmountToWrapToken2 = amountToWrapToken2.div(2);
 
                 const nativeTokenStruct = {
                     assetContract: nativeAddress,
@@ -375,137 +381,280 @@ describe("ETFContract", () => {
                     assetContract: tokenToBeWrapped2.address,
                     tokenType: 0,
                     tokenId: 0,
-                    totalAmount: amountToWrapToken2,
+                    totalAmount: halfAmountToWrapToken2,
                 };
 
-                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
+                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1.mul(2));
+                await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2.mul(2));
                 await tokenToBeWrapped1.connect(etfOwner).approve(
                     etfContract.address,
-                    tokenStruct1.totalAmount
+                    BigNumber.from(amountToWrapToken1.mul(2))
+                );
+                await tokenToBeWrapped2.connect(etfOwner).approve(
+                    etfContract.address,
+                    BigNumber.from(amountToWrapToken2.mul(2))
                 );
 
-                let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                expect(etfTokensBalance).toEqual(BigNumber.from(0));
-
-                etfTokensBalance = await etfTokenContract.balanceOf(etfOwner2.address);
-                expect(etfTokensBalance).toEqual(BigNumber.from(0));
-
                 await etfContract.connect(etfOwner).depositFunds(
-                    0,
-                    [nativeTokenStruct, tokenStruct1],
+                    bundleId,
+                    [nativeTokenStruct, tokenStruct1, tokenStruct2],
                     {
                         value: ethersToWrap,
                     }
                 )
 
-                etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                expect(etfTokensBalance).toEqual(BigNumber.from(0));
+                let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
 
-                await tokenToBeWrapped2.connect(owner).mint(etfOwner2.address, tokenStruct2.totalAmount);
-                await tokenToBeWrapped2.connect(etfOwner2).approve(
-                    etfContract.address,
-                    tokenStruct2.totalAmount
-                );
-                await etfContract.connect(etfOwner2).depositFunds(
+
+                const tokenStruct2_2 = {
+                    assetContract: tokenToBeWrapped2.address,
+                    tokenType: 0,
+                    tokenId: 0,
+                    totalAmount: amountToWrapToken2//amountToWrapToken2.sub(halfAmountToWrapToken2),
+                };
+
+                await etfContract.connect(etfOwner).depositFunds(
                     0,
-                    [tokenStruct2]
+                    [tokenStruct2_2]
                 )
-
                 etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                let valueDepositedByEtfOwner1 = BigNumber.from(tokenStruct1.totalAmount).mul(tokenPrices[1].amount);
-                valueDepositedByEtfOwner1 = valueDepositedByEtfOwner1.add(ethersToWrap.mul(tokenPrices[0].amount));
-                expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner1.mul(etfTokenPerWrap).div(totalValue));
-
-                etfTokensBalance = await etfTokenContract.balanceOf(etfOwner2.address);
-                const valueDepositedByEtfOwner2 = BigNumber.from(tokenStruct2.totalAmount).mul(tokenPrices[2].amount);
-                expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner2.mul(etfTokenPerWrap).div(totalValue));
-
-                expect(await tokenToBeWrapped1.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
-                expect(await tokenToBeWrapped2.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
-                expect(await tokenToBeWrapped1.balanceOf(etfContract.address)).toEqual(tokenStruct1.totalAmount);
-                expect(await tokenToBeWrapped2.balanceOf(etfContract.address)).toEqual(tokenStruct2.totalAmount);
+                expect(BigNumber.from(etfTokensBalance).gt(BigNumber.from(0))).toBeTruthy();
             });
 
         });
 
-        describe("gets notification from side chain deposits", () => {
-            const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
-            const mockSecondaryChainSelectorId = 2;
-            let sideChainTokenWrapped: any;
-            let priceAggregatorSideChainTokenWrapped: any;
-            let message;
+        it("should be able to deposit", async () => {
 
-            beforeEach(async () => {
+            const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+            const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
+            const ethersToWrap = ethers.utils.parseEther("0.5");
 
-                sideChainTokenWrapped = await FungibleTokenFactory.deploy(
-                    "SideChainTokenToWrapped1",
-                    "SIDE1"
-                );
+            const nativeTokenStruct = {
+                assetContract: nativeAddress,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: ethersToWrap,
+            };
 
-                priceAggregatorSideChainTokenWrapped = await PriceAggregatorContractFactory.deploy(
-                    sideChainTokenToBeWrapped1, priceDecimals
-                );
+            const tokenStruct1 = {
+                assetContract: tokenToBeWrapped1.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken1
+            };
 
-                // await sideChainTokenWrapped.connect(owner).mint(etfOwner.address, sideChainTokenToBeWrapped1);
-                // await sideChainTokenWrapped.connect(etfOwner).approve(
-                //     etfContract.address,
-                //     BigNumber.from(sideChainTokenToBeWrapped1)
-                // );
-                etfTokenContract = await EtfTokenContractFactory.deploy();
+            const tokenStruct2 = {
+                assetContract: tokenToBeWrapped2.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken2,
+            };
 
-                const tokenAmounts = [
-                    {
-                        chainIdSelector: mockChainSelectorId,
-                        assetContract: tokenToBeWrapped1.address,
-                        amount: 10,
-                        oracleAddress: priceAggregatortokenToBeWrapped1.address,
-                    },
-                    {
-                        chainIdSelector: mockSecondaryChainSelectorId,  // On the SIDE CHAIN!!
-                        assetContract: sideChainTokenWrapped.address,
-                        amount: 20,
-                        oracleAddress: priceAggregatortokenToBeWrapped2.address,
-                    },
-                ];
+            await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
+            await tokenToBeWrapped1.connect(etfOwner).approve(
+                etfContract.address,
+                tokenStruct1.totalAmount
+            );
 
+            let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            expect(etfTokensBalance).toEqual(BigNumber.from(0));
 
-                const eTFTokenOptions = {
-                    nativeTokenWrapper: nativeTokenWrapper.address,
-                    uriETFToken: ETFURI,
-                    etfTokenAddress: etfTokenContract.address,
-                    etfTokenPerWrap: etfTokenPerWrap,
-                    percentageFee: fee
+            etfTokensBalance = await etfTokenContract.balanceOf(etfOwner2.address);
+            expect(etfTokensBalance).toEqual(BigNumber.from(0));
+
+            await etfContract.connect(etfOwner).depositFunds(
+                0,
+                [nativeTokenStruct, tokenStruct1],
+                {
+                    value: ethersToWrap,
                 }
+            )
+
+            etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            expect(etfTokensBalance).toEqual(BigNumber.from(0));
+
+            await tokenToBeWrapped2.connect(owner).mint(etfOwner2.address, tokenStruct2.totalAmount);
+            await tokenToBeWrapped2.connect(etfOwner2).approve(
+                etfContract.address,
+                tokenStruct2.totalAmount
+            );
+            await etfContract.connect(etfOwner2).depositFunds(
+                0,
+                [tokenStruct2]
+            )
+
+            etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            let valueDepositedByEtfOwner1 = BigNumber.from(tokenStruct1.totalAmount).mul(tokenPrices[1].amount);
+            valueDepositedByEtfOwner1 = valueDepositedByEtfOwner1.add(ethersToWrap.mul(tokenPrices[0].amount));
+            expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner1.mul(etfTokenPerWrap).div(totalValue));
+
+            etfTokensBalance = await etfTokenContract.balanceOf(etfOwner2.address);
+            const valueDepositedByEtfOwner2 = BigNumber.from(tokenStruct2.totalAmount).mul(tokenPrices[2].amount);
+            expect(etfTokensBalance).toEqual(valueDepositedByEtfOwner2.mul(etfTokenPerWrap).div(totalValue));
+
+            expect(await tokenToBeWrapped1.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
+            expect(await tokenToBeWrapped2.balanceOf(etfOwner.address)).toEqual(BigNumber.from(0));
+            expect(await tokenToBeWrapped1.balanceOf(etfContract.address)).toEqual(tokenStruct1.totalAmount);
+            expect(await tokenToBeWrapped2.balanceOf(etfContract.address)).toEqual(tokenStruct2.totalAmount);
+        });
+
+    });
+
+    describe("gets notification from side chain deposits", () => {
+        const mockMessageId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+        const mockSecondaryChainSelectorId = 2;
+        let sideChainTokenWrapped: any;
+        let priceAggregatorSideChainTokenWrapped: any;
+        let message;
+
+        beforeEach(async () => {
+
+            sideChainTokenWrapped = await FungibleTokenFactory.deploy(
+                "SideChainTokenToWrapped1",
+                "SIDE1"
+            );
+
+            priceAggregatorSideChainTokenWrapped = await PriceAggregatorContractFactory.deploy(
+                sideChainTokenToBeWrapped1, priceDecimals
+            );
+
+            // await sideChainTokenWrapped.connect(owner).mint(etfOwner.address, sideChainTokenToBeWrapped1);
+            // await sideChainTokenWrapped.connect(etfOwner).approve(
+            //     etfContract.address,
+            //     BigNumber.from(sideChainTokenToBeWrapped1)
+            // );
+            etfTokenContract = await EtfTokenContractFactory.deploy();
+
+            const tokenAmounts = [
+                {
+                    chainIdSelector: mockChainSelectorId,
+                    assetContract: tokenToBeWrapped1.address,
+                    amount: 10,
+                    oracleAddress: priceAggregatortokenToBeWrapped1.address,
+                },
+                {
+                    chainIdSelector: mockSecondaryChainSelectorId,  // On the SIDE CHAIN!!
+                    assetContract: sideChainTokenWrapped.address,
+                    amount: 20,
+                    oracleAddress: priceAggregatortokenToBeWrapped2.address,
+                },
+            ];
 
 
-                const chainLinkData = {
-                    router: router.address,
-                    link: tokenToBeWrapped2.address,
-                    currentChainSelectorId: mockChainSelectorId,
-                    subscriptionId: subscriptionId,
-                    vrfCoordinator: vrFCoordinatorV2.address,
-                    keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
+            const eTFTokenOptions = {
+                nativeTokenWrapper: nativeTokenWrapper.address,
+                uriETFToken: ETFURI,
+                etfTokenAddress: etfTokenContract.address,
+                etfTokenPerWrap: etfTokenPerWrap,
+                percentageFee: fee
+            }
+
+
+            const chainLinkData = {
+                router: router.address,
+                link: tokenToBeWrapped2.address,
+                currentChainSelectorId: mockChainSelectorId,
+                subscriptionId: subscriptionId,
+                vrfCoordinator: vrFCoordinatorV2.address,
+                keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
+            }
+
+
+            etfContract = await EtfContractFactory.deploy(
+                "ETF-v0.0.3",
+                "ETF",
+                tokenAmounts,
+                eTFTokenOptions,
+                chainLinkData
+            );
+
+            await etfTokenContract.connect(owner).setOwner(etfContract.address);
+            await router.connect(owner).setOnlyRouteTo(etfContract.address);
+            await vrFCoordinatorV2.addConsumer(subscriptionId, etfContract.address);
+        });
+
+
+
+        it("should be able to receive notification and update the bundle", async () => {
+            const amountOfSideChainTokenToWrap = 10;
+            const tokenStruct1 = {
+                assetContract: sideChainTokenWrapped.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountOfSideChainTokenToWrap,
+            };
+
+            const depositFundMessage = {
+                bundleId: 0,
+                tokensToWrap: [tokenStruct1],
+            }
+
+            const encodedData = ethers.utils.defaultAbiCoder.encode(
+                ['tuple(uint256,address,tuple(address,uint256,uint256,uint256)[])'],
+                [[depositFundMessage.bundleId, etfOwner.address, depositFundMessage.tokensToWrap.map(token => [
+                    token.assetContract,
+                    token.tokenType,
+                    token.tokenId,
+                    token.totalAmount
+                ])]]
+            );
+
+            const tx = await router.ccipReceive(
+                {
+                    messageId: mockMessageId,
+                    sourceChainSelector: mockSecondaryChainSelectorId,
+                    // sender: etfOwner2.address,
+                    sender: ethers.utils.defaultAbiCoder.encode(['address'], [etfOwner2.address]),
+                    data: encodedData,
+                    destTokenAmounts: []
                 }
+            );
 
-
-                etfContract = await EtfContractFactory.deploy(
-                    "ETF-v0.0.3",
-                    "ETF",
-                    tokenAmounts,
-                    eTFTokenOptions,
-                    chainLinkData
-                );
-
-                await etfTokenContract.connect(owner).setOwner(etfContract.address);
-                await router.connect(owner).setOnlyRouteTo(etfContract.address);
-                await vrFCoordinatorV2.addConsumer(subscriptionId, etfContract.address);
+            const checkMessageReceivedETFContractPromise = new Promise<void>((resolve, reject) => {
+                etfContract.on("MessageReceived", (messageId: string, chainIdSelector: any, sender: any, data: any) => {
+                    try {
+                        expect(messageId).toEqual(mockMessageId);
+                        expect(sender).toEqual(etfOwner2.address);
+                        expect(chainIdSelector).toEqual(BigNumber.from(mockSecondaryChainSelectorId));
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                    finally {
+                        etfContract.removeAllListeners("MessageReceived");
+                    }
+                });
             });
 
+            await tx.wait();
+            await checkMessageReceivedETFContractPromise;
+            await etfContract.updateBundleAfterReceive(0);
+            const tokens = await etfContract.getTokensBundle(0);
+            console.log('tokens', tokens);
+            expect(tokens[0][0]).toEqual(BigNumber.from(amountOfSideChainTokenToWrap));
+            expect(tokens[1][0]).toEqual(sideChainTokenWrapped.address);
+            expect(tokens[2][0]).toEqual(BigNumber.from(mockSecondaryChainSelectorId));
+        });
 
+        it("should be able to send notifaction to reedem tokens on sidechains (sendReedeemMessage)", async () => {
+            const amountOfSideChainTokenToWrap = 20;
+            const bundles = [0, 1];
 
-            it("should be able to receive notification and update the bundle", async () => {
-                const amountOfSideChainTokenToWrap = 10;
-                const tokenStruct1 = {
+            const ReedemETFMessage = {
+                bundleId: bundles[0],
+                receiver: etfOwner.address
+            }
+
+            const tokenStruct1 = {
+                assetContract: tokenToBeWrapped1.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: 10,
+            };
+
+            for (let i = 0; i < bundles.length; i++) {
+
+                const tokenStructSide = {
                     assetContract: sideChainTokenWrapped.address,
                     tokenType: 0,
                     tokenId: 0,
@@ -513,13 +662,14 @@ describe("ETFContract", () => {
                 };
 
                 const depositFundMessage = {
-                    bundleId: 0,
-                    tokensToWrap: [tokenStruct1],
+                    bundleId: bundles[i],
+                    userSender: etfOwner.address,
+                    tokensToWrap: [tokenStructSide],
                 }
 
                 const encodedData = ethers.utils.defaultAbiCoder.encode(
-                    ['tuple(uint256,address,tuple(address,uint256,uint256,uint256)[])'],
-                    [[depositFundMessage.bundleId, etfOwner.address, depositFundMessage.tokensToWrap.map(token => [
+                    ['tuple(uint256,address, tuple(address,uint256,uint256,uint256)[])'],
+                    [[depositFundMessage.bundleId, depositFundMessage.userSender, depositFundMessage.tokensToWrap.map(token => [
                         token.assetContract,
                         token.tokenType,
                         token.tokenId,
@@ -527,154 +677,75 @@ describe("ETFContract", () => {
                     ])]]
                 );
 
-                const tx = await router.ccipReceive(
+                await router.ccipReceive(
                     {
                         messageId: mockMessageId,
                         sourceChainSelector: mockSecondaryChainSelectorId,
-                        // sender: etfOwner2.address,
-                        sender: ethers.utils.defaultAbiCoder.encode(['address'], [etfOwner2.address]),
+                        sender: ethers.utils.defaultAbiCoder.encode(['address'], [etfOwner.address]),
                         data: encodedData,
                         destTokenAmounts: []
                     }
                 );
 
-                const checkMessageReceivedETFContractPromise = new Promise<void>((resolve, reject) => {
-                    etfContract.on("MessageReceived", (messageId: string, chainIdSelector: any, sender: any, data: any) => {
-                        try {
-                            expect(messageId).toEqual(mockMessageId);
-                            expect(sender).toEqual(etfOwner2.address);
-                            expect(chainIdSelector).toEqual(BigNumber.from(mockSecondaryChainSelectorId));
-                            resolve();
-                        } catch (error) {
-                            reject(error);
-                        }
-                        finally {
-                            etfContract.removeAllListeners("MessageReceived");
-                        }
-                    });
-                });
+                await etfContract.updateBundleAfterReceive(bundles[i]);
 
-                await tx.wait();
-                await checkMessageReceivedETFContractPromise;
-                await etfContract.updateBundleAfterReceive(0);
-                const tokens = await etfContract.getTokensBundle(0);
-                console.log('tokens', tokens);
-                expect(tokens[0][0]).toEqual(BigNumber.from(amountOfSideChainTokenToWrap));
-                expect(tokens[1][0]).toEqual(sideChainTokenWrapped.address);
-                expect(tokens[2][0]).toEqual(BigNumber.from(mockSecondaryChainSelectorId));
-            });
+                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
 
-            it("should be able to send notifaction to reedem tokens on sidechains (sendReedeemMessage)", async () => {
-                const amountOfSideChainTokenToWrap = 20;
-                const bundles = [0, 1];
-
-                const ReedemETFMessage = {
-                    bundleId: bundles[0],
-                    receiver: etfOwner.address
-                }
-
-                const tokenStruct1 = {
-                    assetContract: tokenToBeWrapped1.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: 10,
-                };
-
-                for (let i = 0; i < bundles.length; i++) {
-
-                    const tokenStructSide = {
-                        assetContract: sideChainTokenWrapped.address,
-                        tokenType: 0,
-                        tokenId: 0,
-                        totalAmount: amountOfSideChainTokenToWrap,
-                    };
-
-                    const depositFundMessage = {
-                        bundleId: bundles[i],
-                        userSender: etfOwner.address,
-                        tokensToWrap: [tokenStructSide],
-                    }
-
-                    const encodedData = ethers.utils.defaultAbiCoder.encode(
-                        ['tuple(uint256,address, tuple(address,uint256,uint256,uint256)[])'],
-                        [[depositFundMessage.bundleId, depositFundMessage.userSender, depositFundMessage.tokensToWrap.map(token => [
-                            token.assetContract,
-                            token.tokenType,
-                            token.tokenId,
-                            token.totalAmount
-                        ])]]
-                    );
-
-                    await router.ccipReceive(
-                        {
-                            messageId: mockMessageId,
-                            sourceChainSelector: mockSecondaryChainSelectorId,
-                            sender: ethers.utils.defaultAbiCoder.encode(['address'], [etfOwner.address]),
-                            data: encodedData,
-                            destTokenAmounts: []
-                        }
-                    );
-
-                    await etfContract.updateBundleAfterReceive(bundles[i]);
-
-                    await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, tokenStruct1.totalAmount);
-
-                    await tokenToBeWrapped1.connect(etfOwner).approve(etfContract.address, tokenStruct1.totalAmount);
+                await tokenToBeWrapped1.connect(etfOwner).approve(etfContract.address, tokenStruct1.totalAmount);
 
 
-                    await etfContract.connect(etfOwner).depositFunds(
-                        bundles[i],
-                        [tokenStruct1],
-                    );
-
-                    const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                    console.log('etfTokensBalance', etfTokensBalance.toString(), etfTokenPerWrap.toString());
-                }
-
-                await etfTokenContract.connect(etfOwner).approve(etfContract.address, etfTokenPerWrap);
-
-                // need to wait lock time to reedem (1 day)
-                await ethers.provider.send("evm_increaseTime", [86400]);
-
-                // // reedem etf
-                await etfContract.connect(etfOwner).reedemETF(
-                    bundles[0]);
-
-                // // send reedem message
-                await etfContract.sendReedeemMessage(
-                    ReedemETFMessage.bundleId,
-                    mockChainSelectorId,
-                    PayFeesIn.Native
+                await etfContract.connect(etfOwner).depositFunds(
+                    bundles[i],
+                    [tokenStruct1],
                 );
 
+                const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+                console.log('etfTokensBalance', etfTokensBalance.toString(), etfTokenPerWrap.toString());
+            }
 
-                const checkRouterTestPromise = new Promise<void>((resolve, reject) => {
-                    router.on("RouterMessageSent", (address: string, data: any) => {
-                        try {
-                            const reedemETFMessageMessageType = ['tuple(uint256,address)'];
-                            const decoded = ethers.utils.defaultAbiCoder.decode(reedemETFMessageMessageType, data);
-                            expect(decoded).toBeDefined();
-                            expect(decoded).toBeDefined();
-                            expect(decoded.length).toEqual(1);
-                            expect(decoded[0][0]).toEqual(BigNumber.from(bundles[0]));
-                            expect(decoded[0][1]).toEqual(etfOwner.address);
-                            resolve();
-                        } catch (error) {
-                            reject(error);
-                        }
-                        finally {
-                            router.removeAllListeners("RouterMessageSent");
-                        }
-                    });
+            await etfTokenContract.connect(etfOwner).approve(etfContract.address, etfTokenPerWrap);
+
+            // need to wait lock time to reedem (1 day)
+            await ethers.provider.send("evm_increaseTime", [86400]);
+
+            // // reedem etf
+            await etfContract.connect(etfOwner).reedemETF(
+                bundles[0]);
+
+            // // send reedem message
+            await etfContract.sendReedeemMessage(
+                ReedemETFMessage.bundleId,
+                mockChainSelectorId,
+                PayFeesIn.Native
+            );
+
+
+            const checkRouterTestPromise = new Promise<void>((resolve, reject) => {
+                router.on("RouterMessageSent", (address: string, data: any) => {
+                    try {
+                        const reedemETFMessageMessageType = ['tuple(uint256,address)'];
+                        const decoded = ethers.utils.defaultAbiCoder.decode(reedemETFMessageMessageType, data);
+                        expect(decoded).toBeDefined();
+                        expect(decoded).toBeDefined();
+                        expect(decoded.length).toEqual(1);
+                        expect(decoded[0][0]).toEqual(BigNumber.from(bundles[0]));
+                        expect(decoded[0][1]).toEqual(etfOwner.address);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                    finally {
+                        router.removeAllListeners("RouterMessageSent");
+                    }
                 });
-
-                await checkRouterTestPromise;
             });
 
+            await checkRouterTestPromise;
         });
-
 
     });
 
 
 });
+
+
