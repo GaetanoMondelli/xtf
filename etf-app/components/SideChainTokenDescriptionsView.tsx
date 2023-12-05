@@ -1,8 +1,8 @@
 import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead, ThirdwebProvider, useConnectionStatus, useNetworkMismatch } from "@thirdweb-dev/react";
-import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Divider, Layout, Progress } from 'antd';
+import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Divider, Layout, Progress, List, Card } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
-import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain, PayFeesIn } from "./utils";
+import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain, PayFeesIn, matchDepositFundMessage, minimiseAddress } from "./utils";
 import { useContext, useEffect, useState } from "react";
 import { MumbaiChain } from "../pages/_app";
 import ChainContext from "../context/chain";
@@ -18,6 +18,9 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const index = 0;
     const userAddress = useAddress();
     const [quantities, setQuantities] = useState<any>({});
+    const [messages, setMessages] = useState<any>();
+
+
     const { contract: sideChainContract, isLoading: isSideChainContractLoading, error: isSideChainContractError } = useContract(etfAddress, SIDE_ABI as ContractInterface);
 
 
@@ -66,6 +69,16 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
 
 
 
+    useEffect(() => {
+        const getMessages = () => {
+            if (!bundle) return;
+            const messages: any = matchDepositFundMessage(bundle[2], BigNumber.from(bundleId), address);
+            setMessages(messages);
+        }
+        getMessages();
+    }, [bundle]);
+
+
     const { data: allowance, isLoading: isAllowanceLoading, error: nameError } = useContractRead(contract, "allowance", [userAddress, etfAddress]);
 
     useEffect(() => {
@@ -97,11 +110,11 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
             <h3>Vault {bundleId}</h3>
             <br></br>
             {<p>
-                sxa{JSON.stringify(requiredAssets)}
-                {JSON.stringify(bundle)}
+                {/* sxa{JSON.stringify(requiredAssets)} */}
+                {/* {JSON.stringify(bundle[2])} */}
                 {/* {Number(BigNumber.from(bundle[0][index] || 0))} */}
             </p>}
-            etf: {etfAddress}
+            {/* etf: {etfAddress} */}
             <br></br>
         </Layout.Content>
 
@@ -299,6 +312,45 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                         </Button>
                     </Descriptions.Item>
                 </Descriptions >
+                <List
+                    // grey background
+                    style={{
+                        width: '94%',
+                        padding: '3%',
+                        overflowY: 'auto',
+                        backgroundColor: '#f7f7f7'
+                    }}
+                    dataSource={messages?.messages || []}
+                    renderItem={(item: any) => (
+                        <List.Item>
+                            <Card
+                                className="customcard"
+                                size="small"
+                                title={
+                                    <>
+                                        {`CCIP MessageId:`}<a
+                                            style={{
+                                                color: 'blue'
+                                            }}
+                                            href={`https://ccip.chain.link/msg/${item?.messageId}`}
+                                            target="_blank" rel="noreferrer">{minimiseAddress(item?.messageId)}</a>
+                                    </>
+                                }>
+                                <p>{`Sender: ${minimiseAddress(item.sender)}`}</p>
+                                <p>{`Bundle ID: ${item.depositFundMessage.bundleId}`}</p>
+                                {
+                                    item.depositFundMessage.tokensToWrap.map((token: any, index: number) => {
+                                        return <p>{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
+                                            BigNumber.from(10).pow(18)
+                                        ).toString()}`}</p>
+                                    })
+                                }
+                                {/* <p>{`Amount: ${item.depositFundMessage.totalAmount?.toString()}`}</p> */}
+
+                            </Card>
+                        </List.Item>
+                    )}
+                />
                 <Progress
                     // orange
                     strokeColor={"#ff7f00"}
