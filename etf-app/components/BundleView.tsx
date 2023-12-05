@@ -2,8 +2,8 @@ import { useAddress, useContract, useContractRead, useContractWrite } from "@thi
 
 import styles from '../styles/page.module.css'
 import TokenDescriptions from "./TokenDescriptionsView";
-import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result, Select } from 'antd';
-import { FireFilled } from '@ant-design/icons';
+import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result, Select, Tag } from 'antd';
+import { FireFilled, LockOutlined, UnlockOutlined, BankOutlined } from '@ant-design/icons';
 import { BigNumber, ethers } from "ethers";
 import { useState, useEffect, useContext } from "react";
 import { Pie } from 'react-chartjs-2';
@@ -68,6 +68,12 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         "reedemETF"
     );
 
+    const { mutateAsync: reedemNFTVote, isLoading: isReedemNFTVoteLoadinf, error: errorReedemNFTVote } = useContractWrite(
+        contract,
+        "reeedNFTVote"
+    );
+
+
     const { data: userDeposit, isLoading: userDepositLoading, error: userDepositError } = useContractRead(
         contract,
         "getAddressQuantityPerBundle", [bundleId, userAddress]
@@ -96,6 +102,16 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const { data: chainSelectorId, isLoading: chainSelectorIdLoading, error: chainSelectorIdError } = useContractRead(
         contract,
         "currentChainSelectorId",
+    );
+
+    const { data: winner, isLoading: winnerLoading, error: winnerError } = useContractRead(
+        contract,
+        "bundleIdToRandomWinner", [bundleId],
+    );
+
+    const { data: ownerOf, isLoading: ownerOfLoading, error: ownerOfError } = useContractRead(
+        contract,
+        "ownerOf", [etfId],
     );
 
     const getRequiredAsset = (address: string) => {
@@ -239,6 +255,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                         {/* {!requiredAssetLoading && <pre>{JSON.stringify(bundle, null, 2)}</pre>}
                     {!requiredAssetLoading && <pre>{JSON.stringify(quantities, null, 2)}</pre>} */}
                         <MatrixView address={address}
+                            bundleId={bundleId}
                             bundleState={bundleState}
                             setBundleId={setBundleId}
                             bundleStateLoading={bundleStateLoading}
@@ -439,18 +456,52 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                             expirationTimeLoading ? 0 : expirationTimeError ? 0 : expirationTime ? expirationTime.toNumber() * 1000 : 0
 
                         }></Countdown>
+                        <span
+                            // float on the right
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                alignItems: 'center',
+                                marginRight: '30px'
+                            }}
+                        >Vote n.{etfId?.toString()} Owner:{ownerOf?.toString()}</span>
                         <Result
                             status="success"
                             title="The Bundle has been locked and ETF tokens have been minted"
-                            subTitle={"You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets " + bundleId + " " + etfId}
-                            extra={[<Button type="primary" onClick={() => {
+                            subTitle={"You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets "}
+                            extra={[<Button
+                                icon={
+                                    expirationTimeLoading ? <LockOutlined /> : expirationTimeError ? <LockOutlined /> : expirationTime ? expirationTime.toNumber() * 1000 > Date.now() ? <LockOutlined /> : <UnlockOutlined /> : <LockOutlined />
+                                }
+                                disabled={expirationTimeLoading ? true : expirationTimeError ? true : expirationTime ? expirationTime.toNumber() * 1000 > Date.now() : true}
+                                type="primary" onClick={() => {
 
-                                reedem({
-                                    args: [bundleId],
-                                })
+                                    reedem({
+                                        args: [bundleId],
+                                    })
 
-                            }}>Reedem</Button>
-                            ]}
+                                }}>Reedem</Button>,
+                            <>{!winnerLoading && winner === userAddress && <p>
+                                <Divider />
+                                <Tag color="green"> You are eligble to reedem a vote</Tag>
+                                <br></br>
+                                <br></br>
+
+                                <Button type="primary" 
+                                size="small"
+                                icon={
+                                    <BankOutlined />
+                                }
+                                onClick={() => {
+
+                                    reedemNFTVote({
+                                        args: [bundleId],
+                                    })
+
+                                }}>Reedem NFT Vote</Button>
+                            </p>}</>
+                            ]
+                            }
                         />
 
                     </Card>
@@ -534,7 +585,9 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                 {/* <h3>This bundle is on another chain (not this chain selector Id: {chainSelectorId?.toString()})</h3> */}
 
                 <SideChainTokenDescriptions
-                    address={address}
+                    address={config.sideChainContracts[
+                        networkToSelectorId[selectedChain]
+                    ]['FungibleToken'][0].address}
                     etfAddress={config.sideChainContracts[
                         networkToSelectorId[selectedChain]
                     ]['SidechainDeposit'][0].address}

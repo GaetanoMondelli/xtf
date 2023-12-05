@@ -26,7 +26,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
 
     const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
 
-    address = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
+    // address = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
     // etfAddress = "0x4c0a47b0c3a16291AC32040740687dd5F06a42F3";
 
 
@@ -115,7 +115,6 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                 {/* {Number(BigNumber.from(bundle[0][index] || 0))} */}
             </p>}
             {/* etf: {etfAddress} */}
-            <br></br>
         </Layout.Content>
 
         {requiredAssets && bundle && requiredAssets[1].map((requiredAsset: any, index: number) => {
@@ -128,6 +127,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                 }
                 }
             >
+                {/*  get keys of quantities */}
                 <Descriptions
                     column={2}
                     title={
@@ -234,7 +234,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                         <Button type="link" size="small" onClick={() => {
                             // transfer link tokens to etf contract
                             transferLink({
-                                args: [etfAddress, BigNumber.from(1).mul(BigNumber.from(10).pow(18))]
+                                args: [etfAddress, BigNumber.from(10).mul(BigNumber.from(10).pow(18))]
                             })
 
                         }
@@ -290,15 +290,14 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                             onClick={() =>
                                 depositFundsAndNotify({
                                     args: [bundleId,
-                                        [
-                                            {
-                                                assetContract: "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d",
+                                        Object.keys(quantities).map((key: string) => {
+                                            return {
+                                                assetContract: key,
                                                 tokenType: 0,
                                                 tokenId: 0,
-                                                // totalAmount: BigNumber.from(6).mul(BigNumber.from(10).pow(18)),
-                                                totalAmount: BigNumber.from(quantities[nativeAddress] || 6).mul(BigNumber.from(10).pow(18)),
-                                            },
-                                        ],
+                                                totalAmount: BigNumber.from(quantities[key] || 0).mul(BigNumber.from(10).pow(18)),
+                                            }
+                                        }),
                                         PayFeesIn.LINK,
                                         false,
                                     ],
