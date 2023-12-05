@@ -2,6 +2,7 @@
   "name": "hardhat-javascript-starter",
   "scripts": {
     "compile": "npx hardhat compile",
+    "dev": "cd etf-app && npm run dev",
     "build": "npx thirdweb@latest detect",
     "deploy": "npx thirdweb@latest deploynp",
     "release": "npx thirdweb@latest release",
