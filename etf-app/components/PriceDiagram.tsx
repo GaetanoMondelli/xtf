@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Line } from 'react-chartjs-2';
 import { Layout } from 'antd';
+import { get } from 'http';
 type PriceData = { time: number; price: number };
 type AssetData = Record<string, PriceData[]>;
 
 const { Content } = Layout;
 
-const ChartComponent: React.FC = () => {
+export default function PriceChartComponent({ title, normalise }: { title: string, normalise: boolean }) {
     const [chartData, setChartData] = useState<any>();
     const days = 100; // Number of days for historical data
 
@@ -52,12 +53,13 @@ const ChartComponent: React.FC = () => {
                 price: 0.05 * ethPrice + 15 * daiPrice + 3 * linkPrice + 6 * snxPrice
             };
         });
-
-        for (const key of Object.keys(allData)) {
-            allData[key] = normalizeData(allData[key]);
+        let data = indexAssetData;
+        if (normalise) {
+            for (const key of Object.keys(allData)) {
+                allData[key] = normalizeData(allData[key]);
+            }
+            data = normalizeData(indexAssetData);
         }
-        const normalizedIndexAssetData = normalizeData(indexAssetData);
-
 
         setChartData({
             labels: indexAssetData?.map(data => new Date(data.time).toLocaleDateString()),
@@ -65,12 +67,12 @@ const ChartComponent: React.FC = () => {
                 ...Object.keys(assets)?.map(symbol => ({
                     label: symbol,
                     data: allData[symbol]?.map(data => data.price),
-                    borderColor: getRandomColor(),
+                    borderColor: getAssetColor(symbol),  //getRandomColor(),
                     fill: false,
                 })),
                 {
                     label: 'Index Asset',
-                    data: normalizedIndexAssetData?.map(data => data.price),
+                    data: data?.map(data => data.price),
                     borderColor: '#000000',
                     fill: false,
                 }
@@ -81,6 +83,25 @@ const ChartComponent: React.FC = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const getAssetColor = (symbol: string) => {
+
+        switch (symbol) {
+            case 'ETH':
+                return '#ff9900';
+            case 'LINK':
+                return '#1c81c2';
+            case 'SNX':
+                // dark purple
+                return '#210c69';
+            case 'DAI':
+                // yellow
+                return '#f0c808';
+            default:
+                return getRandomColor();
+        }
+    }
+
 
     const getRandomColor = () => {
         const letters = '0123456789ABCDEF';
@@ -93,14 +114,29 @@ const ChartComponent: React.FC = () => {
 
     return (
         <div>
-            <Content style={{ padding: '0 50px' }} >
+            <Content className='card'  style={{ width:"100%", padding: '0 50px 50px' }} >
 
-                <h2>Asset Price Comparison</h2>
+                {/* <h2>Asset Price Comparison</h2> */}
+                <h2>{title}</h2>
 
-                {chartData && <Line data={chartData} />}
+                {chartData && <Line
+                    options={!normalise ? {
+                        scales: {
+                            y: {
+                                type: 'logarithmic',
+                                ticks: {
+                                    // Include a dollar sign in the ticks
+                                    callback: function (value: any, index: any, values: any) {
+                                        // return '$' + value;
+                                        return value.toExponential();
+                                    }
+                                }
+                            }
+                        }
+                    } : {}}
+                    data={chartData} />}
             </Content>
         </div>
     );
 };
 
-export default ChartComponent;

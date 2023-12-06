@@ -232,7 +232,21 @@ const Home: NextPage = () => {
           </div>}
         <br></br>
 
-        {selectedTab === '2' && <PriceChartComponent></PriceChartComponent>}
+        {selectedTab === '2' &&
+          <div
+          // style={{
+          //   display: "flex",
+          //   flexDirection: "row",
+          //   alignItems: "center",
+          //   justifyContent: "center",
+          //   marginBottom: 20,
+          //   width: "100%"
+          // }}
+          >
+
+            <PriceChartComponent title='Normalised Price Asset Comparison' normalise={true}></PriceChartComponent>
+            <PriceChartComponent title='Logaritmic Price Asset Comparison' normalise={false}></PriceChartComponent>
+          </div>}
         {selectedTab === '3' && <BundleView address={config.contracts['ETFv2'][0].address} bundleId={bundleId}
           setBundleId={setBundleId}
           tokenToBeWrapped1Address={config.contracts['FungibleToken'][0].address}
