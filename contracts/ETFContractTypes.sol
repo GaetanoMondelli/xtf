@@ -65,4 +65,5 @@ struct ETFTokenOptions {
     address etfTokenAddress;
     uint256 etfTokenPerWrap;
     uint256 percentageFee;
+    // address voteNFTAddress;
 }
