@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 import {IETFToken} from "./ETFTokenContract.sol";
+// import {IERC721} from "@thirdweb-dev/contracts/eip/interface/IERC721.sol";
+import {NFTVote} from "./ETFVote.sol";
 import {Ownable} from "@thirdweb-dev/contracts/extension/Ownable.sol";
 import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
 import {IERC165} from "@thirdweb-dev/contracts/eip/interface/IERC165.sol";
 import {ERC1155Receiver} from "@thirdweb-dev/contracts/openzeppelin-presets/utils/ERC1155/ERC1155Receiver.sol";
 import {TokenStore} from "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import {ContractMetadata} from "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
-import {ERC721A} from "@thirdweb-dev/contracts/eip/ERC721AVirtualApprove.sol";
+// import {ERC721A} from "@thirdweb-dev/contracts/eip/ERC721AVirtualApprove.sol";
 import {DefaultOperatorFilterer} from "@thirdweb-dev/contracts/extension/DefaultOperatorFilterer.sol";
 import {IERC20Metadata, IERC20} from "@thirdweb-dev/contracts/base/ERC20Base.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
@@ -22,7 +24,7 @@ import "hardhat/console.sol";
 
 contract ETFBase is
     TokenStore,
-    ERC721A,
+    NFTVote,
     ContractMetadata,
     Ownable,
     DefaultOperatorFilterer,
@@ -63,8 +65,12 @@ contract ETFBase is
     mapping(uint256 => uint256) public bundleIdToETFId;
     // messages from other chains through the CCIP
     mapping(uint256 => MessageDesposit[]) messages;
+    // reedeem messages from other chains through the CCIP
+    mapping(uint256 => ReedeemETFMessage[]) public reedeemMessages;
     // count of messages from other chains through the CCIP
     mapping(uint256 => uint256) messageCount;
+    
+    error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees);
 
     constructor(
         string memory _name,
@@ -73,7 +79,7 @@ contract ETFBase is
         ETFTokenOptions memory _etfOptions,
         ChainLinkData memory _chainLinkData
     )
-        ERC721A(_name, _symbol)
+        NFTVote(msg.sender, _name, _symbol, _etfOptions.uriETFToken)
         TokenStore(_etfOptions.nativeTokenWrapper)
         CCIPReceiver(_chainLinkData.router)
         VRFConsumerBaseV2(_chainLinkData.vrfCoordinator)
@@ -121,12 +127,13 @@ contract ETFBase is
     function isETFBurned(uint256 tokenId) public view returns (bool) {
         // Ensure the token ID is valid.
         // require(tokenId < _currentIndex, "Token ID does not exist.");
-        if (tokenId >= _currentIndex) {
+        if (tokenId >= _currentIndex || tokenId < _startTokenId()) {
             return false;
         }
 
         // Check the burned flag in the ownership struct of the token.
-        return _ownerships[tokenId].burned;
+        // TO-DO ERC721A: return _ownerships[tokenId].burned;
+        return _ownerships[tokenId] == address(0);
     }
 
     function getBurnedCount() public view returns (uint256) {
@@ -206,7 +213,13 @@ contract ETFBase is
         // emit EtherReceived(msg.sender, msg.value);
     }
 
-    function nextTokenIdToMint() public view virtual returns (uint256) {
+    function nextTokenIdToMint()
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return _currentIndex;
     }
 
@@ -218,12 +231,7 @@ contract ETFBase is
 
     function supportsInterface(
         bytes4 interfaceId
-    )
-        public
-        pure
-        override(CCIPReceiver, ERC1155Receiver, ERC721A)
-        returns (bool)
-    {
+    ) public pure override(CCIPReceiver, ERC1155Receiver) returns (bool) {
         return CCIPReceiver.supportsInterface(interfaceId);
     }
 
@@ -248,6 +256,9 @@ contract ETFBase is
     function tokenURI(
         uint256 tokenId
     ) public view override returns (string memory) {
+        if (tokenId > _currentIndex || tokenId < _startTokenId()) {
+            return "";
+        }
         return etfOptions.uriETFToken;
     }
 
