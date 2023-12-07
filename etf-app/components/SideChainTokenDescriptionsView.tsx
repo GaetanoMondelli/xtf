@@ -7,7 +7,6 @@ import { useContext, useEffect, useState } from "react";
 import { MumbaiChain } from "../pages/_app";
 import ChainContext from "../context/chain";
 const SIDE_ABI = require("../.././artifacts/contracts/SidechainDeposit.sol/SidechainDeposit").abi;
-import SIDE_ABI2 from "../../artifacts/contracts/SidechainDeposit.sol/SidechainDeposit.json";
 import { ContractInterface } from "ethers/lib/ethers";
 
 export default function SideChainTokenDescriptions({ address, etfAddress, bundleId, requiredTokenStruct, chainSelectorId }:
@@ -34,6 +33,36 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
         sideChainContract,
         "getTokensBundle", [bundleId]
     );
+
+
+    const { data: burner, isLoading: burnerLoading, error: burnerError } = useContractRead(
+        sideChainContract,
+        "burner", [bundleId]
+    );
+
+    const { data: fee, isLoading: feeLoading, error: feeError } = useContractRead(
+        sideChainContract,
+        "getFee",
+        [
+            BigNumber.from("16015286601757825753"),
+            userAddress,
+            {
+                "userSender": userAddress,
+                "bundleId": bundleId,
+                "tokensToWrap": Object.keys(quantities).map((key: string) => {
+                    return {
+                        assetContract: key,
+                        tokenType: 0,
+                        tokenId: 0,
+                        totalAmount: BigNumber.from(quantities[key] || 0).mul(BigNumber.from(10).pow(18)),
+                    }
+                }) || [],
+            },
+            PayFeesIn.LINK,
+        ],
+    );
+
+    // getDepositFee
 
     const { data: requiredAssets, isLoading: requiredAssetLoading, error: requiredAssetError } = useContractRead(
         sideChainContract,
@@ -108,6 +137,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
         <Layout.Content>
 
             <h3>Vault {bundleId}</h3>
+            {burner && <p>Burner: {burner}</p>}
             <br></br>
             {<p>
                 {/* sxa{JSON.stringify(requiredAssets)} */}
@@ -216,6 +246,14 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                     ⓘ Deposit Link and Notify action will deposit the link tokens to the sidechain contract and
                     notify ETF contract on the primary chain.
                     Communication between the two contracts is done via Chainlink CCIP and requires LINK tokens.
+                    <Divider />
+                    
+                    
+                    {fee && <p>Esitmated Fee for the transaction now: {BigNumber.from(fee || 0).div(
+                        BigNumber.from(10).pow(16)
+                    ).toNumber() / 100} LINK</p>}
+                    {feeError && <p>Fee Error {JSON.stringify(feeError)}</p>}
+                    {feeLoading && <p>Fee Loading...</p>}
                 </Layout.Content>
                 <Divider />
                 <Descriptions
@@ -234,11 +272,11 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                         <Button type="link" size="small" onClick={() => {
                             // transfer link tokens to etf contract
                             transferLink({
-                                args: [etfAddress, BigNumber.from(10).mul(BigNumber.from(10).pow(18))]
+                                args: [etfAddress, BigNumber.from(5).mul(BigNumber.from(10).pow(18))]
                             })
 
                         }
-                        }>Transfer LINK Tokens</Button>
+                        }>Transfer LINK  Tokens</Button>
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Your Link Balance">
@@ -280,13 +318,21 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                         />
                     </Descriptions.Item> */}
 
-                    <Descriptions.Item label="Token">
+                    <Descriptions.Item label="Action">
                         <Button
                             style={{
                                 marginLeft: 20
                             }}
                             type="primary"
                             size="small"
+
+                            disabled={
+                                isLoadingDeposit ||
+                                !quantities[address] ||
+                                quantities[address] === 0 ||
+                                BigNumber.from(bundle[0][index] || 0).eq(BigNumber.from(requiredAssets[0][index] || 0))
+                            }
+
                             onClick={() =>
                                 depositFundsAndNotify({
                                     args: [bundleId,
@@ -319,6 +365,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                         overflowY: 'auto',
                         backgroundColor: '#f7f7f7'
                     }}
+                    grid={{ gutter: 20, column: 3 }}
                     dataSource={messages?.messages || []}
                     renderItem={(item: any) => (
                         <List.Item>

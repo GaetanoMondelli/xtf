@@ -32,7 +32,6 @@ export default function PriceValueStats(
             const value = prices[index]
             if (value == undefined) return;
             values.push(BigNumber.from(value).mul(BigNumber.from(asset.totalAmount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
-            console.log('valueS', value, asset.totalAmount, values[values.length - 1])
             labels.push(asset.assetContract);
         });
         return [labels, values];

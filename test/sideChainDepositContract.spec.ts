@@ -235,6 +235,7 @@ describe("ChainLink CCIP Message layer", () => {
             // to the sidechain contract to release funds to the receiver
 
             const ReedemETFMessage = {
+                messageId: mockMessageId,
                 bundleId: bundleId,
                 receiver: receiver.address
             }
@@ -242,8 +243,8 @@ describe("ChainLink CCIP Message layer", () => {
             const balanceReceiverLinkTokenBeforeReedemMessage = await linkToken.balanceOf(receiver.address);
 
             const encodedData = ethers.utils.defaultAbiCoder.encode(
-                ['tuple(uint256,address)'],
-                [[ReedemETFMessage.bundleId, ReedemETFMessage.receiver]]
+                ['tuple(uint256,address,bytes32)'],
+                [[ReedemETFMessage.bundleId, ReedemETFMessage.receiver, ReedemETFMessage.messageId]]
             );
             // Message from Primary contract -> Sidechain contract
             await router.setOnlyRouteTo(sideChainDepositContract.address);
