@@ -25,6 +25,18 @@ export const chainSelectorIdToExplorerAddress: any = {
     "12532609583862916517": "https://mumbai.polygonscan.com/token",
 }
 
+export const chainIdToNetworkName: any = {
+    11155111: ["Ethereum", "Sepolia"],
+    80001: ["Polygon","Mumbai"],
+    1: ["Hardhat","Localhost"]
+}
+
+export const chainIdToNetworkLogo: any = {
+    80001: "https://assets.coingecko.com/coins/images/4713/standard/polygon.png?1698233745",
+    11155111: "https://assets.coingecko.com/coins/images/279/standard/ethereum.png?1696501628",
+    1: "https://hashnode.com/utility/r?url=https%3A%2F%2Fcdn.hashnode.com%2Fres%2Fhashnode%2Fimage%2Fupload%2Fv1641721533244%2FEDjMSBz-F.png%3Fw%3D1200%26auto%3Dcompress%2Cformat%26format%3Dwebp%26fm%3Dpng"
+}
+
 const ETFConfigurationIndex0 = {
     name: "ETF-hardhat-index0",
     chainId: HardhatChainId,
