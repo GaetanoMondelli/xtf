@@ -187,6 +187,16 @@ describe("ETFContract", () => {
             expect(tokenToBeWrapped1.address).toBeDefined();
         });
 
+        it("should satisfy initial conditions", async () => {
+            const totalSupply = await etfTokenContract.totalSupply();
+            expect(totalSupply).toEqual(BigNumber.from(0));
+            const states = await etfContract.returnStateOfBundles(0, 96);
+            const nextTokenIdToMint = await etfContract.nextTokenIdToMint();
+            const isEtfBurned = await etfContract.isETFBurned(0);
+            expect(isEtfBurned).toBeFalsy();
+        }
+        );
+
         describe("mint ETF", () => {
             it.skip("should prevent to invoke ETF wrap function from an eoa", async () => {
                 // removed wrap function from etf contract
@@ -316,7 +326,7 @@ describe("ETFContract", () => {
 
                 let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
                 expect(BigNumber.from(etfTokensBalance).gt(BigNumber.from(0))).toBeTruthy();
-                
+
 
                 let token1Balance = await tokenToBeWrapped1.balanceOf(etfOwner.address);
                 expect(token1Balance).toEqual(BigNumber.from(0));
@@ -716,7 +726,7 @@ describe("ETFContract", () => {
             await etfContract.sendReedeemMessage(
                 ReedemETFMessage.bundleId,
                 mockChainSelectorId,
-                PayFeesIn.Native
+                PayFeesIn.LINK
             );
 
 
