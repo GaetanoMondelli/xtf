@@ -116,6 +116,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                 </Descriptions.Item>
                 <Descriptions.Item span={2} label="Side Chain Messages">
                     <Button type="primary" size="small"
+                        disabled={messages?.messages?.length === 0}
                         onClick={() => {
                             updateBundleAfterReceive({
                                 args: [bundleId]
@@ -134,6 +135,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                             overflowY: 'auto',
                             backgroundColor: '#f7f7f7'
                         }}
+                        grid={{ gutter: 12, column: 2 }}
                         dataSource={messages?.messages || []}
                         renderItem={(item: any) => (
                             <List.Item>
