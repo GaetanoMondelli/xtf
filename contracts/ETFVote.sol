@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import {IERC721} from "@thirdweb-dev/contracts/eip/interface/IERC721.sol";
-// IERC721Receiver
+import {IERC165} from "@thirdweb-dev/contracts/eip/interface/IERC165.sol";
+import {ContractMetadata} from "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
 import {IERC721Receiver} from "@thirdweb-dev/contracts/eip/interface/IERC721Receiver.sol";
 
-contract NFTVote is IERC721 {
+contract NFTVote is IERC165, IERC721, ContractMetadata {
     address public admin;
-    string public _baseTokenURI;
+    string public _baseTokenURIV;
     string public name;
     string public symbol;
     uint256 public totalSupply = 0;
@@ -14,6 +15,9 @@ contract NFTVote is IERC721 {
     mapping(uint256 => address) _ownerships;
     mapping(address => uint256) balances;
     uint256 public _currentIndex = _startTokenId();
+
+    mapping(uint256 => address) private _tokenApprovals;
+    mapping(address => mapping(address => bool)) private _operatorApprovals;
 
     constructor(
         address _admin,
@@ -24,7 +28,7 @@ contract NFTVote is IERC721 {
         admin = _admin;
         name = _name;
         symbol = _symbol;
-        _baseTokenURI = _tokenURI;
+        _baseTokenURIV = _tokenURI;
     }
 
     function _mint(address to) internal {
@@ -32,6 +36,7 @@ contract NFTVote is IERC721 {
             _ownerships[_currentIndex] = to;
             balances[to]++;
             totalSupply++;
+            emit Transfer(address(0), to, _currentIndex);
             _currentIndex++;
         } else {
             require(
@@ -66,8 +71,12 @@ contract NFTVote is IERC721 {
         admin = newOwner;
     }
 
+    function _baseTokenURI() internal view virtual returns (string memory) {
+        return _baseTokenURIV;
+    }
+
     function setBaseTokenURI(string memory baseTokenURI) public onlyAdmin {
-        _baseTokenURI = baseTokenURI;
+        _baseTokenURIV = baseTokenURI;
     }
 
     function tokenURI(
@@ -76,7 +85,7 @@ contract NFTVote is IERC721 {
         if (_ownerships[tokenId] == address(0)) {
             return "";
         }
-        return _baseTokenURI;
+        return _baseTokenURIV;
     }
 
     function balanceOf(
@@ -101,6 +110,7 @@ contract NFTVote is IERC721 {
         _ownerships[tokenId] = to;
         balances[from]--;
         balances[to]++;
+        emit Transfer(from, to, tokenId);
     }
 
     function transferFrom(
@@ -119,23 +129,50 @@ contract NFTVote is IERC721 {
         _transferFrom(from, to, tokenId);
     }
 
+    function isApprovedForAll(
+        address _owner,
+        address operator
+    ) external view override returns (bool) {
+        return _operatorApprovals[_owner][operator];
+    }
+
     function approve(address to, uint256 tokenId) external override {
-        // Approvals are not supported by Dummy ERC721
+        address owner = _ownerships[tokenId];
+        require(to != owner, "ERC721: approval to current owner");
+
+        require(
+            msg.sender == owner || _operatorApprovals[owner][msg.sender],
+            "ERC721: approve caller is not owner nor approved for all"
+        );
+
+        _tokenApprovals[tokenId] = to;
+        emit Approval(owner, to, tokenId);
     }
 
     function getApproved(
         uint256 tokenId
-    ) external view override returns (address) {}
+    ) external view override returns (address) {
+        require(
+            _ownerships[tokenId] != address(0),
+            "ERC721: approved query for nonexistent token"
+        );
+        return _tokenApprovals[tokenId];
+    }
+
+    function _approve(address to, uint256 tokenId) internal {
+        _tokenApprovals[tokenId] = to;
+        emit Approval(_ownerships[tokenId], to, tokenId);
+    }
 
     function setApprovalForAll(
         address operator,
         bool _approved
-    ) external override {}
+    ) external override {
+        require(operator != msg.sender, "ERC721: approve to caller");
 
-    function isApprovedForAll(
-        address _owner,
-        address operator
-    ) external view override returns (bool) {}
+        _operatorApprovals[msg.sender][operator] = _approved;
+        emit ApprovalForAll(msg.sender, operator, _approved);
+    }
 
     function safeTransferFrom(
         address from,
@@ -168,11 +205,35 @@ contract NFTVote is IERC721 {
         }
     }
 
+    function _exists(uint256 tokenId) internal view returns (bool) {
+        return _ownerships[tokenId] != address(0);
+    }
+
     function isContract(address _addr) private view returns (bool) {
         uint32 size;
         assembly {
             size := extcodesize(_addr)
         }
         return (size > 0);
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external pure override returns (bool) {
+        return
+            interfaceId == type(IERC721).interfaceId ||
+            interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IERC721Receiver).interfaceId ||
+            interfaceId == type(ContractMetadata).interfaceId;
+    }
+
+    function _canSetContractURI()
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return msg.sender == admin;
     }
 }
