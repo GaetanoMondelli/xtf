@@ -96,12 +96,12 @@ async function main() {
     }
 
 
-    const payFeesIn = PayFeesIn.LINK
-    const send = await contract.send(sepSelectorId, receiver, depositFundMessage, payFeesIn);
-    const tx = await send.wait();
-    console.log("send done");
-    const events = tx.events;
-    console.log(events);
+    // const payFeesIn = PayFeesIn.LINK
+    // const send = await contract.send(sepSelectorId, receiver, depositFundMessage, payFeesIn);
+    // const tx = await send.wait();
+    // console.log("send done");
+    // const events = tx.events;
+    // console.log(events);
 
 
     //  after send

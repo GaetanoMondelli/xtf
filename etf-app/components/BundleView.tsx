@@ -1,14 +1,14 @@
-import { useAddress, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
+import { useAddress, useBalance, useContract, useContractRead, useContractWrite } from "@thirdweb-dev/react";
 
 import styles from '../styles/page.module.css'
 import TokenDescriptions from "./TokenDescriptionsView";
-import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result, Select, Tag } from 'antd';
+import { Badge, Button, Card, Statistic, Form, InputNumber, Progress, Divider, Result, Select, Tag, List } from 'antd';
 import { FireFilled, LockOutlined, UnlockOutlined, BankOutlined } from '@ant-design/icons';
 import { BigNumber, ethers } from "ethers";
 import { useState, useEffect, useContext } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { Chain, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, ChainIdToSelectorId, networkToSelectorId } from "./utils";
+import { Chain, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, ChainIdToSelectorId, networkToSelectorId, minimiseAddress } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
@@ -32,7 +32,9 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [prices, setPrices] = useState<any>();
     const [values, setValues] = useState<any>();
     const [requiredTokenStructs, setRequiredTokenStructs] = useState<any>([]);
-    const [notifyChainSelectorId, setNotifyChainSelectorId] = useState<any>(0);
+    const [notifyChainSelectorId, setNotifyChainSelectorId] = useState<any>(
+        Object.keys(config.sideChainContracts)[0]
+    );
     const { selectedChain, setSelectedChain } = useContext(ChainContext);
 
 
@@ -46,6 +48,11 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         contract,
         "returnStateOfBundles", [0, 96]
     );
+
+    // const { data: burner, isLoading: burnerLoading, error: burnerError } = useContractRead(
+    //     contract,
+    //     "burners", [bundleId]
+    // );
 
     const { data: name, isLoading: isNameLoading, error: nameError } = useContractRead(contract, "symbol");
     const { data: bundle, isLoading: countLoading, error: countError } = useContractRead(
@@ -70,7 +77,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
     const { mutateAsync: reedemNFTVote, isLoading: isReedemNFTVoteLoadinf, error: errorReedemNFTVote } = useContractWrite(
         contract,
-        "reeedNFTVote"
+        "reeedemNFTVote"
     );
 
 
@@ -113,6 +120,43 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         contract,
         "ownerOf", [etfId],
     );
+    const sepLinkToken = "0x779877A7B0D9E8603169DdbD7836e478b4624789";
+
+    const { data: linkBalance, isLoading: linkBalanceLoading, error: linkBalanceError } = useBalance(
+        sepLinkToken,
+    );
+    const { contract: linkContract, isLoading: isLinkContractLoading, error: isLinkContractError } = useContract(sepLinkToken);
+
+    const { data: linkContractBalance, isLoading: linkContractBalanceLoading, error: linkContractBalanceError } = useContractRead(
+        linkContract,
+        "balanceOf", [address],
+    );
+
+    const { mutateAsync: transferLink, isLoading: transferLinkLoading, error: transferLinkError } = useContractWrite(
+        linkContract,
+        "transfer"
+    );
+
+    const { data: reedemMessages, isLoading: reedemMessagesLoading, error: reedemMessagesError } = useContractRead(
+        contract,
+        "reedeemMessages", [bundleId, 0]
+    );
+
+
+    // 
+    // const { data: fee, isLoading: feeLoading, error: feeError } = useContractRead(
+    //     contract,
+    //     "getReedemFee",
+    //     [
+    //         BigNumber.from("12532609583862916517"),
+    //         PayFeesIn.LINK,
+    //         {
+    //             "bundleId": bundleId,
+    //             "receiver": userAddress,
+    //         },
+    //     ],
+    // );
+    // getReedemFee
 
     const getRequiredAsset = (address: string) => {
 
@@ -154,7 +198,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
             const value = prices[index]
             if (!value) return;
             values.push(BigNumber.from(value).mul(BigNumber.from(asset.totalAmount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
-            console.log('valueS', value, asset.totalAmount, values[values.length - 1])
             labels.push(asset.assetContract);
         });
         return [labels, values];
@@ -481,25 +524,26 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     })
 
                                 }}>Reedem</Button>,
-                            <>{!winnerLoading && winner === userAddress && <p>
-                                <Divider />
-                                <Tag color="green"> You are eligble to reedem a vote</Tag>
-                                <br></br>
-                                <br></br>
+                            <>{!winnerLoading && winner === userAddress
+                                && ownerOf?.toString() == address && <p>
+                                    <Divider />
+                                    <Tag color="green"> You are eligble to reedem a vote</Tag>
+                                    <br></br>
+                                    <br></br>
 
-                                <Button type="primary" 
-                                size="small"
-                                icon={
-                                    <BankOutlined />
-                                }
-                                onClick={() => {
+                                    <Button type="primary"
+                                        size="small"
+                                        icon={
+                                            <BankOutlined />
+                                        }
+                                        onClick={() => {
 
-                                    reedemNFTVote({
-                                        args: [bundleId],
-                                    })
+                                            reedemNFTVote({
+                                                args: [bundleId],
+                                            })
 
-                                }}>Reedem NFT Vote</Button>
-                            </p>}</>
+                                        }}>Reedem NFT Vote</Button>
+                                </p>}</>
                             ]
                             }
                         />
@@ -516,7 +560,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                             icon={<FireFilled />}
                             status={"error"}
                             title="The ETF has been burned and the tokens have been redeemed"
-                            subTitle="You can trade your tokens again"
+                            subTitle="You can now trade your tokens again"
                         />
                         {/* Check if there are external chain assets and list all the chains
                         and propose to send a notification to the user to withdraw the asset
@@ -535,11 +579,33 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                             }}
                         >
                                 <h3>There are assets on other chains (not this chain selector Id: {chainSelectorId?.toString()})</h3>
+                                <br></br>
+                                {linkBalance && <p>Your Balance: <Tag color="green">{linkBalance?.value.div(
+                                    BigNumber.from(10).pow(16)
+                                ).toNumber() / 100} {linkBalance?.symbol}</Tag></p>}
+                                {linkContractBalance && <p>Contract Balance: <Tag color="green">{linkContractBalance?.div(
+                                    BigNumber.from(10).pow(16)
+                                ).toNumber() / 100} {linkBalance?.symbol}</Tag></p>}
+                                {transferLink && <p>
+                                    CCIP requires LINK to send notifications to other chains.
+                                    <Button type="link" size="small" onClick={() => {
+                                        // transfer link tokens to etf contract
+                                        transferLink({
+                                            args: [address, BigNumber.from(5).mul(BigNumber.from(10).pow(18))]
+                                        })
 
+                                    }
+                                    }>Transfer LINK</Button>
+                                </p>}
+                                {/* {fee && <p>Esitamted fee for sending Reedem message {BigNumber.from(fee).div(BigNumber.from(10).pow(16)).toNumber() / 100} </p>}
+                                {feeError && <p>{JSON.stringify(feeError)} </p>} */}
                                 <Select
                                     onChange={(value) => {
                                         setNotifyChainSelectorId(value);
                                     }}
+                                    defaultValue={
+                                        notifyChainSelectorId
+                                    }
                                     options={requiredTokenStructs.filter((asset: any) => {
                                         return asset.chainSelector.toString() !== chainSelectorId.toString();
                                     }).map((asset: any) => {
@@ -553,12 +619,51 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                     placeholder="Select a chain"
                                 />
                                 <br></br>
+                                <br></br>
+                                <List
+                                    // grey background
+                                    style={{
+                                        width: '94%',
+                                        padding: '3%',
+                                        overflowY: 'auto',
+                                        backgroundColor: '#f7f7f7'
+                                    }}
+                                    grid={{ gutter: 20, column: 3 }}
+                                    dataSource={[reedemMessages] || []}
+                                    renderItem={(item: any) => (
+                                        <List.Item>
+                                            <Card
+                                                className="customcard"
+                                                title={
+                                                    <>
+                                                        {`CCIP MessageId:`}<a
+                                                            style={{
+                                                                color: 'blue'
+                                                            }}
+                                                            href={`https://ccip.chain.link/msg/${item?.messageId}`}
+                                                            target="_blank" rel="noreferrer">{minimiseAddress(item?.messageId)}</a>
+                                                    </>
+                                                }>
+                                                {/* <p>{`Sender: ${minimiseAddress(item.sender)}`}</p> */}
+                                                <p>{`Bundle ID: ${item.bundleId}`}</p>
+                                                <p>{
+                                                    // `Chain Selector ID: ${item.chainSelectorId}`
+                                                    `Chain Selector ID: ${notifyChainSelectorId}`
+                                                }</p>
+
+                                            </Card>
+                                        </List.Item>
+                                    )}
+                                />
+
+
                                 <Button
                                     className="button"
                                     type="primary"
+                                    disabled={reedemMessages && reedemMessages.length > 0}
                                     onClick={() => {
                                         sendReedeemMessage({
-                                            args: [bundleId, notifyChainSelectorId, PayFeesIn.Native],
+                                            args: [bundleId, "12532609583862916517", PayFeesIn.LINK],
                                         })
                                     }}
                                 >Notify</Button>

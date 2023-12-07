@@ -19,6 +19,7 @@ struct TokenAmounts {
 struct ReedeemETFMessage {
     uint256 bundleId;
     address receiver;
+    bytes32 messageId;
 }
 
 address constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
