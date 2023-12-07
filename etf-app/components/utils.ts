@@ -7,8 +7,7 @@ import SEPOLIA_MUMBAI_SIDECHAIN_CONTRACTS from '../../Mumbai-Side-index2.json';
 import PRIMARY_SEPOLIA from '../../CONTRACTS-sepolia.json'
 import SECONDARY_MUMBAI from '../../CONTRACTS-mumbai.json'
 
-const MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
-const ETFContractv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+
 export const nativeAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
 const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
@@ -19,6 +18,49 @@ const SepoliaChainId = 11155111;
 const HardhatChainId = 31337;
 const MumbaiChainId = 80001;
 
+// export const _ETFv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+// const _MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
+// const _ETFContractv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+// export const _SIDE_ABI = require("../.././artifacts/contracts/SidechainDeposit.sol/SidechainDeposit").abi;
+
+
+
+
+function isProduction() {
+    return process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+}
+
+async function fetchABI(fileName: string) {
+    if (!process.browser) {
+        return []; // Or some mock ABI data if necessary
+    }
+    const isProduction = process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+    const baseUrl = isProduction ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 'http://localhost:3000';
+    const url = `${baseUrl}/assets/${fileName}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.abi;
+}
+// const ETFv2ABI = isProduction() ? fetchABI("ETFContractv2.sol/ETFv2.json") : require("../../artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+// const MockAggregatorABI = isProduction() ? fetchABI("MockAggregator.sol/MockAggregator.json") : require("../../artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
+// const ETFContractv2ABI = isProduction() ? fetchABI("ETFContractv2.sol/ETFv2.json") : require("../../artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+// const SIDE_ABI = isProduction() ? fetchABI("SidechainDeposit.sol/SidechainDeposit.json") : require("../../artifacts/contracts/SidechainDeposit.sol/SidechainDeposit").abi;
+
+const ETFv2ABI = fetchABI("ETFv2.json");
+const MockAggregatorABI = fetchABI("MockAggregator.json");
+const SIDE_ABI = fetchABI("SidechainDeposit.json");
+
+
+export {
+    ETFv2ABI,
+    MockAggregatorABI,
+    SIDE_ABI
+};
+
 
 export const chainSelectorIdToExplorerAddress: any = {
     "16015286601757825753": "https://sepolia.etherscan.io/address",
@@ -27,8 +69,8 @@ export const chainSelectorIdToExplorerAddress: any = {
 
 export const chainIdToNetworkName: any = {
     11155111: ["Ethereum", "Sepolia"],
-    80001: ["Polygon","Mumbai"],
-    1: ["Hardhat","Localhost"]
+    80001: ["Polygon", "Mumbai"],
+    1: ["Hardhat", "Localhost"]
 }
 
 export const chainIdToNetworkLogo: any = {
@@ -202,7 +244,7 @@ export const getTotalQuantites = async () => {
     });
 }
 
-export const getPriceAggregatorAddress = async () => {
+export const getPriceAggregatorAddress = async (PriceAggregatorABI: any) => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     // get chainId
     const network = await provider.getNetwork();
@@ -212,7 +254,7 @@ export const getPriceAggregatorAddress = async () => {
 
     if (chainId == SepoliaChainId) {
         for (let address of sepoliaPriceDataFeed) {
-            const contract = new ethers.Contract(address, MockAggregatorABI, provider);
+            const contract = new ethers.Contract(address, PriceAggregatorABI, provider);
             try {
                 const price = await contract.latestRoundData();
                 prices.push(BigNumber.from(price.answer));
@@ -226,7 +268,7 @@ export const getPriceAggregatorAddress = async () => {
 
         for (const contractObject of CONTRACTS['MockAggregator']) {
             const { address } = contractObject;
-            const contract = new ethers.Contract(address, MockAggregatorABI, provider);
+            const contract = new ethers.Contract(address, PriceAggregatorABI, provider);
             try {
                 const price = await contract.latestRoundData();
                 prices.push(BigNumber.from(price.answer));
@@ -241,10 +283,10 @@ export const getPriceAggregatorAddress = async () => {
 };
 
 
-export const getValueChartData = async () => {
+export const getValueChartData = async (PriceAggregatorABI: any) => {
     let values: any = [];
     const labels: any = [];
-    const prices: any[] = await getPriceAggregatorAddress();
+    const prices: any[] = await getPriceAggregatorAddress(PriceAggregatorABI);
     requiredTokenStructs.map((asset: any, index: number) => {
         const value = prices[index]
         values.push(BigNumber.from(value).mul(BigNumber.from(asset.totalAmount).div((BigNumber.from(10).pow(16)))).div(BigNumber.from(10).pow(8)).toNumber() / 100);
@@ -269,7 +311,7 @@ export const getInvestorAddressesForBundle = async (bundleId: number) => {
     const addressTokensMap = new Map<string, any>();
     const contractObject = CONTRACTS['ETFv2'][0];
     const { address } = contractObject;
-    const contract = new ethers.Contract(address, ETFContractv2ABI, provider);
+    const contract = new ethers.Contract(address, await ETFv2ABI, provider);
     const investorAddresses = await contract.getAllAddressesForBundleId(bundleId);
 
     for (const investorAddress of investorAddresses) {
@@ -292,13 +334,13 @@ export const getTokensByAddress = async (bundleId: number, address: string) => {
 
     const contractObject = chainContracts['ETFv2'][0];
     const { address: contractAddress } = contractObject;
-    const contract = new ethers.Contract(contractAddress, ETFContractv2ABI, provider);
+    const contract = new ethers.Contract(contractAddress, await ETFv2ABI, provider);
     const recordArray = await contract.getAddressQuantityPerBundle(bundleId, address);
     return recordArray;
 }
 
-export const calculateTLV = async (bundleIdQuantities: any) => {
-    const prices = await getPriceAggregatorAddress();
+export const calculateTLV = async (bundleIdQuantities: any, PriceAggregatorABI: any) => {
+    const prices = await getPriceAggregatorAddress(PriceAggregatorABI);
     let total = BigNumber.from(0);
     if (!bundleIdQuantities) return 0;
     const quantities = bundleIdQuantities[2]

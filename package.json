@@ -20,7 +20,8 @@
     "deploy-sidechain-mumbai": "hardhat run scripts/deploy-side-polygon.ts --network mumbai",
     "notify-mumbai": "hardhat run scripts/depositAndNotify.ts --network mumbai",
     "notify-sepolia": "hardhat run scripts/depositAndNotify.ts --network sepolia",
-    "connect-sidechain": "hardhat run scripts/connectSidechain.ts --network sepolia"
+    "connect-sidechain": "hardhat run scripts/connectSidechain.ts --network sepolia",
+    "test-nft": "hardhat run scripts/nft-test-deploy.ts --network sepolia"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",

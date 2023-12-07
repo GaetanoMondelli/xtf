@@ -1,7 +1,6 @@
 import dynamic from 'next/dynamic'
 import React from "react";
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
-const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 // import { requiredTokenStructs } from "./utils";
 import { BigNumber } from 'ethers';
 

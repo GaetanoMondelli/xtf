@@ -82,7 +82,7 @@ export default function PriceChartComponent({ title, normalise }: { title: strin
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const getAssetColor = (symbol: string) => {
 

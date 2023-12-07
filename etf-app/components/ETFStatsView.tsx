@@ -3,10 +3,10 @@ import styles from '../styles/page.module.css'
 import { Badge, Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
 import style from '../styles/page.module.css';
 import { BigNumber, ContractInterface } from "ethers";
-import { showOnlyTwoDecimals, calculateTLV, nativeAddress } from "./utils";
-import { useEffect, useState } from "react";
+import { ETFv2ABI, showOnlyTwoDecimals, calculateTLV, nativeAddress } from "./utils";
+import { useContext, useEffect, useState } from "react";
 
-const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
+import ChainContext from "../context/chain";
 
 
 const { Meta } = Card;
@@ -19,8 +19,10 @@ export default function ETFStatsView(
     const connectionStatus = useConnectionStatus();
     const userAddress = useAddress();
 
-    const { contract, isLoading, error } = useContract(address, ABI);
-    const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address, ABI);
+    const { mockAggregatorAbi, etfV2Abi } = useContext(ChainContext);
+
+    const { contract, isLoading, error } = useContract(address, etfV2Abi);
+    const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address);
 
     // const { contract: tokenContract, isLoading: tokenIsLoading, error: tokenError } = useContract(address, ABI);
     const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
@@ -71,11 +73,12 @@ export default function ETFStatsView(
 
     useEffect(() => {
         async function fetchData() {
-            const tlv = await calculateTLV(bundleState);
+            if (bundleStateLoading || bundleState == undefined || !mockAggregatorAbi) return;
+            const tlv = await calculateTLV(bundleState, mockAggregatorAbi);
             setTLV(tlv);
         }
         fetchData();
-    }, [bundleState]);
+    }, [bundleState, mockAggregatorAbi]);
 
 
     const getVotePower = (): [number, string] => {

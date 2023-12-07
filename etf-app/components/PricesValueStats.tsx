@@ -3,10 +3,10 @@ import styles from '../styles/page.module.css'
 import { Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
 import style from '../styles/page.module.css';
 import { BigNumber } from "ethers";
-import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName, getSepoliaDataFeedAddress } from "./utils";
-import { useEffect, useState } from "react";
+import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName, getSepoliaDataFeedAddress, ETFv2ABI } from "./utils";
+import { useContext, useEffect, useState } from "react";
+import ChainContext from "../context/chain";
 
-const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 
 const { Meta } = Card;
 
@@ -18,12 +18,14 @@ export default function PriceValueStats(
     const [labels, setLabels] = useState<any>();
     const [quantities, setQuantities] = useState<any>();
 
-    const { contract, isLoading, error } = useContract(address, ABI);
+    const { mockAggregatorAbi, etfV2Abi } = useContext(ChainContext);
+    const { contract, isLoading, error } = useContract(address, etfV2Abi);
 
     const { data: requiredAsset, isLoading: requiredAssetLoading, error: requiredAssetError } = useContractRead(
         contract,
         "getRequiredAssets", []
     );
+
 
     const getValueChartData = (tokens: any, prices: any) => {
         const labels: any = [];
@@ -39,10 +41,11 @@ export default function PriceValueStats(
 
     useEffect(() => {
         async function fetchData() {
+            if (requiredAssetLoading || !mockAggregatorAbi) return;
             let prcs = [];
             let qts = [];
             if (requiredAssetLoading || requiredAsset == undefined) return;
-            const prices = await getPriceAggregatorAddress();
+            const prices = await getPriceAggregatorAddress(mockAggregatorAbi);
             const tmpRequiredAssets: any = [];
             for (let i = 0; i < requiredAsset[0].length; i++) {
                 const quantity = requiredAsset[0][i];
@@ -67,7 +70,7 @@ export default function PriceValueStats(
             setPrices(prcs);
         }
         fetchData();
-    }, [requiredAsset]);
+    }, [requiredAssetLoading, requiredAsset, mockAggregatorAbi]);
 
 
 
@@ -91,7 +94,7 @@ export default function PriceValueStats(
         >
             {labels && values && labels.map((label: any, index: number) => {
 
-                return <Statistic title={
+                return <Statistic key={label + index} title={
                     <div>
                         <span>{getAssetName(label)}</span>
                         <br></br>

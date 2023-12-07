@@ -3,10 +3,10 @@ import styles from '../styles/page.module.css'
 import { Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
 import style from '../styles/page.module.css';
 import { BigNumber } from "ethers";
-import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName, getSepoliaDataFeedAddress } from "./utils";
-import { useEffect, useState } from "react";
+import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName, ETFv2ABI } from "./utils";
+import { useContext, useEffect, useState } from "react";
+import ChainContext from "../context/chain";
 
-const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 
 const { Meta } = Card;
 
@@ -15,7 +15,8 @@ export default function Prices(
 ) {
     const [prices, setPrices] = useState<any>();
     const [labels, setLabels] = useState<any>();
-    const { contract, isLoading, error } = useContract(address, ABI);
+    const { mockAggregatorAbi, etfV2Abi } = useContext(ChainContext);
+    const { contract, isLoading, error } = useContract(address, etfV2Abi);
 
     const { data: requiredAsset, isLoading: requiredAssetLoading, error: requiredAssetError } = useContractRead(
         contract,
@@ -23,10 +24,10 @@ export default function Prices(
     );
     useEffect(() => {
         async function fetchData() {
-            if (requiredAssetLoading || requiredAsset == undefined) return;
+            if (requiredAssetLoading || requiredAsset == undefined || !mockAggregatorAbi) return;
             const prcs = [];
             const labs = [];
-            const prices = await getPriceAggregatorAddress();
+            const prices = await getPriceAggregatorAddress(mockAggregatorAbi);
             for (let i = 0; i < prices.length; i++) {
                 prcs.push(BigNumber.from(prices[i]).div(BigNumber.from(10).pow(6)).toNumber() / 100);
                 labs.push(getAssetName(requiredAsset[1][i]));
@@ -34,7 +35,7 @@ export default function Prices(
             setPrices(prcs);
         }
         fetchData();
-    }, [requiredAsset]);
+    }, [requiredAssetLoading, requiredAsset, mockAggregatorAbi]);
 
 
     return <div className="marquee card"
@@ -55,7 +56,7 @@ export default function Prices(
                 }}
             >Datafeed Prices: </span>
             {prices && prices.map((price: any, index: number) => {
-                return <>
+                return <span key={'price' + index}>
                     <span
                         style={{
                             // no bold
@@ -65,7 +66,7 @@ export default function Prices(
                         }}
                     >{requiredAsset && getAssetName(requiredAsset[1][index])}: {showOnlyTwoDecimals(price)} $ </span>
                     <span> | </span>
-                </>
+                </span>
             })}
         </div>
     </ div>

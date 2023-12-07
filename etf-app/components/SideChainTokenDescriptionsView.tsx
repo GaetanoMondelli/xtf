@@ -2,16 +2,14 @@ import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useC
 import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Divider, Layout, Progress, List, Card } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
-import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain, PayFeesIn, matchDepositFundMessage, minimiseAddress } from "./utils";
+import { SIDE_ABI, chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain, PayFeesIn, matchDepositFundMessage, minimiseAddress } from "./utils";
 import { useContext, useEffect, useState } from "react";
 import { MumbaiChain } from "../pages/_app";
 import ChainContext from "../context/chain";
-const SIDE_ABI = require("../.././artifacts/contracts/SidechainDeposit.sol/SidechainDeposit").abi;
-import { ContractInterface } from "ethers/lib/ethers";
 
 export default function SideChainTokenDescriptions({ address, etfAddress, bundleId, requiredTokenStruct, chainSelectorId }:
     { address: string, etfAddress?: string, bundleId: any, requiredTokenStruct: any, chainSelectorId: any, }): JSX.Element {
-    const { selectedChain, setSelectedChain } = useContext(ChainContext);
+    const { selectedChain, setSelectedChain, sideAbi } = useContext(ChainContext);
     const connectionStatus = useConnectionStatus();
     //  Refactor this to use the new requiredTokenStructs and match addresses to the requiredTokenStructs on primary chain
     const index = 0;
@@ -20,7 +18,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const [messages, setMessages] = useState<any>();
 
 
-    const { contract: sideChainContract, isLoading: isSideChainContractLoading, error: isSideChainContractError } = useContract(etfAddress, SIDE_ABI as ContractInterface);
+    const { contract: sideChainContract, isLoading: isSideChainContractLoading, error: isSideChainContractError } = useContract(etfAddress, sideAbi);
 
 
     const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
@@ -105,7 +103,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
             setMessages(messages);
         }
         getMessages();
-    }, [bundle]);
+    }, [address, bundleId]);
 
 
     const { data: allowance, isLoading: isAllowanceLoading, error: nameError } = useContractRead(contract, "allowance", [userAddress, etfAddress]);
@@ -149,6 +147,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
 
         {requiredAssets && bundle && requiredAssets[1].map((requiredAsset: any, index: number) => {
             return <div
+                key={'sideasset'+index}
                 className="card"
                 style={{
                     width: "95%",
@@ -386,7 +385,9 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                                 <p>{`Bundle ID: ${item.depositFundMessage.bundleId}`}</p>
                                 {
                                     item.depositFundMessage.tokensToWrap.map((token: any, index: number) => {
-                                        return <p>{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
+                                        return <p
+                                            key={'depositFundMessage-token'+index}
+                                        >{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
                                             BigNumber.from(10).pow(18)
                                         ).toString()}`}</p>
                                     })

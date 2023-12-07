@@ -25,7 +25,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
             setMessages(messages);
         }
         getMessages();
-    }, [userDeposit]);
+    }, [address, bundleId, userDeposit]);
 
     const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
         address,
@@ -156,7 +156,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                                     <p>{`Bundle ID: ${item.depositFundMessage.bundleId}`}</p>
                                     {
                                         item.depositFundMessage.tokensToWrap.map((token: any, index: number) => {
-                                            return <p>{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
+                                            return <p key={token+index}>{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
                                                 BigNumber.from(10).pow(18)
                                             ).toString()}`}</p>
                                         })

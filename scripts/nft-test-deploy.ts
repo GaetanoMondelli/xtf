@@ -19,7 +19,33 @@ const messangerSepolia = "0xB8C88Fc9ff63E01b0C535Fd75408E81d2CD17ea7";
 
 async function main() {
     const accounts = await ethers.getSigners();
-    // const contractName = "PolygonSenderReceiver";
+    const contractName = "NFTVote";
+
+    const contractFactory = await ethers.getContractFactory(contractName as string);
+
+    // admin = _admin;
+    // name = _name;
+    // symbol = _symbol;
+    // _baseTokenURIV = _tokenURI;
+    const contract = await contractFactory.deploy(
+        accounts[0].address,
+        "NFTVote",
+        "NFTV",
+        "https://gaetanomondelli.github.io/static/media/gman2.f52db750.png"
+    );
+
+    await contract.deployed();
+    
+    const tx = await contract._mint(accounts[0].address);
+
+    await tx.wait();
+
+    console.log("NFTVote deployed to:", contract.address);
+
+
+
+    console.log(`${contractName} deployed to: ${contract.address}`);
+
     // const contracts: any = {};
     // const contractFactory = await ethers.getContractFactory(contractName as string);
     // enum PayFeesIn {
@@ -88,18 +114,18 @@ async function main() {
     // const lastmsgnum = await contractRead.lastmsgnum();
     // console.log("lastmsgnum", lastmsgnum.toString());
 
-    const contractName = "ETFv2";
-    const primaryETFContractAddress = "0x2dB25eBf7917F7127f63fFbA388ce8c3504e89f5";
-    const secondaryETFContractAddress = "0x24521Ec44FEeC05F7a1Ec3268DC96Cbf9144F8Ac";
-    console.log("Deploying side contracts with the account:", accounts[0].address);
-    // const sideContractName = "SidechainDeposit";
-    const contract = await ethers.getContractAt(contractName, primaryETFContractAddress);
-    // const sideContract = await ethers.getContractAt(sideContractName, "0x0b3A4FA2eBc31F932a9A4CE83E3ba217AEeF4281");
+    // const contractName = "ETFv2";
+    // const primaryETFContractAddress = "0x2dB25eBf7917F7127f63fFbA388ce8c3504e89f5";
+    // const secondaryETFContractAddress = "0x24521Ec44FEeC05F7a1Ec3268DC96Cbf9144F8Ac";
+    // console.log("Deploying side contracts with the account:", accounts[0].address);
+    // // const sideContractName = "SidechainDeposit";
+    // const contract = await ethers.getContractAt(contractName, primaryETFContractAddress);
+    // // const sideContract = await ethers.getContractAt(sideContractName, "0x0b3A4FA2eBc31F932a9A4CE83E3ba217AEeF4281");
 
-    const tx = await contract.setSideChainAddress(mumbaiSelectorId, secondaryETFContractAddress);
-    // const tx = await contract.setBaseTokenURI("https://gaetanomondelli.github.io/static/media/gman2.f52db750.png");
-    await tx.wait();
-    console.log("setSideChainAddress done");
+    // const tx = await contract.setSideChainAddress(mumbaiSelectorId, secondaryETFContractAddress);
+    // // const tx = await contract.setBaseTokenURI("https://gaetanomondelli.github.io/static/media/gman2.f52db750.png");
+    // await tx.wait();
+    // console.log("setSideChainAddress done");
 }
 
 main()

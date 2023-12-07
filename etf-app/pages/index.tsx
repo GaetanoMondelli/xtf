@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import {
   ConnectWallet, useChainId, useChain,
   useConnectionStatus,
@@ -119,7 +120,7 @@ const Home: NextPage = () => {
                 marginBottom: 20
               }}
             >
-              <img width={120} src="/images/lg.png" alt="logo" />
+              <Image width={120} height={120} src="/images/lg.png" alt="logo" />
               <Prices address={config?.contracts['ETFv2'][0].address} />
               <div>
                 <ConnectWallet
@@ -206,7 +207,7 @@ const Home: NextPage = () => {
                         ['ETF STATS', 'PRICE CHART', 'BUNDLE VIEW'].map((tab, index) => (
                           <div
                             className="customcard"
-                            key={index}
+                            key={'tab'+index}
                             onClick={() => setSelectedTab((index + 1).toString())}
                             style={{
                               backgroundColor: selectedTab === (index + 1).toString() ? "gray" : "white",
@@ -353,7 +354,7 @@ const Home: NextPage = () => {
                     marginBottom: 20
                   }}
                 >
-                  <img width={120} src="/images/lg.png" alt="logo" />
+                  <Image width={120} height={120} src="/images/lg.png" alt="logo" />
                   {/* <Prices address={config?.contracts['ETFv2'][0].address} /> */}
                   <Skeleton
                     style={{

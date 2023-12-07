@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 import {IERC721} from "@thirdweb-dev/contracts/eip/interface/IERC721.sol";
 import {IERC165} from "@thirdweb-dev/contracts/eip/interface/IERC165.sol";
-import {ContractMetadata} from "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
-import {IERC721Receiver} from "@thirdweb-dev/contracts/eip/interface/IERC721Receiver.sol";
 
-contract NFTVote is IERC165, IERC721, ContractMetadata {
+// import {ContractMetadata} from "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
+
+contract NFTVote is IERC165, IERC721 {
     address public admin;
     string public _baseTokenURIV;
     string public name;
@@ -31,7 +31,7 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
         _baseTokenURIV = _tokenURI;
     }
 
-    function _mint(address to) internal {
+    function _mint(address to) public {
         if (_ownerships[_currentIndex] == address(0)) {
             _ownerships[_currentIndex] = to;
             balances[to]++;
@@ -41,7 +41,7 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
         } else {
             require(
                 _ownerships[_currentIndex] == to,
-                "Token already minted to another address."
+                ""
             );
         }
     }
@@ -55,7 +55,7 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
     }
 
     function _burn(uint256 tokenId) internal {
-        require(_ownerships[tokenId] != address(0), "Token does not exist.");
+        require(_ownerships[tokenId] != address(0), "no");
         balances[_ownerships[tokenId]]--;
         delete _ownerships[tokenId];
         totalSupply--;
@@ -63,7 +63,7 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only owner can call this function.");
+        require(msg.sender == admin, "noadmin");
         _;
     }
 
@@ -106,7 +106,7 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
     }
 
     function _transferFrom(address from, address to, uint256 tokenId) internal {
-        require(_ownerships[tokenId] == from, "Only owner can transfer token.");
+        require(_ownerships[tokenId] == from, "");
         _ownerships[tokenId] = to;
         balances[from]--;
         balances[to]++;
@@ -138,11 +138,11 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
 
     function approve(address to, uint256 tokenId) external override {
         address owner = _ownerships[tokenId];
-        require(to != owner, "ERC721: approval to current owner");
+        require(to != owner, "");
 
         require(
             msg.sender == owner || _operatorApprovals[owner][msg.sender],
-            "ERC721: approve caller is not owner nor approved for all"
+            ""
         );
 
         _tokenApprovals[tokenId] = to;
@@ -152,10 +152,7 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
     function getApproved(
         uint256 tokenId
     ) external view override returns (address) {
-        require(
-            _ownerships[tokenId] != address(0),
-            "ERC721: approved query for nonexistent token"
-        );
+        require(_ownerships[tokenId] != address(0), "0");
         return _tokenApprovals[tokenId];
     }
 
@@ -168,7 +165,7 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
         address operator,
         bool _approved
     ) external override {
-        require(operator != msg.sender, "ERC721: approve to caller");
+        require(operator != msg.sender, "");
 
         _operatorApprovals[msg.sender][operator] = _approved;
         emit ApprovalForAll(msg.sender, operator, _approved);
@@ -180,29 +177,26 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
         uint256 tokenId,
         bytes calldata _data
     ) external override {
-        require(
-            _ownerships[tokenId] == from,
-            "Only NFTVOTE owner can transfer token."
-        );
+        require(_ownerships[tokenId] == from, "noadmin");
         _ownerships[tokenId] = to;
         balances[from]--;
         balances[to]++;
-        if (isContract(to)) {
-            require(
-                IERC721Receiver(to).onERC721Received(
-                    msg.sender,
-                    from,
-                    tokenId,
-                    _data
-                ) ==
-                    bytes4(
-                        keccak256(
-                            "onERC721Received(address,address,uint256,bytes)"
-                        )
-                    ),
-                "ERC721: transfer to non ERC721Receiver implementer"
-            );
-        }
+        // if (isContract(to)) {
+        //     require(
+        //         IERC721Receiver(to).onERC721Received(
+        //             msg.sender,
+        //             from,
+        //             tokenId,
+        //             _data
+        //         ) ==
+        //             bytes4(
+        //                 keccak256(
+        //                     "onERC721Received(address,address,uint256,bytes)"
+        //                 )
+        //             ),
+        //         "ERC721: transfer to non ERC721Receiver implementer"
+        //     );
+        // }
     }
 
     function _exists(uint256 tokenId) internal view returns (bool) {
@@ -219,20 +213,22 @@ contract NFTVote is IERC165, IERC721, ContractMetadata {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) external pure override returns (bool) {
+    ) external pure virtual override returns (bool) {
         return
             interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC165).interfaceId ||
-            interfaceId == type(IERC721Receiver).interfaceId ||
-            interfaceId == type(ContractMetadata).interfaceId;
+            interfaceId == type(IERC165).interfaceId;
+
+        // interfaceId == type(ContractMetadata).interfaceId;
     }
 
     function _canSetContractURI()
         internal
         view
         virtual
-        override
-        returns (bool)
+        returns (
+            // override
+            bool
+        )
     {
         return msg.sender == admin;
     }

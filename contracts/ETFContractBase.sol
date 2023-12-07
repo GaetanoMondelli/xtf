@@ -24,12 +24,12 @@ import "hardhat/console.sol";
 
 contract ETFBase is
     TokenStore,
-    NFTVote,
     ContractMetadata,
     Ownable,
     DefaultOperatorFilterer,
     CCIPReceiver,
-    VRFConsumerBaseV2
+    VRFConsumerBaseV2,
+    NFTVote
 {
     VRFCoordinatorV2Interface COORDINATOR;
     //  Options to define ETF tokens, amount of tokens for etf, and fees
@@ -69,7 +69,7 @@ contract ETFBase is
     mapping(uint256 => ReedeemETFMessage[]) public reedeemMessages;
     // count of messages from other chains through the CCIP
     mapping(uint256 => uint256) messageCount;
-    
+
     error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees);
 
     constructor(
@@ -231,7 +231,12 @@ contract ETFBase is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public pure override(CCIPReceiver, ERC1155Receiver) returns (bool) {
+    )
+        public
+        pure
+        override(CCIPReceiver, ERC1155Receiver, NFTVote)
+        returns (bool)
+    {
         return CCIPReceiver.supportsInterface(interfaceId);
     }
 
@@ -239,7 +244,7 @@ contract ETFBase is
         internal
         view
         virtual
-        override
+        override(ContractMetadata, NFTVote)
         returns (bool)
     {
         return true;

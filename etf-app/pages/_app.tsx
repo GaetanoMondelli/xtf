@@ -1,13 +1,11 @@
 import type { AppProps } from "next/app";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
-import { ConfigProvider, Typography } from "antd";
+import { ConfigProvider } from "antd";
 import ChainContext from "../context/chain";
 import "../node_modules/neobrutalismcss/dist/index.css";
 import "../styles/custom.css";
 import { useEffect, useState } from "react";
-import { Chain } from "../components/utils";
-import { Sepolia } from "@thirdweb-dev/chains";
-const activeChain = "localhost";
+import { Chain, ETFv2ABI, MockAggregatorABI, SIDE_ABI } from "../components/utils";
 const sepoliaEndpoint = "https://orbital-capable-season.ethereum-sepolia.quiknode.pro/8a961b76e01b85d94eb0568af4d471c8f46ea07c";
 const mumabiEndpoint = "https://rpc-mumbai.maticvigil.com";
 
@@ -71,13 +69,47 @@ export const localhostChain = {
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [selectedChain, setSelectedChain] = useState(Chain.Sepolia);
+  const [etfV2Abi, setEtfV2Abi] = useState<any>();
+  const [mockAggregatorAbi, setMockAggregatorAbi] = useState<any>();
+  // const [etfContractv2Abi, setEtfContractv2Abi] = useState<any>();
+  const [sideAbi, setSideAbi] = useState<any>();
+  const [isAbisLoading, setIsAbisLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      ETFv2ABI,
+      MockAggregatorABI,
+      SIDE_ABI
+    ]).then(([fetchedEtfV2Abi, fetchedMockAggregatorAbi, fetchedSideAbi]) => {
+      console.log("Resolved ABIs", fetchedSideAbi);
+      setEtfV2Abi(fetchedEtfV2Abi);
+      setMockAggregatorAbi(fetchedMockAggregatorAbi);
+      setSideAbi(fetchedSideAbi);
+      setIsAbisLoading(false);
+    }).catch(error => {
+      console.error("Error loading ABIs:", error);
+    });;
+  }, []);
+
+
+
+  if (isAbisLoading) {
+    return <div>Loading ABIs...</div>;
+  }
 
   return (
-    <ChainContext.Provider value={{ selectedChain, setSelectedChain }}>
+    <ChainContext.Provider value={{
+      selectedChain, setSelectedChain,
+      etfV2Abi,
+      mockAggregatorAbi,
+      // etfContractv2Abi,
+      sideAbi,
+      isAbisLoading
+    }}>
       <ThirdwebProvider
         clientId={process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID}
         activeChain={
-          selectedChain === Chain.Localhost ? localhostChain : selectedChain  === Chain.Sepolia ? SepoliaChain : MumbaiChain
+          selectedChain === Chain.Localhost ? localhostChain : selectedChain === Chain.Sepolia ? SepoliaChain : MumbaiChain
         }
       >
         <ConfigProvider

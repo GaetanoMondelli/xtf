@@ -8,13 +8,12 @@ import { BigNumber, ethers } from "ethers";
 import { useState, useEffect, useContext } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { Chain, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, ChainIdToSelectorId, networkToSelectorId, minimiseAddress } from "./utils";
+import { ETFv2ABI, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, ChainIdToSelectorId, networkToSelectorId, minimiseAddress } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
 import ChainContext from "../context/chain";
 
-const ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 
 
 const { Countdown } = Statistic;
@@ -35,13 +34,12 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
     const [notifyChainSelectorId, setNotifyChainSelectorId] = useState<any>(
         Object.keys(config.sideChainContracts)[0]
     );
-    const { selectedChain, setSelectedChain } = useContext(ChainContext);
-
+    const { selectedChain, setSelectedChain, mockAggregatorAbi, etfV2Abi } = useContext(ChainContext);
 
 
     const userAddress = useAddress();
 
-    const { contract, isLoading, error } = useContract(address, ABI);
+    const { contract, isLoading, error } = useContract(address, etfV2Abi);
 
 
     const { data: bundleState, isLoading: bundleStateLoading, error: bundleStateError } = useContractRead(
@@ -205,8 +203,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
     useEffect(() => {
         async function fetchData() {
-            if (requiredAssetLoading || requiredAsset == undefined) return;
-            const prices = await getPriceAggregatorAddress();
+            if (requiredAsset == undefined || !mockAggregatorAbi) return;
+            const prices = await getPriceAggregatorAddress(mockAggregatorAbi);
             const tmpRequiredAssets: any = [];
             for (let i = 0; i < requiredAsset[0].length; i++) {
                 const quantity = requiredAsset[0][i];
@@ -226,7 +224,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
             }
         }
         fetchData();
-    }, [requiredAsset]);
+    }, [requiredAsset, mockAggregatorAbi]);
 
 
 
@@ -378,13 +376,13 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                             width: "95%",
                         }}>
 
-                        {bundle && bundle[0] && !chainSelectorIdLoading && requiredTokenStructs.map((asset: any) => {
+                        {bundle && bundle[0] && !chainSelectorIdLoading && requiredTokenStructs.map((asset: any, key: number) => {
 
                             // if(asset.chainSelector.toString() !== chainSelectorId.toString()) return;
 
                             const tokenAddress = asset.assetContract;
                             const index = bundle[1].indexOf(tokenAddress);
-                            return <div
+                            return <div key={tokenAddress + key}
                                 style={{
                                     display: 'flex',
                                     justifyContent: 'center', // Center horizontally
@@ -509,41 +507,47 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                             }}
                         >Vote n.{etfId?.toString()} Owner:{ownerOf?.toString()}</span>
                         <Result
+                            key={'reedemresult' + bundleId}
                             status="success"
                             title="The Bundle has been locked and ETF tokens have been minted"
                             subTitle={"You can now trade your ETF tokens or use them to burn the bundle and redeem the underlying assets "}
-                            extra={[<Button
-                                icon={
-                                    expirationTimeLoading ? <LockOutlined /> : expirationTimeError ? <LockOutlined /> : expirationTime ? expirationTime.toNumber() * 1000 > Date.now() ? <LockOutlined /> : <UnlockOutlined /> : <LockOutlined />
-                                }
-                                disabled={expirationTimeLoading ? true : expirationTimeError ? true : expirationTime ? expirationTime.toNumber() * 1000 > Date.now() : true}
-                                type="primary" onClick={() => {
+                            extra={[
 
-                                    reedem({
-                                        args: [bundleId],
-                                    })
+                                <Button
+                                    key={'reedembutton' + bundleId}
+                                    icon={
+                                        expirationTimeLoading ? <LockOutlined /> : expirationTimeError ? <LockOutlined /> : expirationTime ? expirationTime.toNumber() * 1000 > Date.now() ? <LockOutlined /> : <UnlockOutlined /> : <LockOutlined />
+                                    }
+                                    disabled={expirationTimeLoading ? true : expirationTimeError ? true : expirationTime ? expirationTime.toNumber() * 1000 > Date.now() : true}
+                                    type="primary" onClick={() => {
 
-                                }}>Reedem</Button>,
-                            <>{!winnerLoading && winner === userAddress
-                                && ownerOf?.toString() == address && <p>
-                                    <Divider />
-                                    <Tag color="green"> You are eligble to reedem a vote</Tag>
-                                    <br></br>
-                                    <br></br>
+                                        reedem({
+                                            args: [bundleId],
+                                        })
 
-                                    <Button type="primary"
-                                        size="small"
-                                        icon={
-                                            <BankOutlined />
-                                        }
-                                        onClick={() => {
+                                    }}>Reedem</Button>,
+                                <span
+                                    key={'reedemNFTVote' + bundleId}
+                                >{!winnerLoading && winner === userAddress
+                                    && ownerOf?.toString() == address && <p>
+                                        <Divider />
+                                        <Tag color="green"> You are eligble to reedem a vote</Tag>
+                                        <br></br>
+                                        <br></br>
 
-                                            reedemNFTVote({
-                                                args: [bundleId],
-                                            })
+                                        <Button type="primary"
+                                            size="small"
+                                            icon={
+                                                <BankOutlined />
+                                            }
+                                            onClick={() => {
 
-                                        }}>Reedem NFT Vote</Button>
-                                </p>}</>
+                                                reedemNFTVote({
+                                                    args: [bundleId],
+                                                })
+
+                                            }}>Reedem NFT Vote</Button>
+                                    </p>}</span>
                             ]
                             }
                         />
@@ -677,40 +681,41 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
             </Card >
         </Badge.Ribbon >
         }
-        {
-            selectedChain !== config.chainId && <div
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    margin: '0 20px 0 20px'
+
+
+
+        {selectedChain !== config.chainId && <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                margin: '0 20px 0 20px'
+            }}
+        >
+
+            <SideChainTokenDescriptions
+                address={config.sideChainContracts[
+                    networkToSelectorId[selectedChain]
+                ]['FungibleToken'][0].address}
+                etfAddress={config.sideChainContracts[
+                    networkToSelectorId[selectedChain]
+                ]['SidechainDeposit'][0].address}
+                bundleId={bundleId}
+                requiredTokenStruct={getRequiredAsset(address)}
+                chainSelectorId={getRequiredAsset(address)?.chainSelector}
+            />
+
+            <br></br>
+            <Button
+                className="button"
+                type="primary"
+                onClick={() => {
+                    setSelectedChain(config.chainId);
                 }}
-            >
-                {/* <h3>This bundle is on another chain (not this chain selector Id: {chainSelectorId?.toString()})</h3> */}
-
-                <SideChainTokenDescriptions
-                    address={config.sideChainContracts[
-                        networkToSelectorId[selectedChain]
-                    ]['FungibleToken'][0].address}
-                    etfAddress={config.sideChainContracts[
-                        networkToSelectorId[selectedChain]
-                    ]['SidechainDeposit'][0].address}
-                    bundleId={bundleId}
-                    requiredTokenStruct={getRequiredAsset(address)}
-                    chainSelectorId={getRequiredAsset(address)?.chainSelector}
-                />
-
-                <br></br>
-                <Button
-                    className="button"
-                    type="primary"
-                    onClick={() => {
-                        setSelectedChain(config.chainId);
-                    }}
-                >Go back to the main chain
-                </Button>
-            </div>
+            >Go back to the main chain
+            </Button>
+        </div>
         }
 
     </>
