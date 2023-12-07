@@ -202,6 +202,28 @@ contract SidechainDeposit is
                 );
     }
 
+    function getFee(
+        uint64 destinationChainSelector,
+        address receiver,
+        DepositFundMessage memory data,
+        PayFeesIn payFeesIn
+    ) public view returns (uint256 fee) {
+        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
+            receiver: abi.encode(receiver),
+            data: abi.encode(data),
+            tokenAmounts: new Client.EVMTokenAmount[](0),
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({
+                    gasLimit: CALLBACK_GAS_LIMIT,
+                    strict: false
+                })
+            ),
+            feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
+        });
+
+        fee = IRouterClient(i_router).getFee(destinationChainSelector, message);
+    }
+
     function send(
         uint64 destinationChainSelector,
         address receiver,
@@ -213,7 +235,10 @@ contract SidechainDeposit is
             data: abi.encode(data),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: CALLBACK_GAS_LIMIT, strict: false})
+                Client.EVMExtraArgsV1({
+                    gasLimit: CALLBACK_GAS_LIMIT,
+                    strict: false
+                })
             ),
             feeToken: payFeesIn == PayFeesIn.LINK ? i_link : address(0)
         });
@@ -263,7 +288,10 @@ contract SidechainDeposit is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public pure override(CCIPReceiver, ERC1155Receiver) returns (bool) {}
+    ) public pure override(CCIPReceiver, ERC1155Receiver) returns (bool) {
+        // return super.supportsInterface(interfaceId);
+        return CCIPReceiver.supportsInterface(interfaceId);
+    }
 
     function getBundleInfo(
         uint256 bundleId
@@ -294,7 +322,7 @@ contract SidechainDeposit is
 
         require(
             burner[reedeemMessage.bundleId] == address(0),
-            "ETFContract: bundleId is already burned"
+            "bundleId is already burned"
         );
         _burnCounter += 1;
         // console.log("reedeemMessage.receiver", reedeemMessage.receiver);
