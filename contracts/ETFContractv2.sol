@@ -418,7 +418,7 @@ contract ETFv2 is ETFBase {
         uint64 destinationChainSelector,
         PayFeesIn payFeesIn
     ) public returns (bytes32 messageId) {
-        require(isETFBurned(bundleIdToETFId[bundleId]), "notRdmd");
+        require(isETFBurned(bundleIdToETFId[bundleId]), "notbrnd");
 
         // TO-DO: check if the destinationChainSelector is in the chainSelectorIds
         // require(
@@ -428,10 +428,41 @@ contract ETFv2 is ETFBase {
 
         ReedeemETFMessage memory data = ReedeemETFMessage({
             bundleId: bundleId,
-            receiver: burner[bundleId]
+            receiver: burner[bundleId],
+            messageId: 0
         });
         messageId = send(destinationChainSelector, payFeesIn, data);
+        data.messageId = messageId;
+        reedeemMessages[bundleId].push(data);
     }
+
+    // function getReedemFee(
+    //     uint64 destinationChainSelector,
+    //     PayFeesIn payFeesIn,
+    //     ReedeemETFMessage memory data
+    // ) public view returns (uint256 fee) {
+    //     Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
+    //         receiver: abi.encode(
+    //             chainSelectorIdToSidechainAddress[destinationChainSelector]
+    //         ),
+    //         data: abi.encode(data),
+    //         tokenAmounts: new Client.EVMTokenAmount[](0),
+    //         extraArgs: Client._argsToBytes(
+    //             Client.EVMExtraArgsV1({
+    //                 gasLimit: CALLBACK_GAS_LIMIT,
+    //                 strict: false
+    //             })
+    //         ),
+    //         feeToken: payFeesIn == PayFeesIn.LINK
+    //             ? chainLinkData.link
+    //             : address(0)
+    //     });
+
+    //     fee = IRouterClient(chainLinkData.router).getFee(
+    //         destinationChainSelector,
+    //         message
+    //     );
+    // }
 
     function send(
         uint64 destinationChainSelector,
@@ -461,12 +492,19 @@ contract ETFv2 is ETFBase {
         );
 
         if (payFeesIn == PayFeesIn.LINK) {
-            // LinkTokenInterface(i_link).approve(i_router, fee);
+            if (fee > IERC20(chainLinkData.link).balanceOf(address(this)))
+                revert NotEnoughBalance(
+                    IERC20(chainLinkData.link).balanceOf(address(this)),
+                    fee
+                );
+            IERC20(chainLinkData.link).approve(chainLinkData.router, fee);
             messageId = IRouterClient(chainLinkData.router).ccipSend(
                 destinationChainSelector,
                 message
             );
         } else {
+            if (fee > address(this).balance)
+                revert NotEnoughBalance(address(this).balance, fee);
             messageId = IRouterClient(chainLinkData.router).ccipSend{
                 value: fee
             }(destinationChainSelector, message);
@@ -491,13 +529,13 @@ contract ETFv2 is ETFBase {
             );
 
             // remove all the message from the array
-            delete messages[bundleId][i];
             // update the message count
 
             if (canBeClosed) {
                 closeBundle(depositFundMessage.bundleId, address(this));
             }
         }
+        delete messages[bundleId];
         messageCount[bundleId] = 0;
     }
 
@@ -537,11 +575,18 @@ contract ETFv2 is ETFBase {
         chainSelectorIdToSidechainAddress[chainSelectorId] = sideChainAddress;
     }
 
-    function reeedNFTVote(uint256 bundleId) public {
-        uint256 etfId = bundleIdToETFId[bundleId];
-        _burn(etfId);
-        bundleIdToETFId[bundleId] = nextTokenIdToMint();
-        _safeMint(msg.sender, 1);
+    function reeedemNFTVote(uint256 bundleId) public {
+        require(bundleIdToRandomWinner[bundleId] != address(0), "notAsgnd");
+        require(!isETFBurned(bundleIdToETFId[bundleId]), "brnd");
+        _transferFrom(
+            address(this),
+            bundleIdToRandomWinner[bundleId],
+            bundleIdToETFId[bundleId]
+        );
+        // uint256 etfId = bundleIdToETFId[bundleId];
+        // _burn(etfId);
+        // bundleIdToETFId[bundleId] = nextTokenIdToMint();
+        // _safeMint(msg.sender, 1);
     }
 
     function fulfillRandomWords(
