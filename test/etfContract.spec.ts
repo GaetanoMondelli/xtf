@@ -26,6 +26,7 @@ describe("ETFContract", () => {
     const sideChainTokenToBeWrapped1 = 15;
     const priceNativeToken = 196741624297;
     const mockChainSelectorId = 0;
+    const mockKeyHash = "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc";
 
     let etfTokenContract: any;
     let etfContract: any;
@@ -162,7 +163,7 @@ describe("ETFContract", () => {
             currentChainSelectorId: mockChainSelectorId,
             subscriptionId: subscriptionId,
             vrfCoordinator: vrFCoordinatorV2.address,
-            keyHash: "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
+            keyHash: mockKeyHash
         }
 
         etfContract = await EtfContractFactory.deploy(
@@ -196,242 +197,243 @@ describe("ETFContract", () => {
             expect(isEtfBurned).toBeFalsy();
         }
         );
+    });
 
-        describe("mint ETF", () => {
-            it.skip("should prevent to invoke ETF wrap function from an eoa", async () => {
-                // removed wrap function from etf contract
-                const uriForWrappedToken = "https://example.com";
+    describe("mint ETF", () => {
+        it.skip("should prevent to invoke ETF wrap function from an eoa", async () => {
+            // removed wrap function from etf contract
+            const uriForWrappedToken = "https://example.com";
 
-                const tokenStruct = {
-                    assetContract: tokenToBeWrapped1.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: 100,
-                };
-                await expect(
-                    etfContract
-                        .connect(owner)
-                        .wrap([tokenStruct], uriForWrappedToken, owner.address)
-                ).rejects.toThrow(
-                    "VM Exception while processing transaction: reverted with reason string 'ETFContract: wrap from eoa is not allowed'"
-                );
-            });
+            const tokenStruct = {
+                assetContract: tokenToBeWrapped1.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: 100,
+            };
+            await expect(
+                etfContract
+                    .connect(owner)
+                    .wrap([tokenStruct], uriForWrappedToken, owner.address)
+            ).rejects.toThrow(
+                "VM Exception while processing transaction: reverted with reason string 'ETFContract: wrap from eoa is not allowed'"
+            );
+        });
 
-            it.skip("should mint an ETF", async () => {
-                const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
-                const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
-                const ethersToWrap = ethers.utils.parseEther("0.5");
+        it.skip("should mint an ETF", async () => {
+            const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+            const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
+            const ethersToWrap = ethers.utils.parseEther("0.5");
 
-                const nativeTokenStruct = {
-                    assetContract: nativeAddress,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: ethersToWrap,
-                };
+            const nativeTokenStruct = {
+                assetContract: nativeAddress,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: ethersToWrap,
+            };
 
-                const tokenStruct1 = {
-                    assetContract: tokenToBeWrapped1.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: amountToWrapToken1,
-                };
+            const tokenStruct1 = {
+                assetContract: tokenToBeWrapped1.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken1,
+            };
 
-                const tokenStruct2 = {
-                    assetContract: tokenToBeWrapped2.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: amountToWrapToken2,
-                };
+            const tokenStruct2 = {
+                assetContract: tokenToBeWrapped2.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken2,
+            };
 
-                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1);
-                await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2);
-                await tokenToBeWrapped1.connect(etfOwner).approve(
-                    etfContract.address,
-                    amountToWrapToken1
-                );
-                await tokenToBeWrapped2.connect(etfOwner).approve(
-                    etfContract.address,
-                    amountToWrapToken2
-                );
-
-
-                await etfContract
-                    .connect(etfOwner)
-                    .mint(etfOwner.address, [nativeTokenStruct, tokenStruct1, tokenStruct2], {
-                        value: ethersToWrap,
-                    });
-
-                const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                const diff = etfTokenPerWrap.sub(etfTokensBalance);
-                expect(diff.lte(BigNumber.from(1))).toBeTruthy();
-            });
+            await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1);
+            await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2);
+            await tokenToBeWrapped1.connect(etfOwner).approve(
+                etfContract.address,
+                amountToWrapToken1
+            );
+            await tokenToBeWrapped2.connect(etfOwner).approve(
+                etfContract.address,
+                amountToWrapToken2
+            );
 
 
-            it("should reedem and burn an ETF", async () => {
-                const bundleId = 0;
-                const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
-                const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));;
-                const ethersToWrap = ethers.utils.parseEther("0.5");
+            await etfContract
+                .connect(etfOwner)
+                .mint(etfOwner.address, [nativeTokenStruct, tokenStruct1, tokenStruct2], {
+                    value: ethersToWrap,
+                });
 
-                const nativeTokenStruct = {
-                    assetContract: nativeAddress,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: ethersToWrap,
-                };
-
-                const tokenStruct1 = {
-                    assetContract: tokenToBeWrapped1.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: amountToWrapToken1,
-                };
-
-                const tokenStruct2 = {
-                    assetContract: tokenToBeWrapped2.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: amountToWrapToken2,
-                };
-
-                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1.mul(2));
-                await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2.mul(2));
-
-                await tokenToBeWrapped1.connect(etfOwner).approve(
-                    etfContract.address,
-                    BigNumber.from(amountToWrapToken1.mul(2))
-                );
-                await tokenToBeWrapped2.connect(etfOwner).approve(
-                    etfContract.address,
-                    BigNumber.from(amountToWrapToken2.mul(2))
-                );
+            const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            const diff = etfTokenPerWrap.sub(etfTokensBalance);
+            expect(diff.lte(BigNumber.from(1))).toBeTruthy();
+        });
 
 
-                await etfContract.connect(etfOwner).depositFunds(
-                    bundleId,
-                    [nativeTokenStruct, tokenStruct1, tokenStruct2],
-                    {
-                        value: ethersToWrap,
-                    }
-                )
+        it("should reedem and burn an ETF", async () => {
+            const bundleId = 0;
+            const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+            const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));;
+            const ethersToWrap = ethers.utils.parseEther("0.5");
 
-                // need to fix the precision in distribution of etf tokens
-                await etfContract.connect(etfOwner).depositFunds(
-                    bundleId + 1,
-                    [nativeTokenStruct, tokenStruct1, tokenStruct2],
-                    {
-                        value: ethersToWrap,
-                    }
-                )
+            const nativeTokenStruct = {
+                assetContract: nativeAddress,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: ethersToWrap,
+            };
 
-                let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                expect(BigNumber.from(etfTokensBalance).gt(BigNumber.from(0))).toBeTruthy();
+            const tokenStruct1 = {
+                assetContract: tokenToBeWrapped1.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken1,
+            };
 
+            const tokenStruct2 = {
+                assetContract: tokenToBeWrapped2.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken2,
+            };
 
-                let token1Balance = await tokenToBeWrapped1.balanceOf(etfOwner.address);
-                expect(token1Balance).toEqual(BigNumber.from(0));
+            await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1.mul(2));
+            await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2.mul(2));
 
-                let token2Balance = await tokenToBeWrapped2.balanceOf(etfOwner.address);
-                expect(token2Balance).toEqual(BigNumber.from(0));
-
-                await etfTokenContract.connect(etfOwner).approve(etfContract.address, etfTokenPerWrap);
-
-                // const etfOwnerAddress = await etfContract.ownerOf(startingBundleId);
-                // expect(etfOwnerAddress).toEqual(etfContract.address);
-
-                // need to wait lock time to reedem (1 day)
-
-
-                const uri = await etfContract.connect(owner).tokenURI(1);
-                expect(uri).toEqual(ETFURI);
-
-                await ethers.provider.send("evm_increaseTime", [86400]);
-
-                await etfContract.connect(etfOwner).reedemETF(bundleId);
-
-                // const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                // expect(etfTokensBalance).toEqual(BigNumber.from(0));
-
-                // token1Balance = await tokenToBeWrapped1.balanceOf(etfOwner.address);
-                // expect(token1Balance).toEqual(amountToWrapToken1);
-
-                // token2Balance = await tokenToBeWrapped2.balanceOf(etfOwner.address);
-                // expect(token2Balance).toEqual(amountToWrapToken2);
-
-                // const etFSupply = await etfTokenContract.totalSupply();
-                // expect(etFSupply).toEqual(BigNumber.from(0));
-
-            });
+            await tokenToBeWrapped1.connect(etfOwner).approve(
+                etfContract.address,
+                BigNumber.from(amountToWrapToken1.mul(2))
+            );
+            await tokenToBeWrapped2.connect(etfOwner).approve(
+                etfContract.address,
+                BigNumber.from(amountToWrapToken2.mul(2))
+            );
 
 
+            await etfContract.connect(etfOwner).depositFunds(
+                bundleId,
+                [nativeTokenStruct, tokenStruct1, tokenStruct2],
+                {
+                    value: ethersToWrap,
+                }
+            )
 
-            it("should be able to  and mint in two or more steps", async () => {
-                const bundleId = 0;
-                const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
-                const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
-                const ethersToWrap = ethers.utils.parseEther("0.5");
+            // need to fix the precision in distribution of etf tokens
+            await etfContract.connect(etfOwner).depositFunds(
+                bundleId + 1,
+                [nativeTokenStruct, tokenStruct1, tokenStruct2],
+                {
+                    value: ethersToWrap,
+                }
+            )
 
-                const halfAmountToWrapToken2 = amountToWrapToken2.div(2);
-
-                const nativeTokenStruct = {
-                    assetContract: nativeAddress,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: ethersToWrap,
-                };
-
-                const tokenStruct1 = {
-                    assetContract: tokenToBeWrapped1.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: amountToWrapToken1
-                };
-
-                const tokenStruct2 = {
-                    assetContract: tokenToBeWrapped2.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: halfAmountToWrapToken2,
-                };
-
-                await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1.mul(2));
-                await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2.mul(2));
-                await tokenToBeWrapped1.connect(etfOwner).approve(
-                    etfContract.address,
-                    BigNumber.from(amountToWrapToken1.mul(2))
-                );
-                await tokenToBeWrapped2.connect(etfOwner).approve(
-                    etfContract.address,
-                    BigNumber.from(amountToWrapToken2.mul(2))
-                );
-
-                await etfContract.connect(etfOwner).depositFunds(
-                    bundleId,
-                    [nativeTokenStruct, tokenStruct1, tokenStruct2],
-                    {
-                        value: ethersToWrap,
-                    }
-                )
-
-                let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            expect(BigNumber.from(etfTokensBalance).gt(BigNumber.from(0))).toBeTruthy();
 
 
-                const tokenStruct2_2 = {
-                    assetContract: tokenToBeWrapped2.address,
-                    tokenType: 0,
-                    tokenId: 0,
-                    totalAmount: amountToWrapToken2//amountToWrapToken2.sub(halfAmountToWrapToken2),
-                };
+            let token1Balance = await tokenToBeWrapped1.balanceOf(etfOwner.address);
+            expect(token1Balance).toEqual(BigNumber.from(0));
 
-                await etfContract.connect(etfOwner).depositFunds(
-                    0,
-                    [tokenStruct2_2]
-                )
-                etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
-                expect(BigNumber.from(etfTokensBalance).gt(BigNumber.from(0))).toBeTruthy();
-            });
+            let token2Balance = await tokenToBeWrapped2.balanceOf(etfOwner.address);
+            expect(token2Balance).toEqual(BigNumber.from(0));
+
+            await etfTokenContract.connect(etfOwner).approve(etfContract.address, etfTokenPerWrap);
+
+            // const etfOwnerAddress = await etfContract.ownerOf(startingBundleId);
+            // expect(etfOwnerAddress).toEqual(etfContract.address);
+
+            // need to wait lock time to reedem (1 day)
+
+
+            const uri = await etfContract.connect(owner).tokenURI(1);
+            expect(uri).toEqual(ETFURI);
+
+            await ethers.provider.send("evm_increaseTime", [86400]);
+
+            await etfContract.connect(etfOwner).reedemETF(bundleId);
+
+            // const etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            // expect(etfTokensBalance).toEqual(BigNumber.from(0));
+
+            // token1Balance = await tokenToBeWrapped1.balanceOf(etfOwner.address);
+            // expect(token1Balance).toEqual(amountToWrapToken1);
+
+            // token2Balance = await tokenToBeWrapped2.balanceOf(etfOwner.address);
+            // expect(token2Balance).toEqual(amountToWrapToken2);
+
+            // const etFSupply = await etfTokenContract.totalSupply();
+            // expect(etFSupply).toEqual(BigNumber.from(0));
 
         });
+
+
+
+        it("should be able to and mint in two or more steps", async () => {
+            const bundleId = 0;
+            const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+            const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));
+            const ethersToWrap = ethers.utils.parseEther("0.5");
+
+            const halfAmountToWrapToken2 = amountToWrapToken2.div(2);
+
+            const nativeTokenStruct = {
+                assetContract: nativeAddress,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: ethersToWrap,
+            };
+
+            const tokenStruct1 = {
+                assetContract: tokenToBeWrapped1.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken1
+            };
+
+            const tokenStruct2 = {
+                assetContract: tokenToBeWrapped2.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: halfAmountToWrapToken2,
+            };
+
+            await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1.mul(2));
+            await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2.mul(2));
+            await tokenToBeWrapped1.connect(etfOwner).approve(
+                etfContract.address,
+                BigNumber.from(amountToWrapToken1.mul(2))
+            );
+            await tokenToBeWrapped2.connect(etfOwner).approve(
+                etfContract.address,
+                BigNumber.from(amountToWrapToken2.mul(2))
+            );
+
+            await etfContract.connect(etfOwner).depositFunds(
+                bundleId,
+                [nativeTokenStruct, tokenStruct1, tokenStruct2],
+                {
+                    value: ethersToWrap,
+                }
+            )
+
+            let etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+
+
+            const tokenStruct2_2 = {
+                assetContract: tokenToBeWrapped2.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken2//amountToWrapToken2.sub(halfAmountToWrapToken2),
+            };
+
+            await etfContract.connect(etfOwner).depositFunds(
+                0,
+                [tokenStruct2_2]
+            )
+            etfTokensBalance = await etfTokenContract.balanceOf(etfOwner.address);
+            expect(BigNumber.from(etfTokensBalance).gt(BigNumber.from(0))).toBeTruthy();
+        });
+
+
 
         it("should be able to deposit", async () => {
 
@@ -755,6 +757,95 @@ describe("ETFContract", () => {
 
     });
 
+    describe("VRF promises fullfiment", () => {
+
+        it("should be able to handle the VRF promises fullfilment for NFT Vote winner", async () => {
+            const bundleId = 0;
+            const amountToWrapToken1 = BigNumber.from(10).mul(BigNumber.from(10).pow(18));
+            const amountToWrapToken2 = BigNumber.from(20).mul(BigNumber.from(10).pow(18));;
+            const ethersToWrap = ethers.utils.parseEther("0.5");
+
+            const nativeTokenStruct = {
+                assetContract: nativeAddress,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: ethersToWrap,
+            };
+
+            const tokenStruct1 = {
+                assetContract: tokenToBeWrapped1.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken1,
+            };
+
+            const tokenStruct2 = {
+                assetContract: tokenToBeWrapped2.address,
+                tokenType: 0,
+                tokenId: 0,
+                totalAmount: amountToWrapToken2,
+            };
+
+            await tokenToBeWrapped1.connect(owner).mint(etfOwner.address, amountToWrapToken1.mul(2));
+            await tokenToBeWrapped2.connect(owner).mint(etfOwner.address, amountToWrapToken2.mul(2));
+
+            await tokenToBeWrapped1.connect(etfOwner).approve(
+                etfContract.address,
+                BigNumber.from(amountToWrapToken1.mul(2))
+            );
+            await tokenToBeWrapped2.connect(etfOwner).approve(
+                etfContract.address,
+                BigNumber.from(amountToWrapToken2.mul(2))
+            );
+
+
+            await etfContract.connect(etfOwner).depositFunds(
+                bundleId,
+                [nativeTokenStruct, tokenStruct1, tokenStruct2],
+                {
+                    value: ethersToWrap,
+                }
+            )
+
+            // need to fix the precision in distribution of etf tokens
+            await etfContract.connect(etfOwner).depositFunds(
+                bundleId + 1,
+                [nativeTokenStruct, tokenStruct1, tokenStruct2],
+                {
+                    value: ethersToWrap,
+                }
+            )
+
+            const checkVRFRequestedPromise = new Promise<void>((resolve, reject) => {
+                vrFCoordinatorV2.on("RandomWordsRequested", (keyHash: any, requestId: any, preSeed: any, subId: any, minimumRequestConfirmations: any, callbackGasLimit: any, numWords: any, sender: any) => {
+                    try {
+                        expect(keyHash).toEqual(mockKeyHash);
+                        expect(requestId).toBeDefined();
+                        expect(preSeed).toBeDefined();
+                        expect(subId).toEqual(subscriptionId);
+                        expect(minimumRequestConfirmations).toEqual(3);
+                        expect(callbackGasLimit).toEqual(2500000);
+                        expect(numWords).toEqual(1);
+                        expect(sender).toEqual(etfContract.address);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                    finally {
+                        vrFCoordinatorV2.removeAllListeners("RandomWordsRequested");
+                    }
+                });
+            });
+
+            await checkVRFRequestedPromise;
+
+
+        });
+
+
+        // 
+
+    });
 
 });
 
