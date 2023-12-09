@@ -95,7 +95,7 @@ export default function MatrixView({ address, bundleState, bundleId, bundleState
         const rowData: {
             name: string;
             data: any[];
-        } = { name: `Bundle`, data: [] };
+        } = { name: `Vault`, data: [] };
 
         for (let colIndex = 0; colIndex < numberOfColumns; colIndex++) {
             // Invert the row index to start from the bottom
@@ -131,9 +131,7 @@ export default function MatrixView({ address, bundleState, bundleId, bundleState
 
 
     const handleCellClick = (event: any, chartContext: any, { seriesIndex, dataPointIndex }: any) => {
-        console.log('event', seriesIndex, dataPointIndex)
         const bundleId = seriesIndex * numberOfColumns + dataPointIndex;
-        console.log(setBundleId)
         setBundleId(bundleId);
     };
 

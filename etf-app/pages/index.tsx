@@ -7,7 +7,7 @@ import {
 import styles from '../styles/page.module.css'
 import { NextPage } from "next";
 import ChainContext from "../context/chain";
-import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert, Tabs, Divider, Watermark } from 'antd';
+import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert, Tabs, Divider, Watermark, Space, Tag, Layout } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
@@ -173,6 +173,15 @@ const Home: NextPage = () => {
                         value: c.name,
                       }))}
                   ></Select>
+                  <Divider type="vertical" />
+                  <Space size={[0, 8]} wrap>
+                    {/* {
+                        config
+                      } */}
+
+                    <Tag bordered={false} color="default"><b>Sepolia</b></Tag>
+                    <Tag bordered={false} color="default"><b>Mumbai</b></Tag>
+                  </Space>
                 </div>
 
                 <div>
@@ -204,10 +213,10 @@ const Home: NextPage = () => {
                       }}
                     >
                       {
-                        ['ETF STATS', 'PRICE CHART', 'BUNDLE VIEW'].map((tab, index) => (
+                        ['ETF STATS', 'PRICE CHART', 'VAULT VIEW'].map((tab, index) => (
                           <div
                             className="customcard"
-                            key={'tab'+index}
+                            key={'tab' + index}
                             onClick={() => setSelectedTab((index + 1).toString())}
                             style={{
                               backgroundColor: selectedTab === (index + 1).toString() ? "gray" : "white",
@@ -289,57 +298,73 @@ const Home: NextPage = () => {
 
 
             <div className={styles.grid}>
+              
               <a
-                href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+                href=""
                 className={styles.card}
                 target="_blank"
+                style={{
+                  color: "black",
+                }}
                 rel="noopener noreferrer"
               >
                 <h2>
                   Whitepaper <span>-&gt;</span>
                 </h2>
-                <p>Find in-depth information about Next.js features and API.</p>
+                <p>Roadmap and Whitepaper will be soon available</p>
               </a>
 
               <a
                 href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
                 className={styles.card}
                 target="_blank"
+                style={{
+                  color: "black",
+                }}
                 rel="noopener noreferrer"
               >
                 <h2>
                   Learn <span>-&gt;</span>
                 </h2>
-                <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
+                <p>
+                  Landing page and guide for the ETFv2 contract will be soon available
+                </p>
+              </a>
+              <a
+                href="https://chain.link/hackathon"
+                className={styles.card}
+                target="_blank"
+                style={{
+                  color: "black",
+                }}
+                rel="noopener noreferrer"
+              >
+                <h2>
+                  Chainlink Constellation <span>-&gt;</span>
+                </h2>
+                <p>Check other projects here</p>
               </a>
 
               <a
-                href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+                href="https://gaetanomondelli.github.io/#/"
                 className={styles.card}
                 target="_blank"
-                rel="noopener noreferrer"
+                // text color black
+                style={{
+                  color: "black",
+                }}
+                rel="Landing page and guide for the ETFv2 contract will be soon available"
               >
                 <h2>
                   About <span>-&gt;</span>
                 </h2>
-                <p>Explore the Next.js 13 playground.</p>
-              </a>
-
-              <a
-                href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                className={styles.card}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <h2>
-                  Deploy <span>-&gt;</span>
-                </h2>
-                <p>
-                  Instantly deploy your Next.js site to a shareable URL with Vercel.
-                </p>
+                <p>Visit my not-updated info page</p>
               </a>
             </div>
-
+            <Divider></Divider>
+            <Layout.Content>
+              Made with 🖤 Shoreditch, London 2023
+            </Layout.Content>
           </>}
 
           {

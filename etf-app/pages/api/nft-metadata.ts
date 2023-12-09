@@ -7,7 +7,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     const metadata = {
         name: `NFT ${tokenId}`,
         description: `The ETF NFT represents a vote in decision-making for its corresponding vault, granting the holder a say in its management and future strategy.`,
-        image: `${process.env.NEXT_PUBLIC_BASE_URL}/vault.jpg`, // Assuming the cake picture is named "cake.jpg" and placed in the "public" folder
+        image: `https://xtf.vercel.app/images/vault.png`, // Assuming the cake picture is named "cake.jpg" and placed in the "public" folder
     };
 
     // Set the response headers
