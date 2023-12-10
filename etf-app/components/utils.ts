@@ -70,7 +70,8 @@ export const chainSelectorIdToExplorerAddress: any = {
 export const chainIdToNetworkName: any = {
     11155111: ["Ethereum", "Sepolia"],
     80001: ["Polygon", "Mumbai"],
-    1: ["Hardhat", "Localhost"]
+    1: ["Hardhat", "Localhost"],
+    0: ["Hardhat", "Localhost"],
 }
 
 export const chainIdToNetworkLogo: any = {

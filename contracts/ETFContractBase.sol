@@ -188,7 +188,7 @@ contract ETFBase is
         uint64 chainSelectorId
     ) internal view {
         // check if the chainIdSelector is in the ETF
-        require(chainSelectorIdInETF[chainSelectorId], "chin");
+        require(chainSelectorIdInETF[chainSelectorId], "cid");
 
         for (uint256 i = 0; i < tokensToWrap.length; i += 1) {
             // check each assetContract is whitelisted

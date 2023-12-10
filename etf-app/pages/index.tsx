@@ -120,7 +120,7 @@ const Home: NextPage = () => {
                 marginBottom: 20
               }}
             >
-              <Image width={120} height={120} src="/images/lg.png" alt="logo" />
+              <Image width={120} height={120} src="/images/logo3.png" alt="logo" />
               <Prices address={config?.contracts['ETFv2'][0].address} />
               <div>
                 <ConnectWallet
@@ -363,7 +363,7 @@ const Home: NextPage = () => {
             </div>
             <Divider></Divider>
             <Layout.Content>
-              Made with 🖤 Shoreditch, London 2023
+              Made with 🖤  in Shoreditch, London 2023
             </Layout.Content>
           </>}
 
@@ -379,7 +379,7 @@ const Home: NextPage = () => {
                     marginBottom: 20
                   }}
                 >
-                  <Image width={120} height={120} src="/images/lg.png" alt="logo" />
+                  <Image width={120} height={120} src="/images/logo3.png" alt="logo" />
                   {/* <Prices address={config?.contracts['ETFv2'][0].address} /> */}
                   <Skeleton
                     style={{

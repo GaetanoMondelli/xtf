@@ -232,6 +232,13 @@ export default function MatrixView({ address, bundleState, bundleId, bundleState
         series,
     };
 
+    const legendItems = [
+        { color: 'gray', label: 'Empty'},
+        { color: 'lightblue', label: 'Open' },
+        { color: 'orange', label: 'Messages to Process' },
+        { color: 'green', label: 'Locked' },
+        { color: 'red', label: 'Burned' },
+    ];
 
     return (
         <div className="mixed-chart">
@@ -244,6 +251,38 @@ export default function MatrixView({ address, bundleState, bundleId, bundleState
                     width="500"
                 />
             }
+            <div className="legend" style={
+                {
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    width: "100%"
+                }
+            }>
+                {legendItems.map((item, index) => (
+                    <div key={index} className="legend-item" style={
+                        {
+                            display: "flex",
+                            flexDirection: "row",
+                            marginRight: "0.5rem",
+                            justifyContent: "space-between",
+                        }
+                    }>
+                        <div className="legend-label">
+                            <span 
+                            style={
+                                {
+                                    color: item.color,
+                                    fontSize: "1.5rem",
+                                    marginRight: "0.3rem"
+                                }
+                            }
+                            >■</span>{item.label}</div>
+                    </div>
+                ))}
+            </div>
+            <br></br>
+
         </div>
     );
 }

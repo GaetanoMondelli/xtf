@@ -418,7 +418,7 @@ contract ETFv2 is ETFBase {
         uint64 destinationChainSelector,
         PayFeesIn payFeesIn
     ) public returns (bytes32 messageId) {
-        require(isETFBurned(bundleIdToETFId[bundleId]), "notbrnd");
+        require(isETFBurned(bundleIdToETFId[bundleId]), "!brn");
 
         // TO-DO: check if the destinationChainSelector is in the chainSelectorIds
         // require(
@@ -576,8 +576,8 @@ contract ETFv2 is ETFBase {
     }
 
     function reeedemNFTVote(uint256 bundleId) public {
-        require(bundleIdToRandomWinner[bundleId] != address(0), "notAsgnd");
-        require(!isETFBurned(bundleIdToETFId[bundleId]), "brnd");
+        require(bundleIdToRandomWinner[bundleId] != address(0), "!Asg");
+        require(!isETFBurned(bundleIdToETFId[bundleId]), "!brn");
         _transferFrom(
             address(this),
             bundleIdToRandomWinner[bundleId],

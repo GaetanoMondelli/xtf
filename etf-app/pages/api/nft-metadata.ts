@@ -5,7 +5,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Generate the metadata object
     const metadata = {
-        name: `NFT ${tokenId}`,
+        name: `NFT Vote`,
         description: `The ETF NFT represents a vote in decision-making for its corresponding vault, granting the holder a say in its management and future strategy.`,
         image: `https://xtf.vercel.app/images/vault.png`, // Assuming the cake picture is named "cake.jpg" and placed in the "public" folder
     };

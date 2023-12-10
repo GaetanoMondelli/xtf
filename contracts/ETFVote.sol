@@ -177,10 +177,11 @@ contract NFTVote is IERC165, IERC721 {
         uint256 tokenId,
         bytes calldata _data
     ) external override {
-        require(_ownerships[tokenId] == from, "noadmin");
+        require(_ownerships[tokenId] == from, "");
         _ownerships[tokenId] = to;
         balances[from]--;
         balances[to]++;
+        _data;
         // if (isContract(to)) {
         //     require(
         //         IERC721Receiver(to).onERC721Received(

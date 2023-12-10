@@ -31,7 +31,7 @@ async function main() {
         accounts[0].address,
         "NFTVote",
         "NFTV",
-        "https://gaetanomondelli.github.io/static/media/gman2.f52db750.png"
+        "https://xtf.vercel.app/api/nft-metadata"
     );
 
     await contract.deployed();
