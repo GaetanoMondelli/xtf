@@ -7,26 +7,40 @@ import {
 import styles from '../styles/page.module.css'
 import { NextPage } from "next";
 import ChainContext from "../context/chain";
-import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert, Tabs, Divider, Watermark, Space, Tag, Layout } from 'antd';
+import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert, Tabs, Divider, Watermark, Space, Tag, Layout, Tour, TourProps, Button } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
 import Prices from "../components/Prices";
 import { configs, Chain, chainIdToNetworkLogo, chainIdToNetworkName } from "../components/utils";
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { Sepolia } from "@thirdweb-dev/chains";
 import PriceChartComponent from "../components/PriceDiagram";
 import { inherits } from "util";
 
-const { TabPane } = Tabs;
 
-const minimiseAddress = (address: string) => {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
+
 
 const Home: NextPage = () => {
+  const selectRef = useRef(null);
+  const chips = useRef(null);
+  const etfStatsRef = useRef(null);
+  const openRef = useRef(null);
+  const mintedRef = useRef(null);
+  const burnedRef = useRef(null);
+  const tlvRef = useRef(null);
+  const etfBalanceRef = useRef(null);
+  const votingPowerRef = useRef(null);
+  const vaultCompositionRef = useRef(null);
+  const priceChartRef = useRef(null);
+  const priceChartRef2 = useRef(null);
+  const vaultViewRef = useRef(null);
+  const matrixViewRef = useRef(null);
+  const pieViewRef = useRef(null);
+  const formViewRef = useRef(null);
 
+  const [open, setOpen] = useState<boolean>(false);
   const [bundleId, setBundleId] = useState<number>(0);
   const [selectedTab, setSelectedTab] = useState<string>('1');
   const [localTest, setLocalTest] = useState<boolean>(false)
@@ -41,6 +55,97 @@ const Home: NextPage = () => {
   const connectionStatus = useConnectionStatus();
   const switchChain = useSwitchChain();
   const isMismatched = useNetworkMismatch();
+
+  const steps: TourProps['steps'] = [
+    {
+      title: 'Select your ETF Index',
+      description: 'Here you can select the index you want to invest or deposit in. Different indexes have different vault composition and different ETF tokens. In the future you will be ale to create your own index.',
+      target: () => selectRef?.current,
+    },
+    {
+      title: 'ETF Networks',
+      description: 'The tags here show the networks where the ETF assets are deployed. You can switch between networks by clicking on the tags.',
+      target: () => chips?.current,
+    },
+    {
+      title: 'ETF Stats',
+      description: 'This section shows the ETF stats for the selected index.',
+      target: () => etfStatsRef?.current,
+    },
+    {
+      title: 'Vault Open',
+      description: 'This metric displays the number of vaults in which users have started depositing assets, but the deposits are not yet sufficient to reach completion.',
+      target: () => openRef?.current,
+    },
+    {
+      title: 'Vault Minted',
+      description: 'This metric displays the number of vaults in which users have completed the deposit phase, the NFT Vote and ETF Tokens have been distributed and the vault is ready to be burned.',
+      target: () => mintedRef?.current,
+    },
+    {
+      title: 'Vault Burned',
+      description: 'This metric displays the number of vaults in which users have completed the burn phase and the burner user have withdrawn the underlying assets.',
+      target: () => burnedRef?.current,
+    },
+    {
+      title: 'Total Locked Value',
+      description: 'This metric displays an estimation based on current prices of the total value of assets locked in this ETF index.',
+      target: () => tlvRef?.current,
+    },
+    {
+      title: 'ETF Tokens Balance',
+      description: 'This metric displays the total amount of ETF tokens you own and the total suppply.',
+      target: () => etfBalanceRef?.current,
+    },
+    {
+      title: 'Voting Power',
+      description: 'This metric displays the total amount of NFT votes a user owns. Most of these metris are not yet available as the DAO is still in phase of definition',
+      target: () => votingPowerRef?.current,
+    },
+    {
+      title: 'Vault Composition',
+      description: 'This section shows the composition of the vaults for the selected index. Prices here and in the scrolling marquee on top are fectehd real-time from Chainlink Data Feeds',
+      target: () => vaultCompositionRef?.current,
+    },
+    {
+      title: 'Price Chart',
+      description: 'This section allows you to view the price chart for the selected index. There are two charts, one with normalised prices and one with a logaritmic representation.',
+      target: () => priceChartRef?.current,
+    },
+    {
+      title: 'Price Chart Normalised vs Logaritmic',
+      description: 'The normalised chart shows the price of the index and the price of the assets composing the index. The logaritmic chart shows the price of the index and the price of the assets composing the index in a logaritmic scale.',
+      target: () => priceChartRef2?.current,
+    },
+    {
+      title: 'Specific Vault View State',
+      cover: (
+        <Image
+          width={400}
+          height={400}
+          alt="tour.png"
+          src="/images/states.png"
+        />
+      ),
+      description: 'This section allows you to view the status of a specific vault for the selected index. The ribbon represent the state of the selected Vault. Blue vaults are still OPEN for contributions. Green vaults that have got all the required contributions and have been MINTED. Red vaults are vaults that have been BURNED and the underlying assets have been withdrawn.',
+      // target: () => vaultViewRef?.current,
+    },
+    {
+      title: 'Vaults View Matrix',
+      description: 'This section allows you to view the status of the vaults for the selected index. Gray vaults are vaults with no contributions. Blue vaults are vaults with contributions but not yet minted. Green vaults that have got all the required contributions and have been minted. Orange vaults have not yet committed messages from other chains. Red vaults are vaults that have been burned and the underlying assets have been withdrawn.',
+      target: () => matrixViewRef?.current,
+    },
+    {
+      title: 'Pie vault Composition and Deposits',
+      description: 'This chart shows for a selected vault the assets composition and in the inner circle the amount of deposits. Green is the amount of deposits that the connetced user have deposited, red is the amount of deposits that other users have deposted and blue is the contributions missing to close (MINT) the vault.',
+      target: () => pieViewRef?.current,
+    },
+    {
+      title: 'Vault Form Actions',
+      description: 'This section allows you to interact with the selected vault. You can deposit in OPEN vaults, withdraw in MINTED/CLOSED vaults, process messages from other chains.',
+      target: () => formViewRef?.current,
+    }
+  ];
 
 
   useEffect(() => {
@@ -150,7 +255,10 @@ const Home: NextPage = () => {
                   padding: 4,
                 }}
               >
-                <div>
+                <div
+                  ref={selectRef}
+
+                >
 
                   <span>&nbsp;&nbsp;{"Select Index"}</span>
                   <Select
@@ -174,7 +282,9 @@ const Home: NextPage = () => {
                       }))}
                   ></Select>
                   <Divider type="vertical" />
-                  <Space size={[0, 8]} wrap>
+                  <Space
+                    ref={chips}
+                    size={[0, 8]} wrap>
                     {/* {
                         config
                       } */}
@@ -188,6 +298,7 @@ const Home: NextPage = () => {
                   &nbsp;&nbsp;&nbsp;<span>Hardhat local test</span> &nbsp;&nbsp;
                   <Switch checkedChildren="Hardhat" unCheckedChildren="Prod"
                     className="nb-input"
+                    disabled={true}
                     style={{
                       color: "black",
                       border: "2px solid black",
@@ -196,6 +307,8 @@ const Home: NextPage = () => {
                       marginLeft: 20
                     }}
                     checked={localTest} onChange={(checked) => setLocalTest(checked)} />
+                  <Divider type="vertical" />
+                  <Button className="nb-input" type='dashed' onClick={() => setOpen(true)}>Tour</Button>
                 </div>
 
               </div>
@@ -218,6 +331,7 @@ const Home: NextPage = () => {
                             className="customcard"
                             key={'tab' + index}
                             onClick={() => setSelectedTab((index + 1).toString())}
+                            ref={tab === 'ETF STATS' ? etfStatsRef : null}
                             style={{
                               backgroundColor: selectedTab === (index + 1).toString() ? "gray" : "white",
                               color: selectedTab === (index + 1).toString() ? "white" : "black",
@@ -241,8 +355,17 @@ const Home: NextPage = () => {
                   width: "100%",
                 }}
               >
-                <ETFStatsView tokenAddress={config.contracts['ETFToken'][0].address} address={config.contracts['ETFv2'][0].address} />
-                <PriceValueStats address={config.contracts['ETFv2'][0].address} />
+                <ETFStatsView
+                  openRef={openRef}
+                  mintedRef={mintedRef}
+                  burnedRef={burnedRef}
+                  tlvRef={tlvRef}
+                  votingPowerRef={votingPowerRef}
+                  etfBalanceRef={etfBalanceRef}
+                  tokenAddress={config.contracts['ETFToken'][0].address} address={config.contracts['ETFv2'][0].address} />
+                <PriceValueStats
+                  vaultCompositionRef={vaultCompositionRef}
+                  address={config.contracts['ETFv2'][0].address} />
                 {/* <Prices address={config.contracts['ETFv2'][0].address} /> */}
                 <br></br>
 
@@ -281,10 +404,15 @@ const Home: NextPage = () => {
                 // }}
                 >
 
-                  <PriceChartComponent title='Normalised Price Asset Comparison' normalise={true}></PriceChartComponent>
-                  <PriceChartComponent title='Logaritmic Price Asset Comparison' normalise={false}></PriceChartComponent>
+                  <PriceChartComponent chartRef={priceChartRef} title='Normalised Price Asset Comparison' normalise={true}></PriceChartComponent>
+                  <PriceChartComponent chartRef={priceChartRef2} title='Logaritmic Price Asset Comparison' normalise={false}></PriceChartComponent>
                 </div>}
-              {selectedTab === '3' && <BundleView address={config.contracts['ETFv2'][0].address} bundleId={bundleId}
+              {selectedTab === '3' && <BundleView
+                vaultViewRef={vaultViewRef}
+                matrixViewRef={matrixViewRef}
+                pieViewRef={pieViewRef}
+                formViewRef={formViewRef}
+                address={config.contracts['ETFv2'][0].address} bundleId={bundleId}
                 setBundleId={setBundleId}
                 tokenToBeWrapped1Address={config.contracts['FungibleToken'][0].address}
                 tokenToBeWrapped2Address={config.contracts['FungibleToken'][1].address}
@@ -298,7 +426,7 @@ const Home: NextPage = () => {
 
 
             <div className={styles.grid}>
-              
+
               <a
                 href=""
                 className={styles.card}
@@ -424,6 +552,21 @@ const Home: NextPage = () => {
         </div >
       </Watermark >
 
+      <Tour open={open} onClose={() => setOpen(false)} steps={steps}
+        onChange={(index) => {
+          if (index < 10) {
+            setSelectedTab('1')
+          }
+          if (index >= 10 && index < 11) {
+            setTimeout(() => setSelectedTab('2'), 500)
+          }
+          if (index > 11) {
+            // wait for the element to be rendered
+            setTimeout(() => setSelectedTab('3'), 500)
+          }
+        }}
+
+      />
 
     </>
 

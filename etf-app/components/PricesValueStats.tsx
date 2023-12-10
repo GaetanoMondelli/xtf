@@ -11,7 +11,7 @@ import ChainContext from "../context/chain";
 const { Meta } = Card;
 
 export default function PriceValueStats(
-    { address }: { address: string }
+    { address, vaultCompositionRef }: { address: string, vaultCompositionRef: any }
 ) {
     const [prices, setPrices] = useState<any>();
     const [values, setValues] = useState<any>();
@@ -86,6 +86,7 @@ export default function PriceValueStats(
         />
         <br></br>
         <div
+            ref={vaultCompositionRef}
             style={{
                 display: 'flex',
                 justifyContent: 'space-between',

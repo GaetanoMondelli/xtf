@@ -8,7 +8,7 @@ type AssetData = Record<string, PriceData[]>;
 
 const { Content } = Layout;
 
-export default function PriceChartComponent({ title, normalise }: { title: string, normalise: boolean }) {
+export default function PriceChartComponent({ title, normalise, chartRef, }: { title: string, normalise: boolean, chartRef: any }) {
     const [chartData, setChartData] = useState<any>();
     const days = 100; // Number of days for historical data
 
@@ -113,7 +113,7 @@ export default function PriceChartComponent({ title, normalise }: { title: strin
     };
 
     return (
-        <div>
+        <div ref={chartRef}>
             <Content className='card'  style={{ width:"100%", padding: '0 50px 50px' }} >
 
                 {/* <h2>Asset Price Comparison</h2> */}

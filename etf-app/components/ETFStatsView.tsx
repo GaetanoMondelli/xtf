@@ -4,7 +4,7 @@ import { Badge, Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
 import style from '../styles/page.module.css';
 import { BigNumber, ContractInterface } from "ethers";
 import { ETFv2ABI, showOnlyTwoDecimals, calculateTLV, nativeAddress } from "./utils";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 
 import ChainContext from "../context/chain";
 
@@ -12,7 +12,17 @@ import ChainContext from "../context/chain";
 const { Meta } = Card;
 
 export default function ETFStatsView(
-    { address, tokenAddress }: { address: string, tokenAddress: string }
+    { address, tokenAddress,
+        openRef,
+        mintedRef,
+        burnedRef,
+        tlvRef,
+        votingPowerRef,
+        etfBalanceRef,
+
+    }: {
+        address: string, tokenAddress: string, openRef: any, mintedRef: any, burnedRef: any, tlvRef: any, votingPowerRef: any, etfBalanceRef: any
+    }
 ) {
     const [TLV, setTLV] = useState<any>("Loading...s");
     const offsetMintedBeforeChangingOwenrs = 150;
@@ -123,41 +133,52 @@ export default function ETFStatsView(
             {!isWhiteListedLoading && <p>Whitelisted: {isWhiteListed ? "Yes" : "No"}</p>} */}
 
 
-                <Statistic title="Vault Opened" value={
-                    bundleCountLoading ? "Loading..." : bundleCountError ?
-                        "Error" : bundleCount ? bundleCount.toString() : "0"
-                } />
-                <Statistic title="Vault Minted" value={
-                    isLoading ? "Loading..." : totalSupplyError ?
-                        "Error" : totalSupplyLoading ? "Loading..." :
-                            BigNumber.from(totalSupply).toString()} />
-                <Statistic title="Vault Burnt" value={
-                    burnedCountLoading ? "Loading..." : burnedCountError ?
-                        "Error" : burnedCount ? burnedCount.toString() : "0"
-                } />
-                <Statistic title="Estimated TLV" suffix="$" value={
-                    bundleStateLoading ? "Loading..." : bundleStateError ?
-                        "Error" : bundleState ? showOnlyTwoDecimals(TLV) : "0"
+                <span ref={openRef}>
 
-                } />
-
-                <Statistic title={
-                    connectionStatus === "connected" ? "ETF Tokens Balance" : "ETF Token Supply"
-                }
-                    suffix={connectionStatus === "connected" ?
-                        totalSupplyLoading ? "Loading..." : totalSupplyError ?
-                            "Error" :
-                            "/ " + showOnlyTwoDecimals(BigNumber.from(totalSupply).mul(100).toString() as string) : ""}
-                    value={
-                        connectionStatus === "connected" ?
-                            balanceLoading ? "Loading..." : balanceError ?
-                                "Error" :
-                                showOnlyTwoDecimals(balance?.displayValue as string) :
-                            tokenTotalSupplyLoading ? "Loading..." : tokenTotalSupplyError ?
-                                "Error"
-                                : showOnlyTwoDecimals(BigNumber.from(tokenTotalSupply).mul(100).add(0).toString())
+                    <Statistic title="Vault Opened" value={
+                        bundleCountLoading ? "Loading..." : bundleCountError ?
+                            "Error" : bundleCount ? bundleCount.toString() : "0"
+                    }
+                    />
+                </span>
+                <span ref={mintedRef}>
+                    <Statistic title="Vault Minted" value={
+                        isLoading ? "Loading..." : totalSupplyError ?
+                            "Error" : totalSupplyLoading ? "Loading..." :
+                                BigNumber.from(totalSupply).toString()} />
+                </span>
+                <span ref={burnedRef}>
+                    <Statistic title="Vault Burnt" value={
+                        burnedCountLoading ? "Loading..." : burnedCountError ?
+                            "Error" : burnedCount ? burnedCount.toString() : "0"
                     } />
+                </span>
+                <span ref={tlvRef}>
+                    <Statistic title="Estimated TLV" suffix="$" value={
+                        bundleStateLoading ? "Loading..." : bundleStateError ?
+                            "Error" : bundleState ? showOnlyTwoDecimals(TLV) : "0"
 
+                    } />
+                </span>
+                <span ref={etfBalanceRef}>
+                    <Statistic title={
+                        connectionStatus === "connected" ? "ETF Tokens Balance" : "ETF Token Supply"
+                    }
+                        suffix={connectionStatus === "connected" ?
+                            totalSupplyLoading ? "Loading..." : totalSupplyError ?
+                                "Error" :
+                                "/ " + showOnlyTwoDecimals(BigNumber.from(totalSupply).mul(100).toString() as string) : ""}
+                        value={
+                            connectionStatus === "connected" ?
+                                balanceLoading ? "Loading..." : balanceError ?
+                                    "Error" :
+                                    showOnlyTwoDecimals(balance?.displayValue as string) :
+                                tokenTotalSupplyLoading ? "Loading..." : tokenTotalSupplyError ?
+                                    "Error"
+                                    : showOnlyTwoDecimals(BigNumber.from(tokenTotalSupply).mul(100).add(0).toString())
+                        } />
+
+                </span>
             </div>
         </Card>
 
@@ -186,13 +207,14 @@ export default function ETFStatsView(
                         "Error" : totalSupplyLoading ? "Loading..." :
                             BigNumber.from(totalSupply).toString()} />
 
-
-                <Statistic title={
-                    connectionStatus === "connected" ? "Voting Power" : "Voting Quota"
-                }
-                    value={getVotePower()[0]}
-                    suffix={getVotePower()[1]}
-                />
+                <span ref={votingPowerRef}>
+                    <Statistic title={
+                        connectionStatus === "connected" ? "Voting Power" : "Voting Quota"
+                    }
+                        value={getVotePower()[0]}
+                        suffix={getVotePower()[1]}
+                    />
+                </span>
 
 
 
