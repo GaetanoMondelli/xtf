@@ -1,5 +1,8 @@
 # Chainlink usage link
 
+Here are all the smart contracts implemented for this hackathon
+[contract](https://github.com/GaetanoMondelli/xtf/blob/main/contracts.md)
+
 
 Parts of the smart contract of ETFv2 (that inherits by ETFBase) and SideChainDeposit (for handling sidechain deposit) that uses Chainlink.
 

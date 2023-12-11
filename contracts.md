@@ -1,0 +1,17 @@
+### List of all implemented smart contracts
+
+- [ETFContractBase.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/ETFContractBase.sol): This contract lays the foundation for XTF tokens, encompassing the basic functionalities essential to the ecosystem.
+- [ETFVote.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/ETFVote.sol): A straightforward implementation of an NFT, designed with a unique feature: it can only be burned by the Contract Owner (admin), facilitating the burning process when underlying asset tokens are released from the vault.
+- [ETFContractV2.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/ETFContractV2.sol): Building upon ETFContractBase.sol and ETFVote.sol, this contract inherits and extends certain functionalities, primarily adaptations made to address size restrictions.
+
+- [SidechainDeposit.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/SidechainDeposit.sol): A simpler version of ETFContractV2 designed for deployment on sidechains. This implementation focuses on storing assets in vaults and sending messages to the mainchain. However, it delegates the responsibility for releasing or burning vaults to ETFContractV2, awaiting messages to proceed with these actions.
+- [ETFContractTypes.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/ETFContractTypes.sol):A comprehensive library containing all the struct definitions utilised by ETFContractBase, ETFContractV2, and SidechainDeposit.
+- [NativeTokenWrapper.sol] (https://github.com/GaetanoMondelli/xtf/blob/main/contracts/ETFContractTypes.sol): This component is crucial for handling deposits of native currency in the XTF ecosystem. It utilises wrapped tokens, a key feature especially considering *future enhancements where gas expenses and LINK tokens used for messaging operations might be factored in as part of deposit contributions*. For development across various chains, reliable wrapped token solutions were essential. The specific of the wrapped tokens utilised can be found in the deployment scripts inside the 'scripts' folder of the repository (e.g [WMATIC for Mumbai](https://github.com/GaetanoMondelli/xtf/blob/c1a17034add8501557462b88c3775c98570aae27/scripts/deploy-side-polygon.ts#L23) )
+
+Tests Contracts:
+
+- [MockAggregator.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/MockAggregator.sol): Data Feed Aggregator mock for testing and local development
+- [MockRouter.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/MockRouter.sol): CCIP Router Mock for testing and local development
+- [MessageReceiver.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/MessageReceiver.sol) & [MessageSender](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/MessageSender.sol): Trivial implementation of a sender and a receiver for testing purpose and understand CCIP processes                  
+- [PolygonSender.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/PolygonSender.sol): Trivial implementation for sending DepositFund Messages from a Sidechain for testing purposes. 
+- [LinkTokenInterface.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/LinkTokenInterface.sol): Mock implementation of the LINK token for testing LINK payments for CCIP
