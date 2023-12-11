@@ -12,7 +12,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
     { bundleId: number, address: string, etfAddress?: string, bundle: any, index: number, quantities: any, setQuantities: any, requiredTokenStructs: any, chainSelectorId: any, currentConfig: any, userDeposit: any }) {
 
     const userAddress = useAddress();
-    const { selectedChain, setSelectedChain } = useContext(ChainContext);
+    const { fungibleTokenAbi, setSelectedChain } = useContext(ChainContext);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [messages, setMessages] = useState<any>();
@@ -30,11 +30,16 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
     const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
         address,
     );
-    const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address);
+    const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address, fungibleTokenAbi);
+
     const { contract: etfContract, isLoading: isEtfContractLoading, error: isEtfContractError } = useContract(etfAddress);
     const { mutateAsync: updateBundleAfterReceive, isLoading: updateBundleAfterReceiveLoading, error: updateBundleAfterReceiveError } = useContractWrite(etfContract, "updateBundleAfterReceive");
 
     const { mutateAsync: approve, isLoading, error } = useContractWrite(contract, "approve");
+
+    // mint
+    const { mutateAsync: mint, isLoading: mintLoading, error: mintError } = useContractWrite(contract, "mint");
+
 
     const { data: allowance, isLoading: isAllowanceLoading, error: nameError } = useContractRead(contract, "allowance", [userAddress, etfAddress]);
 
@@ -45,6 +50,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
     }
 
     const isOnExternalChain = getRequiredAsset(address)?.chainSelector.toString() !== chainSelectorId?.toString();
+
 
     return <>
         <Descriptions
@@ -174,7 +180,25 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
 
             {!isOnExternalChain && <Descriptions.Item label="Balance">
                 {balanceLoading && <Tag color="processing">Loading...</Tag>}
-                {!balanceError && !balanceLoading && balance && <Tag color="success">{showOnlyTwoDecimals(balance.displayValue)} {balance.symbol}</Tag>}
+                {!balanceError && !balanceLoading && balance &&
+                    <>
+                        <Tag color="success">{showOnlyTwoDecimals(balance.displayValue)} {balance.symbol}</Tag>
+                        {nativeAddress !== address  && <Button type="link"
+                        
+                        style={
+                            {
+                                color: 'green'
+                            }
+                        }
+                        size="small" onClick={() => {
+                            mint({
+                                args: [userAddress, BigNumber.from(100).mul(BigNumber.from(10).pow(18))],
+                            })
+                        }}>Mint (Faucet)</Button>}
+                    </>
+
+                }
+
             </Descriptions.Item>
             }
 

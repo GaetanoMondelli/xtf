@@ -8,6 +8,7 @@ export const ChainContext = createContext({
   mockAggregatorAbi: [],
   // etfContractv2Abi: [],
   sideAbi: [],
+  fungibleTokenAbi: [],
   isAbisLoading: true,
 });
 

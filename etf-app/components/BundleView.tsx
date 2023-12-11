@@ -8,7 +8,7 @@ import { BigNumber, ethers } from "ethers";
 import { useState, useEffect, useContext } from "react";
 import { Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { ETFv2ABI, getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, ChainIdToSelectorId, networkToSelectorId, minimiseAddress } from "./utils";
+import { getPriceAggregatorAddress, nativeAddress, ETFState, getETFStatus, getAssetName, PayFeesIn, ChainIdToSelectorId, networkToSelectorId, minimiseAddress } from "./utils";
 import { Chart, ChartDataset } from "chart.js/auto";
 import MatrixView from "../components/MatrixView";
 import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";

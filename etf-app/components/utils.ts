@@ -53,12 +53,14 @@ async function fetchABI(fileName: string) {
 const ETFv2ABI = fetchABI("ETFv2.json");
 const MockAggregatorABI = fetchABI("MockAggregator.json");
 const SIDE_ABI = fetchABI("SidechainDeposit.json");
+const FungibleTokenABI = fetchABI("FungibleToken.json");
 
 
 export {
     ETFv2ABI,
     MockAggregatorABI,
-    SIDE_ABI
+    SIDE_ABI,
+    FungibleTokenABI,
 };
 
 

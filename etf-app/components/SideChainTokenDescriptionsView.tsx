@@ -9,7 +9,7 @@ import ChainContext from "../context/chain";
 
 export default function SideChainTokenDescriptions({ address, etfAddress, bundleId, requiredTokenStruct, chainSelectorId }:
     { address: string, etfAddress?: string, bundleId: any, requiredTokenStruct: any, chainSelectorId: any, }): JSX.Element {
-    const { selectedChain, setSelectedChain, sideAbi } = useContext(ChainContext);
+    const { selectedChain, fungibleTokenAbi, setSelectedChain, sideAbi } = useContext(ChainContext);
     const connectionStatus = useConnectionStatus();
     //  Refactor this to use the new requiredTokenStructs and match addresses to the requiredTokenStructs on primary chain
     const index = 0;
@@ -75,7 +75,10 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance(
         address,
     );
-    const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address);
+    const { contract, isLoading: isContractLoading, error: isContractError } = useContract(address, fungibleTokenAbi);
+    
+    const { mutateAsync: mint, isLoading: mintLoading, error: mintError } = useContractWrite(contract, "mint");
+
     const { contract: linkContract, isLoading: isLinkContractLoading, error: isLinkContractError } = useContract(linkAddressMumbai);
 
     const { mutateAsync: approve, isLoading, error } = useContractWrite(contract, "approve");
@@ -147,7 +150,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
 
         {requiredAssets && bundle && requiredAssets[1].map((requiredAsset: any, index: number) => {
             return <div
-                key={'sideasset'+index}
+                key={'sideasset' + index}
                 className="card"
                 style={{
                     width: "95%",
@@ -197,7 +200,24 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
 
                     <Descriptions.Item label="Balance">
                         {balanceLoading && <Tag color="processing">Loading...</Tag>}
-                        {!balanceError && !balanceLoading && balance && <Tag color="success">{showOnlyTwoDecimals(balance.displayValue)} {balance.symbol}</Tag>}
+                        {!balanceError && !balanceLoading && balance &&
+
+                            <>
+                                <Tag color="success">{showOnlyTwoDecimals(balance.displayValue)} {balance.symbol}</Tag>
+                                {nativeAddress !== address && <Button type="link"
+
+                                    style={
+                                        {
+                                            color: 'green'
+                                        }
+                                    }
+                                    size="small" onClick={() => {
+                                        mint({
+                                            args: [userAddress, BigNumber.from(100).mul(BigNumber.from(10).pow(18))],
+                                        })
+                                    }}>Mint (Faucet)</Button>}
+                            </>
+                        }
                     </Descriptions.Item>
 
 
@@ -246,8 +266,8 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                     notify ETF contract on the primary chain.
                     Communication between the two contracts is done via Chainlink CCIP and requires LINK tokens.
                     <Divider />
-                    
-                    
+
+
                     {fee && <p>Esitmated Fee for the transaction now: {BigNumber.from(fee || 0).div(
                         BigNumber.from(10).pow(16)
                     ).toNumber() / 100} LINK</p>}
@@ -386,7 +406,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
                                 {
                                     item.depositFundMessage.tokensToWrap.map((token: any, index: number) => {
                                         return <p
-                                            key={'depositFundMessage-token'+index}
+                                            key={'depositFundMessage-token' + index}
                                         >{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
                                             BigNumber.from(10).pow(18)
                                         ).toString()}`}</p>
