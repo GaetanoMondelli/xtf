@@ -1,7 +1,8 @@
-DEMO HACKHATON CHLINK
+TO-DO / BUG FIX
 
+- Total value does not update soon
 
-TO-DO
+- Implement minimum amount of deposits to avoid spam (and for being gas efficient)
 
 - **major** subsequent reedem gets more etfTokens [SOLVED]
 
@@ -13,32 +14,8 @@ TO-DO
 
 - we need to check what happens with the excess of ethers (native tokens) [SOLVED]
 
-```
 
-     for (uint256 j = 0; j < getTokenCountOfBundle(_bundleId); j += 1) {
-                if (
-                    getTokenOfBundle(_bundleId, j).assetContract ==
-                    _tokensToWrap[i].assetContract
-                ) {
-                    tokenAlreadyInBundle = true;
-
-                    // check if the token quantity + current quantity is not greater than the quantity required
-                    
-                    if (
-                        getTokenOfBundle(_bundleId, j).totalAmount +
-                            _tokensToWrap[i].totalAmount >
-                        tokenQuantities[
-                            getTokenOfBundle(_bundleId, j).assetContract
-                        ]
-                    ) {
-                        _tokensToWrap[i].totalAmount =
-                            tokenQuantities[
-                                getTokenOfBundle(_bundleId, j).assetContract
-                            ] -
-                            getTokenOfBundle(_bundleId, j).totalAmount;
-                    }
-```
-
+   
 - we check bundleId was not already closed in an ETF need to make sure etf id starts from 1 [SOLVED]
 
 ```
@@ -48,7 +25,7 @@ TO-DO
         );
 ```
 
-- we need to add virtual to the CCIPReceiver.sol [CONTACTED CHAINLINK] [SOLVED IN NEWER VERSIONS]
+- we need to add virtual to the CCIPReceiver.sol [CONTACTED CHAINLINK] [SOLVED IN NEWER VERSIONS]  [SOLVED]
 
   /// @notice IERC165 supports an interfaceId
   /// @param interfaceId The interfaceId to check
@@ -58,4 +35,4 @@ TO-DO
   }
 
 
-npx hardhat verify --network sepolia --constructor-args ./scripts/args2.js  0xfd454Ea2186E1f355c08ef98b9B66dfDC1ed7f8B
+npx hardhat verify --network sepolia --constructor-args ./scripts/args2.js  0xfd454Ea2186E1f355c08ef98b9B66dfDC1ed7f8B  [SOLVED]

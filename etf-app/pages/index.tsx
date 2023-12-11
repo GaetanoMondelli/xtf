@@ -7,7 +7,7 @@ import {
 import styles from '../styles/page.module.css'
 import { NextPage } from "next";
 import ChainContext from "../context/chain";
-import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert, Tabs, Divider, Watermark, Space, Tag, Layout, Tour, TourProps, Button } from 'antd';
+import { Select, Card, InputNumber, Switch, Skeleton, Spin, Alert, Tabs, Divider, Watermark, Space, Tag, Layout, Tour, TourProps, Button, Image as AntdImage } from 'antd';
 import BundleView from "../components/BundleView";
 import ETFStatsView from "../components/ETFStatsView";
 import PriceValueStats from "../components/PricesValueStats";
@@ -41,6 +41,8 @@ const Home: NextPage = () => {
   const formViewRef = useRef(null);
 
   const [open, setOpen] = useState<boolean>(false);
+  const [visible, setVisible] = useState<boolean>(false);
+  const [scaleStep, setScaleStep] = useState(0.5);
   const [bundleId, setBundleId] = useState<number>(0);
   const [selectedTab, setSelectedTab] = useState<string>('1');
   const [localTest, setLocalTest] = useState<boolean>(false)
@@ -119,15 +121,14 @@ const Home: NextPage = () => {
     },
     {
       title: 'Specific Vault View State',
-      cover: (
-        <Image
-          width={400}
-          height={400}
-          alt="tour.png"
-          src="/images/states.png"
-        />
-      ),
-      description: 'This section allows you to view the status of a specific vault for the selected index. The ribbon represent the state of the selected Vault. Blue vaults are still OPEN for contributions. Green vaults that have got all the required contributions and have been MINTED. Red vaults are vaults that have been BURNED and the underlying assets have been withdrawn.',
+      // cover: (
+      //   <Image
+      //     width={400}
+      //     height={400}
+      //     alt="tour.png"
+      //     src="/images/states.png"
+      //   />
+      // ),
       // target: () => vaultViewRef?.current,
     },
     {
@@ -309,6 +310,13 @@ const Home: NextPage = () => {
                     checked={localTest} onChange={(checked) => setLocalTest(checked)} />
                   <Divider type="vertical" />
                   <Button className="nb-input" type='dashed' onClick={() => setOpen(true)}>Tour</Button>
+                  <Button className="nb-input" type='dashed' onClick={() => setVisible(true)}>
+                    ?
+                  </Button>
+
+
+
+
                 </div>
 
               </div>
@@ -552,7 +560,8 @@ const Home: NextPage = () => {
         </div >
       </Watermark >
 
-      <Tour open={open} onClose={() => setOpen(false)} steps={steps}
+      <Tour open={open} onClose={() => setOpen(false)}
+        steps={steps}
         onChange={(index) => {
           if (index < 10) {
             setSelectedTab('1')
@@ -567,7 +576,18 @@ const Home: NextPage = () => {
         }}
 
       />
-
+      <AntdImage
+        width={200}
+        style={{ display: 'none' }}
+        preview={{
+          visible,
+          scaleStep,
+          src: "/images/states2.png",
+          onVisibleChange: (value) => {
+            setVisible(value);
+          },
+        }}
+      />
     </>
 
   );

@@ -1,12 +1,17 @@
+# Chainlink usage link
 
-## Chainlink usage link
+
+Parts of the smart contract of ETFv2 (that inherits by ETFBase) and SideChainDeposit (for handling sidechain deposit) that uses Chainlink.
+
+Please refer to this Readme for the full description of the protocol.
 
 
-### Chainlink Data Feed
+
+## Chainlink Data Feed
 Once the contract knows a vault can be closed it calculates all users' contributions using **Chainlink DataFeed** 
 
 
-[`closeBundle` - calculate the total value of the valut in ths period summing up the quantities times prices from Data Feed ](https://github.com/GaetanoMondelli/xtf/blob/766ae477d2053badf1d4943c7bc642deef3d1650/contracts/ETFContractv2.sol#L319)
+[`closeBundle` - This calculates the total value of the vault by summing the quantities of the deposited assets multiplied by their respective prices, sourced from the Data Feed.](https://github.com/GaetanoMondelli/xtf/blob/766ae477d2053badf1d4943c7bc642deef3d1650/contracts/ETFContractv2.sol#L319)
 
 ```
 uint256 totalValue = 0;
@@ -62,12 +67,13 @@ addressToAmount[bundleId][addressToSend] += amountToSend;
 
 ```
 
-
+## Chainlink CCIP
 
 ### DepositFundMessage Message of Tokens deposited from SideChain --> MainChain
 
-When a user deposit on a sidechain an asset, after some checks on the sidechain a message is sent trhough CCIP to the Mainchain.
-In this case the contract does not automatically add the tokens to the bundle. This operation could be too much gas expensive considered that if these addition completes the bundle with all the required assets, it would also trigger the `closebundle` method that calculates all the contributions, mints the tokens and send a message to VRF Coordinator to elect a winner for the NFT Vote. Instead a EventSource (ES) approach is used, where the message is stored in an array and later the user can apply those changes by calling the public method `updateBundleAfterReceive(bundleId)` 
+When a user deposits an asset on a sidechain, the sidechain contract performs some checks and then sends a message through CCIP to the Mainchain. However, this process doesn't automatically add the tokens to the bundle in the Mainchain contract. This is to avoid high gas costs that could occur if this addition completes the bundle, triggering the `closeBundle` method. This method not only finalises the bundle but also calculates all contributions, mints tokens, and sends a message to the VRF Coordinator for the NFT Vote winner selection.
+
+To manage this efficiently, we employ an Event Source (ES) approach. Here, the message from the sidechain is stored in an array on the Mainchain. Users can then apply these changes at their convenience by invoking the public method `updateBundleAfterReceive(bundleId)`. This method allows users to update the bundle status and process contributions from sidechains, ensuring a cost-effective and user-driven approach.
 
 [`DepositFundMessage` - Message Strucuture in types contract](https://github.com/GaetanoMondelli/xtf/blob/766ae477d2053badf1d4943c7bc642deef3d1650/contracts/ETFContractTypes.sol#L27)
 
@@ -140,7 +146,10 @@ messageCount[depositFundMessage.bundleId] += 1;
 
 ### RedeemETFMessage Message of Tokens deposited from MainChain --> SideChain 
 
-Once a vault is completed, it mints ETF tokens to the contributors. After a locking period a if a user has enough ETFTokens can decide to `burn` the vault and redeem the underlying assets. This operation is done in the Mainchain and release automatically all the assets to the `burners`. The vault is now in `Burned` state and the related `burner` is stored in the contract. At this point any user can ask to send messages to the other Sidechains asking to relaese the token to the `burner/receiver`.  
+
+After a vault is fully contributed to, it transitions to the next state by minting ETF tokens for its contributors. Following a set locking period ()`locktime`), if a user has accumulated enough ETF tokens, they have the option to burn the vault (`redeem`). Usually the total amount of tokens minted per vault is required to burned it. This action is initiated on the Mainchain and automatically releases all the assets to the user  who initiates the burn (`burner`) on the main chain. Consequently, the vault's status changes to Burned, and the burner's details are recorded in the contract.
+At this point, any user can trigger a process to send messages to the associated sidechains. These messages instruct the sidechains to release the stored assets for that vault to the burner (known in the message as `receiver`). This step completes the asset redemption process from the vault, ensuring that the `burner` receives their due share from both the Mainchain and the sidechains.
+
 
 [`RedeemETFMessage`- Message Strucuture in types contract](https://github.com/GaetanoMondelli/xtf/blob/766ae477d2053badf1d4943c7bc642deef3d1650/contracts/ETFContractTypes.sol#L19)
 ```
@@ -208,12 +217,13 @@ Note that sidechain contracts are stored after the deployment in the  `chainSele
     }
 ```
 
+### VRF 
 
-### VRF `Running sum` for elect a Winner
+## `Running sum` for elect a Winner
 
 [`closeBundle` method sends the requests to elect a Vote winner after minting ETF tokens to users](https://github.com/GaetanoMondelli/xtf/blob/766ae477d2053badf1d4943c7bc642deef3d1650/contracts/ETFContractv2.sol#L397C1-L405C22)
 
-Once all the required tokens are deposited in a vault (bundle) the ETF tokens are minted and a NFT Vote is minted to the Contract. The `closeBundle` method after assigning the NFT Vote to the contract, sends a VRF Request to get a random word that will be used to elect the winner of the Vote.
+When a vault (sometimes referred as bundle) receives all the required token deposits, the protocol initiates the minting of ETF tokens. Alongside this, a unique `NFT Vote`  is minted and assigned to the contract. The `closeBundle` method, which is responsible for this process, also triggers a subsequent action: it `sends` out a request to the VRF (Verifiable Random Function) system to obtain a random word. This random word is then utilized to determine the winner of the NFT Vote, ensuring a fair and transparent selection process.
 
 ```
 requestIdToBundleId[
@@ -227,7 +237,7 @@ COORDINATOR.requestRandomWords(
 ] = bundleId;
 ```
 
-The easiest solution (gas efficient)
+The gas efficient trivial solution
 
 ```
 address winner = bundleIdToAddress[requestIdToBundleId[requestId]][
@@ -238,9 +248,7 @@ randomWords[0] %
 bundleIdToRandomWinner[requestIdToBundleId[requestId]] = winner;
 ```
 
-
-
-The more complex solution (gas inefficient), temporarily disabled as it was sometimes consuming more GAS than MAX_CALLBACK 2_000_000.
+The more sophisticated yet temporarily disabled solution, due to its high gas consumption often exceeding the MAX_CALLBACK limit of `2_000_000 `GAS, employs a running index. This methodology is designed to allocate a higher chance of winning to users based on the size of their contributions. However, due to its gas inefficiency, we've had to pause its implementation, as it occasionally demands more gas than is feasible under the current system constraints.
 
 
 ```
@@ -278,10 +286,13 @@ The last solution uses a running sum to make sure that the more an account contr
 
 ---
 
+---
+
 
 ### Mock Chainlink Contracts for initial protocol design/test
 
-All the mocks were necessary for deploying the contract locally and launch a local chain with the xtf protocol on localhost. This script documents also all the requirements necessary for using xtf.
+All the mocks were necessary for deploying the contract locally and launch a local chain with the XTF protocol on localhost. This script documents also all the requirements necessary for using xtf locally.
+
 - [script/deploy.ts](https://github.com/GaetanoMondelli/xtf/blob/42d6edbc54fcd3da54f1a7ece6c2dae3d9bb482f/scripts/deploy.ts#L35) 
 
 #### Data Feed

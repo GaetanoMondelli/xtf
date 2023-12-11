@@ -461,7 +461,8 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
 
                                         const tokenAddress = asset.assetContract;
                                         const index = bundle[1].indexOf(tokenAddress);
-                                        return <div key={tokenAddress + key}
+                                        return <div
+                                            key={tokenAddress + key}
                                             style={{
                                                 display: 'flex',
                                                 justifyContent: 'center', // Center horizontally
@@ -673,9 +674,9 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                         subTitle="You can now trade your tokens again"
                                     />
                                     {/* Check if there are external chain assets and list all the chains
-                        and propose to send a notification to the user to withdraw the asset
-                        there will be a select box with the chain selector id and a button to send the notification
-                    */}
+                                        and propose to send a notification to the user to withdraw the asset
+                                        there will be a select box with the chain selector id and a button to send the notification
+                                    */}
 
                                     {!isLoadingsendReedeemMessage && requiredTokenStructs.some((asset: any) => {
                                         return asset.chainSelector !== chainSelectorId;
@@ -708,7 +709,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                                 }>Transfer LINK</Button>
                                             </p>}
                                             {/* {fee && <p>Esitamted fee for sending Reedem message {BigNumber.from(fee).div(BigNumber.from(10).pow(16)).toNumber() / 100} </p>}
-                                {feeError && <p>{JSON.stringify(feeError)} </p>} */}
+                                            {feeError && <p>{JSON.stringify(feeError)} </p>} */}
                                             <Select
                                                 onChange={(value) => {
                                                     setNotifyChainSelectorId(value);
@@ -730,7 +731,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                             />
                                             <br></br>
                                             <br></br>
-                                            <List
+                                            {reedemMessages && <List
                                                 // grey background
                                                 style={{
                                                     width: '94%',
@@ -740,8 +741,10 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                                 }}
                                                 grid={{ gutter: 20, column: 3 }}
                                                 dataSource={[reedemMessages] || []}
-                                                renderItem={(item: any) => (
-                                                    <List.Item>
+                                                renderItem={(item: any, key: number) => (
+                                                    <List.Item
+                                                        key={item?.messageId}
+                                                    >
                                                         <Card
                                                             className="customcard"
                                                             title={
@@ -755,7 +758,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                                                 </>
                                                             }>
                                                             {/* <p>{`Sender: ${minimiseAddress(item.sender)}`}</p> */}
-                                                            <p>{`Bundle ID: ${item.bundleId}`}</p>
+                                                            <p>{`Vault ID: ${item.bundleId}`}</p>
                                                             <p>{
                                                                 // `Chain Selector ID: ${item.chainSelectorId}`
                                                                 `Chain Selector ID: ${notifyChainSelectorId}`
@@ -764,7 +767,7 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
                                                         </Card>
                                                     </List.Item>
                                                 )}
-                                            />
+                                            />}
 
 
                                             <Button

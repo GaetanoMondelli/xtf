@@ -2,7 +2,7 @@ import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useC
 import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Progress, Carousel, Card, List } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
-import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, matchDepositFundMessage, minimiseAddress } from "./utils";
+import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, matchDepositFundMessage, minimiseAddress, getAssetName } from "./utils";
 import SideChainTokenDescriptions from "./SideChainTokenDescriptionsView";
 import { useContext, useEffect, useState } from "react";
 import ChainContext from "../context/chain";
@@ -75,7 +75,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                             }
                         >{balance?.symbol}</Avatar>
                     </div>
-                    <span>{balance?.symbol}&nbsp;
+                    <span>{!isOnExternalChain ? balance?.symbol : getAssetName(address)}&nbsp;
                         {address !== nativeAddress &&
                             <Tooltip title={`See ${balance?.symbol} on Etherscan`}>
                                 <SelectOutlined style={{ fontSize: '14px', color: '#08c' }} onClick={() => { window.open(`${chainSelectorIdToExplorerAddress[getRequiredAsset(address)?.chainSelector.toString()]}/${address}`, "_blank") }} />
@@ -156,7 +156,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                                     <p>{`Bundle ID: ${item.depositFundMessage.bundleId}`}</p>
                                     {
                                         item.depositFundMessage.tokensToWrap.map((token: any, index: number) => {
-                                            return <p key={token+index}>{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
+                                            return <p key={token + index}>{`Token Address: ${minimiseAddress(token.assetContract)} Qt: ${BigNumber.from(token.totalAmount).div(
                                                 BigNumber.from(10).pow(18)
                                             ).toString()}`}</p>
                                         })
