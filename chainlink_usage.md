@@ -240,7 +240,7 @@ COORDINATOR.requestRandomWords(
 ] = bundleId;
 ```
 
-The gas efficient trivial solution
+The gas efficient trivial solution in `fulfillRandomWords``
 
 ```
 address winner = bundleIdToAddress[requestIdToBundleId[requestId]][
@@ -251,7 +251,11 @@ randomWords[0] %
 bundleIdToRandomWinner[requestIdToBundleId[requestId]] = winner;
 ```
 
-The more sophisticated yet temporarily disabled solution, due to its high gas consumption often exceeding the MAX_CALLBACK limit of `2_000_000 `GAS, employs a running index. This methodology is designed to allocate a higher chance of winning to users based on the size of their contributions. However, due to its gas inefficiency, we've had to pause its implementation, as it occasionally demands more gas than is feasible under the current system constraints.
+The more sophisticated solution was disabled V2 due to its high gas consumption often exceeding the MAX_CALLBACK limit of `2_000_000 `GAS, employs a running index.
+
+It is working in v3 here when the VRF coordinator invokes [fulfillRandomWords](https://github.com/GaetanoMondelli/xtf/blob/961b5e24d4c4085d301dd932b02ed8385d6c04b1/contracts/ETFContractv3.sol#L599)
+
+This methodology is designed to allocate a higher chance of winning to users based on the size of their contributions. However, due to its gas inefficiency, we've had to pause its implementation, as it occasionally demands more gas than is feasible under the current system constraints.
 
 
 ```
@@ -283,9 +287,11 @@ for (
         break;
     }
 }
+bundleIdToRandomWinner[requestIdToBundleId[requestId]] = winner;
 ```
 
 The last solution uses a running sum to make sure that the more an account contributed to the vault the more are the chances to get a NFT token.
+Initially, the NFT was transferred directly to the winner here. However, to avoid exceeding gas consumption limits, we now store the winner's details in a map. This allows the user to redeem the NFT later using the `redeemVote` method.
 
 ---
 
@@ -323,7 +329,7 @@ and later tested for proving the correct messages ware sent and received by the 
 
 #### VRF
 
-In this case I was able to find a mock mockimplentation ready [here](https://docs.chain.link/vrf/v2/subscription/examples/test-locally) 
+In this case I was able to find a mock implementation ready [here](https://docs.chain.link/vrf/v2/subscription/examples/test-locally) 
 - [should be able to handle the VRF promises fullfilment for NFT Vote winner](https://github.com/GaetanoMondelli/xtf/blob/766ae477d2053badf1d4943c7bc642deef3d1650/test/etfContract.spec.ts#L820) 
 
 
