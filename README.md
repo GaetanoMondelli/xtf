@@ -176,3 +176,6 @@ Finally expanding my knowledge in Chainlink's Functions and in  Chainlink Proof 
 Perhaps XTF will be at the forefront of offering ETFs with traditional assets and crypto exposure, stepping ahead of major players like Blackrock and Fidelity. 
 
 ![news](https://github.com/GaetanoMondelli/xtf/blob/main/news.png?raw=true)
+
+
+<!--  -->
