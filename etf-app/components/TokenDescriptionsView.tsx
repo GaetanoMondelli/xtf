@@ -108,7 +108,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
                 </Button>
             </Descriptions.Item>
             }
-            {isOnExternalChain && <><Descriptions.Item span={2} label="Quantity Locked on Side Chain"><></>
+            {isOnExternalChain && <><Descriptions.Item span={2} label="Quantity Locked on Side Chain To be tracked"><></>
             </Descriptions.Item>
                 <Descriptions.Item span={2} >
                     <br></br>
@@ -203,7 +203,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
             }
 
 
-            {!isOnExternalChain && <Descriptions.Item label="Quantity to Deposit">
+            {isOnExternalChain && <Descriptions.Item label="Quantity to Deposit">
                 <InputNumber
                     style={{
                         marginLeft: 20
