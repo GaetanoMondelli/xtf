@@ -2,7 +2,7 @@ import { BigNumber, ethers } from "ethers";
 import CONTRACTS from '../../CONTRACTS.json'
 import SEPOLIA_CONTRACTS from '../../Sepolia-Index1.json'
 import SEPOLIA_MUMBAI_CONTRACTS from '../../Sepolia-index2.json'
-import SEPOLIA_MUMBAI_SIDECHAIN_CONTRACTS from '../../Mumbai-Side-index2.json';
+// import SEPOLIA_MUMBAI_SIDECHAIN_CONTRACTS from '../../Mumbai-Side-index2.json';
 
 import PRIMARY_SEPOLIA from '../../CONTRACTS-sepolia.json'
 import SECONDARY_MUMBAI from '../../CONTRACTS-mumbai.json'

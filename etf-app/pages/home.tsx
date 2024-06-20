@@ -19,7 +19,6 @@ const LandingPage: React.FC = () => {
             content={'XTF Protocol'}
             height={130}
             width={150}>
-        >
             <div
                 className='customcard'
                 style={{

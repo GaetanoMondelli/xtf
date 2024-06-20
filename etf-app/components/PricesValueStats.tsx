@@ -1,9 +1,7 @@
-import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead } from "@thirdweb-dev/react";
-import styles from '../styles/page.module.css'
-import { Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
-import style from '../styles/page.module.css';
+import { useContract, useContractRead } from "@thirdweb-dev/react";
+import { Card, Statistic } from 'antd';
 import { BigNumber } from "ethers";
-import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName, getSepoliaDataFeedAddress, ETFv2ABI } from "./utils";
+import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName, getSepoliaDataFeedAddress } from "./utils";
 import { useContext, useEffect, useState } from "react";
 import ChainContext from "../context/chain";
 

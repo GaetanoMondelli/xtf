@@ -1,11 +1,9 @@
 import dynamic from 'next/dynamic'
 import React from "react";
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
-// import { requiredTokenStructs } from "./utils";
 import { BigNumber } from 'ethers';
 
 async function fetchBundleInfo(bundleId: string) {
-    //  return a color based on bundleId randomly
     const colors = ["#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0"];
     const color = colors[Math.floor(Math.random() * colors.length)];
     return color;
@@ -15,7 +13,6 @@ async function fetchBundleInfo(bundleId: string) {
 export default function MatrixView({ address, bundleState, bundleId, bundleStateLoading, bundleStateError, setBundleId, requiredTokenStructs }: {
     address: string, bundleState: any, bundleStateLoading: any, bundleId: any, bundleStateError: any, setBundleId: any, requiredTokenStructs: any
 }) {
-    // const [selectedBundle, setSelectedBundle] = useState<string>();
     const numberOfColumns = 16; // Previously numberOfRows
     const numberOfRows = 6;     // Previously numberOfColumns
     const series = [];

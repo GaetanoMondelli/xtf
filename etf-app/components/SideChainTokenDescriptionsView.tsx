@@ -1,10 +1,9 @@
-import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead, ThirdwebProvider, useConnectionStatus, useNetworkMismatch } from "@thirdweb-dev/react";
-import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Modal, Divider, Layout, Progress, List, Card } from 'antd';
+import { useAddress, useContract, useBalance, useContractWrite, useContractRead, useConnectionStatus } from "@thirdweb-dev/react";
+import { Avatar, Button, Descriptions, InputNumber, Tag, Tooltip, Divider, Layout, Progress, List, Card } from 'antd';
 import { SelectOutlined } from '@ant-design/icons';
 import { BigNumber, ethers, utils } from "ethers";
-import { SIDE_ABI, chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, SelectorIdToChainId, Chain, PayFeesIn, matchDepositFundMessage, minimiseAddress } from "./utils";
+import { chainSelectorIdToExplorerAddress, nativeAddress, showOnlyTwoDecimals, getAssetIcon, Chain, PayFeesIn, matchDepositFundMessage, minimiseAddress } from "./utils";
 import { useContext, useEffect, useState } from "react";
-import { MumbaiChain } from "../pages/_app";
 import ChainContext from "../context/chain";
 
 export default function SideChainTokenDescriptions({ address, etfAddress, bundleId, requiredTokenStruct, chainSelectorId }:

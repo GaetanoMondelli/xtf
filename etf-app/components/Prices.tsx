@@ -1,14 +1,10 @@
-import { useAddress, useContract, useBalance, Web3Button, useContractWrite, useContractRead } from "@thirdweb-dev/react";
-import styles from '../styles/page.module.css'
-import { Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
-import style from '../styles/page.module.css';
+import { useContract, useContractRead } from "@thirdweb-dev/react";
+import { Card } from 'antd';
 import { BigNumber } from "ethers";
-import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName, ETFv2ABI } from "./utils";
+import { showOnlyTwoDecimals, getPriceAggregatorAddress, getAssetName } from "./utils";
 import { useContext, useEffect, useState } from "react";
 import ChainContext from "../context/chain";
 
-
-const { Meta } = Card;
 
 export default function Prices(
     { address }: { address: string }
