@@ -102,7 +102,9 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
             {isOnExternalChain && <Descriptions.Item label="Open Side Chain">
                 <Button type="primary" size="small" onClick={() => {
                     // setModalVisible(true);
-                    setSelectedChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
+                    // setSelectedChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
+                    setSelectedChain(SelectorIdToChainId["80002"]);
+                    
                 }}
                 >Open Side Chain
                 </Button>
