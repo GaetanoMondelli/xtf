@@ -19,8 +19,8 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
 
     const { contract: sideChainContract, isLoading: isSideChainContractLoading, error: isSideChainContractError } = useContract(etfAddress, sideAbi);
 
-
-    const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
+    const linkAddressAmoy = "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904";
+    // const linkAddressMumbai = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
 
     // address = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
     // etfAddress = "0x4c0a47b0c3a16291AC32040740687dd5F06a42F3";
@@ -78,7 +78,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     
     const { mutateAsync: mint, isLoading: mintLoading, error: mintError } = useContractWrite(contract, "mint");
 
-    const { contract: linkContract, isLoading: isLinkContractLoading, error: isLinkContractError } = useContract(linkAddressMumbai);
+    const { contract: linkContract, isLoading: isLinkContractLoading, error: isLinkContractError } = useContract(linkAddressAmoy);
 
     const { mutateAsync: approve, isLoading, error } = useContractWrite(contract, "approve");
 
@@ -87,7 +87,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     const { mutateAsync: transferLink, isLoading: transferLinkLoading, error: transferLinkError } = useContractWrite(linkContract, "transfer");
 
     const { data: linkBalance, isLoading: linkBalanceLoading, error: linkBalanceError } = useBalance(
-        linkAddressMumbai,
+        linkAddressAmoy,
     );
 
     // link balance of etf contract
@@ -113,7 +113,7 @@ export default function SideChainTokenDescriptions({ address, etfAddress, bundle
     useEffect(() => {
         // export declare function useSetConnectionStatus(): (status: "unknown" | "connected" | "disconnected" | "connecting") => void;
         if (connectionStatus !== "connected") return;
-        setSelectedChain(Chain.Mumbai);
+        setSelectedChain(Chain.Amoy);
     }, [connectionStatus, selectedChain, setSelectedChain])
 
 

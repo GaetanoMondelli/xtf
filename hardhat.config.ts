@@ -36,6 +36,11 @@ const config: HardhatUserConfig = {
       chainId: 80001,
       accounts: [process.env.DEPLOYER_PRIVATE_KEY || ''],
     },
+    amoy: {
+      url: "https://rpc-amoy.polygon.technology/",
+      chainId: 80002,
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY || ''],
+    },
     sepolia: {
       url: "https://eth-sepolia.g.alchemy.com/v2/RFiBHY2-HWqMY3wHC_lMpOKdJfji5EgY",
       chainId: 11155111,

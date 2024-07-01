@@ -2,6 +2,11 @@ import { BigNumber, ethers } from "ethers";
 import CONTRACTS from '../../CONTRACTS.json'
 import SEPOLIA_CONTRACTS from '../../Sepolia-Index1.json'
 import SEPOLIA_MUMBAI_CONTRACTS from '../../Sepolia-index2.json'
+
+
+
+import SEPOLIA_AMOY_CONTRACTS from '../../Sepolia-index2.json'
+
 // import SEPOLIA_MUMBAI_SIDECHAIN_CONTRACTS from '../../Mumbai-Side-index2.json';
 
 import PRIMARY_SEPOLIA from '../../CONTRACTS-sepolia.json'
@@ -17,6 +22,7 @@ const nativeWrapperAddress = CONTRACTS['NativeTokenWrapper'][0].address
 const SepoliaChainId = 11155111;
 const HardhatChainId = 31337;
 const MumbaiChainId = 80001;
+const AmoyChainId = 80002;
 
 // export const _ETFv2ABI = require("../.././artifacts/contracts/ETFContractv2.sol/ETFv2.json").abi;
 // const _MockAggregatorABI = require("../.././artifacts/contracts/MockAggregator.sol/MockAggregator.json").abi;
@@ -67,17 +73,20 @@ export {
 export const chainSelectorIdToExplorerAddress: any = {
     "16015286601757825753": "https://sepolia.etherscan.io/address",
     "12532609583862916517": "https://mumbai.polygonscan.com/token",
+    "16281711391670634445": "https://amoy.polygonscan.com/token",
 }
 
 export const chainIdToNetworkName: any = {
     11155111: ["Ethereum", "Sepolia"],
     80001: ["Polygon", "Mumbai"],
+    80002: ["Polygon", "Amoy"],
     1: ["Hardhat", "Localhost"],
     0: ["Hardhat", "Localhost"],
 }
 
 export const chainIdToNetworkLogo: any = {
     80001: "https://assets.coingecko.com/coins/images/4713/standard/polygon.png?1698233745",
+    80002: "https://assets.coingecko.com/coins/images/4713/standard/polygon.png?1698233745",
     11155111: "https://assets.coingecko.com/coins/images/279/standard/ethereum.png?1696501628",
     1: "https://hashnode.com/utility/r?url=https%3A%2F%2Fcdn.hashnode.com%2Fres%2Fhashnode%2Fimage%2Fupload%2Fv1641721533244%2FEDjMSBz-F.png%3Fw%3D1200%26auto%3Dcompress%2Cformat%26format%3Dwebp%26fm%3Dpng"
 }
@@ -104,8 +113,21 @@ const ETFConfigurationIndex0 = {
 //     contracts: SEPOLIA_CONTRACTS,
 // }
 
+// const ETFConfigurationIndex2 = {
+//     name: "ETF-sepolia-mumbai-idx2",
+//     chainId: SepoliaChainId,
+//     // nativeAddress: nativeAddress,
+//     // nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+//     // selectorId: BigNumber.from("16015286601757825753"),
+//     // routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
+//     contracts: PRIMARY_SEPOLIA,
+//     sideChainContracts: {
+//         "12532609583862916517": SECONDARY_MUMBAI,
+//     }
+// }
+
 const ETFConfigurationIndex2 = {
-    name: "ETF-sepolia-mumbai-idx2",
+    name: "ETF-sepolia-amoy-idx2",
     chainId: SepoliaChainId,
     // nativeAddress: nativeAddress,
     // nativeWrapper: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
@@ -113,13 +135,15 @@ const ETFConfigurationIndex2 = {
     // routerAddress: "0xd0daae2231e9cb96b94c8512223533293c3693bf",
     contracts: PRIMARY_SEPOLIA,
     sideChainContracts: {
-        "12532609583862916517": SECONDARY_MUMBAI,
+        // "12532609583862916517": SECONDARY_MUMBAI,
+        "16281711391670634445": SEPOLIA_AMOY_CONTRACTS,
     }
 }
 
 export const SelectorIdToChainId: any = {
     "16015286601757825753": SepoliaChainId,
     "12532609583862916517": MumbaiChainId,
+    "16281711391670634445": AmoyChainId,
     "1": HardhatChainId,
     "0": HardhatChainId,
 }
@@ -127,6 +151,7 @@ export const SelectorIdToChainId: any = {
 export const ChainIdToSelectorId: any = {
     [SepoliaChainId]: "16015286601757825753",
     [MumbaiChainId]: "12532609583862916517",
+    [AmoyChainId]: "16281711391670634445",
     [HardhatChainId]: "1",
 }
 
@@ -144,13 +169,15 @@ const sepoliaPriceDataFeed = ["0x694AA1769357215DE4FAC081bf1f309aDC325306",
 export enum Chain {
     Sepolia = 11155111,
     Localhost = 31337,
-    Mumbai = 80001
+    Mumbai = 80001,
+    Amoy = 80002
 }
 
 export const networkToSelectorId: any = {
     [Chain.Sepolia]: "16015286601757825753",
     [Chain.Localhost]: "1",
     [Chain.Mumbai]: "12532609583862916517",
+    [Chain.Amoy]: "16281711391670634445",
 }
 
 
@@ -197,6 +224,9 @@ const getContracts = (chainId: any) => {
     let chainContracts: any = CONTRACTS;
     if (chainId == SepoliaChainId) {
         chainContracts = SEPOLIA_CONTRACTS;
+    }
+    else if (chainId == AmoyChainId) {
+        chainContracts = SEPOLIA_AMOY_CONTRACTS;
     }
     return chainContracts;
 }

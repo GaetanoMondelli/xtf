@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Chain, ETFv2ABI, MockAggregatorABI, SIDE_ABI, FungibleTokenABI } from "../components/utils";
 const sepoliaEndpoint = "https://orbital-capable-season.ethereum-sepolia.quiknode.pro/8a961b76e01b85d94eb0568af4d471c8f46ea07c";
 const mumabiEndpoint = "https://rpc-mumbai.maticvigil.com";
+const amoyEndpoint = "https://rpc-amoy.polygon.technology";
 
 export const SepoliaChain = {
   // === Required information for connecting to the network === \\
@@ -45,6 +46,24 @@ export const MumbaiChain = {
   name: "Mumbai Testnet", // Name of the network
 };
 
+
+export const AmoyChain = {
+  // === Required information for connecting to the network === \\
+  chainId: 80002, // Chain ID of the Sepolia network
+  // Array of RPC URLs to use
+  rpc: [amoyEndpoint], // Replace with actual Sepolia RPC URL
+
+  nativeCurrency: {
+    decimals: 18,
+    name: "Polygon MATIC",
+    symbol: "MATIC",
+  },
+  shortName: "amoy", // Display value shown in the wallet UI
+  slug: "amoy", // Display value shown in the wallet UI
+  testnet: true, // Boolean indicating whether the chain is a testnet or mainnet
+  chain: "Amoy", // Name of the network
+  name: "Amoy Testnet", // Name of the network
+};
 
 export const localhostChain = {
   // === Required information for connecting to the network === \\

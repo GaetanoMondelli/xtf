@@ -16,9 +16,12 @@
     "init": "npm run stop:node & npm run start:node & npm run deploy:local",
     "checksize": "npm run build:contracts && npx ts-node scripts/checksize.ts",
     "deploy-primer-sepolia": "hardhat run scripts/deploy-primer-sepolia.ts --network mumbai",
+    "deploy-primer-sepolia-amoy": "hardhat run scripts/deploy-primer-sepolia.ts --network amoy",
     "deploy-sepolia": "hardhat run scripts/deploy-sepolia.ts --network sepolia",
     "deploy-sidechain-mumbai": "hardhat run scripts/deploy-side-polygon.ts --network mumbai",
+    "deploy-sidechain-amoy": "hardhat run scripts/deploy-side-polygon.ts --network amoy",
     "notify-mumbai": "hardhat run scripts/depositAndNotify.ts --network mumbai",
+    "notify-amoy": "hardhat run scripts/depositAndNotify.ts --network amoy",
     "notify-sepolia": "hardhat run scripts/depositAndNotify.ts --network sepolia",
     "connect-sidechain": "hardhat run scripts/connectSidechain.ts --network sepolia",
     "test-nft": "hardhat run scripts/nft-test-deploy.ts --network sepolia"

@@ -203,7 +203,7 @@ export default function MatrixView({
           useFillColorAsStroke: false,
 
           shadeIntensity: 0.5,
-          distributed: true, // Ensure colors are applied per-cell
+          distributed: true, // Ensure colors are applied per-cell!
           colorScale: {
             inverse: true,
             ranges: series.flatMap((row) =>
