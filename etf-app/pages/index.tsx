@@ -181,6 +181,10 @@ const Home: NextPage = () => {
         setSelectedChain(Chain.Mumbai)
         switchChain(Chain.Mumbai)
       }
+      else if (selectedChain === Chain.Amoy) {
+        setSelectedChain(Chain.Amoy)
+        switchChain(Chain.Amoy)
+      }
     }
   }, [chainId, localTest, selectedChain, connectionStatus])
 
@@ -291,7 +295,7 @@ const Home: NextPage = () => {
                       } */}
 
                     <Tag bordered={false} color="default"><b>Sepolia</b></Tag>
-                    <Tag bordered={false} color="default"><b>Mumbai</b></Tag>
+                    <Tag bordered={false} color="default"><b>Amoy</b></Tag>
                   </Space>
                 </div>
 
@@ -401,16 +405,7 @@ const Home: NextPage = () => {
               <br></br>
 
               {selectedTab === '2' &&
-                <div
-                // style={{
-                //   display: "flex",
-                //   flexDirection: "row",
-                //   alignItems: "center",
-                //   justifyContent: "center",
-                //   marginBottom: 20,
-                //   width: "100%"
-                // }}
-                >
+                <div>
 
                   <PriceChartComponent chartRef={priceChartRef} title='Normalised Price Asset Comparison' normalise={true}></PriceChartComponent>
                   <PriceChartComponent chartRef={priceChartRef2} title='Logaritmic Price Asset Comparison' normalise={false}></PriceChartComponent>

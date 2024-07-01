@@ -4,6 +4,8 @@ import { BigNumber } from "ethers";
 
 
 export const preDeployedSNXContractOnMumbai = "0xdE617C9DaDDF41EbD739cA57eBbA607C11ba902d";
+// use predeterministic contract address deployment
+
 export const amountSNX = BigNumber.from(6).mul(BigNumber.from(10).pow(18));
 
 const DEMO_USER_ADDRESS = "0x2a1F5eB3e84e58e6F1e565306298B9dE1273f203";
@@ -34,14 +36,15 @@ async function main() {
 
     // const maticRouterAddress = "0x70499c328e1e2a3c41108bd3730f6670a44595d1";
     const vrfCoordinatorAddress = "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625"
-    const subID = 7338; //https://vrf.chain.link/sepolia/7338
+    const subID = 7338; //https://vrf.chain.link/sepolia/7338   
     const keyHash150gwei = "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
     // const Sepolia native token wrapper address
     const sepNativeTokenWrapperAddress = "0x7b79995e5f793a07bc00c21412e50ecae098e7f9";
 
     // Sepolia selector id
     const sepSelectorId = BigNumber.from("16015286601757825753");
-    const mumbaiSelectorId = BigNumber.from("12532609583862916517");
+    // const mumbaiSelectorId = BigNumber.from("12532609583862916517");
+    const amoySelectorId = BigNumber.from("16281711391670634445");
 
     // https://vrf.chain.link/ https://sepolia.etherscan.io/tx/0xf109812aa8c18c01256e2dfe6eaa4012cc04a9000b928dbf4601481a35888177
     const amounts = [ethers.utils.parseEther("0.05"), BigNumber.from(15).mul(BigNumber.from(10).pow(18)), BigNumber.from(3).mul(BigNumber.from(10).pow(18))];
@@ -75,7 +78,7 @@ async function main() {
                     oracleAddress: sepLINKUSDDataFeedAddress,
                 },
                 {
-                    chainIdSelector: mumbaiSelectorId,
+                    chainIdSelector: amoySelectorId,
                     assetContract: preDeployedSNXContractOnMumbai,
                     amount: amountSNX,
                     oracleAddress: sepSNXUSDDataFeedAddress,
@@ -159,7 +162,7 @@ async function main() {
                 oracleAddress: sepLINKUSDDataFeedAddress,
             },
             {
-                chainIdSelector: mumbaiSelectorId,
+                chainIdSelector: amoySelectorId,
                 assetContract: preDeployedSNXContractOnMumbai,
                 amount: amountSNX,
                 oracleAddress: sepSNXUSDDataFeedAddress,

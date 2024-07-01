@@ -52,11 +52,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         "returnStateOfBundles", [0, 96]
     );
 
-    // const { data: burner, isLoading: burnerLoading, error: burnerError } = useContractRead(
-    //     contract,
-    //     "burners", [bundleId]
-    // );
-
     const { data: name, isLoading: isNameLoading, error: nameError } = useContractRead(contract, "symbol");
     const { data: bundle, isLoading: countLoading, error: countError } = useContractRead(
         contract,
@@ -144,22 +139,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
         contract,
         "reedeemMessages", [bundleId, 0]
     );
-
-
-    // 
-    // const { data: fee, isLoading: feeLoading, error: feeError } = useContractRead(
-    //     contract,
-    //     "getReedemFee",
-    //     [
-    //         BigNumber.from("12532609583862916517"),
-    //         PayFeesIn.LINK,
-    //         {
-    //             "bundleId": bundleId,
-    //             "receiver": userAddress,
-    //         },
-    //     ],
-    // );
-    // getReedemFee
 
     const getRequiredAsset = (address: string) => {
 
@@ -326,10 +305,6 @@ export default function BundleView({ address, bundleId, tokenToBeWrapped1Address
             backgroundColor: ["rgba(75, 192, 192, 0.5)", "rgba(255, 99, 132, 0.5)", "rgba(125, 217, 255, 0.5)"]
         }
     ];
-
-
-
-
 
     return <>
 

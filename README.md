@@ -111,6 +111,10 @@ The final stage was deploying the project on Vercel for judges' review. However,
 - [ETFContractTypes.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/ETFContractTypes.sol):A comprehensive library containing all the struct definitions utilised by ETFContractBase, ETFContractV2, and SidechainDeposit.
 - [NativeTokenWrapper.sol] (https://github.com/GaetanoMondelli/xtf/blob/main/contracts/ETFContractTypes.sol): This component is crucial for handling deposits of native currency in the XTF ecosystem. It utilises wrapped tokens, a key feature especially considering *future enhancements where gas expenses and LINK tokens used for messaging operations might be factored in as part of deposit contributions*. For development across various chains, reliable wrapped token solutions were essential. The specific of the wrapped tokens utilised can be found in the deployment scripts inside the 'scripts' folder of the repository (e.g [WMATIC for Mumbai](https://github.com/GaetanoMondelli/xtf/blob/c1a17034add8501557462b88c3775c98570aae27/scripts/deploy-side-polygon.ts#L23) )
 
+Note: Since its deprecation this demo has been adapted to Amoy, please note that the deploy-side-polygon has been updated with the new ChainId, Chain selector, Router, Link Address
+
+[WMATIC for Mumbai](https://github.com/GaetanoMondelli/xtf/blob/c1a17034add8501557462b88c3775c98570aae27/scripts/deploy-side-polygon.ts#L23) )
+
 Tests Contracts:
 
 - [MockAggregator.sol](https://github.com/GaetanoMondelli/xtf/blob/main/contracts/MockAggregator.sol): Data Feed Aggregator mock for testing and local development
@@ -176,3 +180,6 @@ Finally expanding my knowledge in Chainlink's Functions and in  Chainlink Proof 
 Perhaps XTF will be at the forefront of offering ETFs with traditional assets and crypto exposure, stepping ahead of major players like Blackrock and Fidelity. 
 
 ![news](https://github.com/GaetanoMondelli/xtf/blob/main/news.png?raw=true)
+
+
+<!--  -->

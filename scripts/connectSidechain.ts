@@ -10,6 +10,8 @@ const routerAddressMumbai = "0x70499c328e1e2a3c41108bd3730f6670a44595d1";
 const sepSelectorId = BigNumber.from("16015286601757825753");
 const mumbaiSelectorId = BigNumber.from("12532609583862916517");
 
+const amoySelectorId = BigNumber.from("16281711391670634445");
+
 const sepLinkToken = "0x779877A7B0D9E8603169DdbD7836e478b4624789"
 const sepRouterAddress = "0xd0daae2231e9cb96b94c8512223533293c3693bf";
 
@@ -96,7 +98,9 @@ async function main() {
     const contract = await ethers.getContractAt(contractName, primaryETFContractAddress);
     // const sideContract = await ethers.getContractAt(sideContractName, "0x0b3A4FA2eBc31F932a9A4CE83E3ba217AEeF4281");
 
-    const tx = await contract.setSideChainAddress(mumbaiSelectorId, secondaryETFContractAddress);
+    // const tx = await contract.setSideChainAddress(mumbaiSelectorId, secondaryETFContractAddress);
+    const tx = await contract.setSideChainAddress(amoySelectorId, secondaryETFContractAddress);
+
     // const tx = await contract.setBaseTokenURI("https://gaetanomondelli.github.io/static/media/gman2.f52db750.png");
     await tx.wait();
     console.log("setSideChainAddress done");

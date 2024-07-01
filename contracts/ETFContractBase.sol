@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 import {IETFToken} from "./ETFTokenContract.sol";
-// import {IERC721} from "@thirdweb-dev/contracts/eip/interface/IERC721.sol";
 import {NFTVote} from "./ETFVote.sol";
 import {Ownable} from "@thirdweb-dev/contracts/extension/Ownable.sol";
 import {TokenBundle, ITokenBundle} from "@thirdweb-dev/contracts/extension/TokenBundle.sol";
@@ -9,7 +8,6 @@ import {IERC165} from "@thirdweb-dev/contracts/eip/interface/IERC165.sol";
 import {ERC1155Receiver} from "@thirdweb-dev/contracts/openzeppelin-presets/utils/ERC1155/ERC1155Receiver.sol";
 import {TokenStore} from "@thirdweb-dev/contracts/extension/TokenStore.sol";
 import {ContractMetadata} from "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
-// import {ERC721A} from "@thirdweb-dev/contracts/eip/ERC721AVirtualApprove.sol";
 import {DefaultOperatorFilterer} from "@thirdweb-dev/contracts/extension/DefaultOperatorFilterer.sol";
 import {IERC20Metadata, IERC20} from "@thirdweb-dev/contracts/base/ERC20Base.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";

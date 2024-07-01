@@ -1,10 +1,8 @@
-import { useAddress, useContract, useBalance, Web3Button, useConnectionStatus, useContractRead } from "@thirdweb-dev/react";
-import styles from '../styles/page.module.css'
-import { Badge, Button, Card, Col, Layout, Row, Statistic, Tag } from 'antd';
-import style from '../styles/page.module.css';
-import { BigNumber, ContractInterface } from "ethers";
-import { ETFv2ABI, showOnlyTwoDecimals, calculateTLV, nativeAddress } from "./utils";
-import { useContext, useEffect, useState, useRef } from "react";
+import { useAddress, useContract, useBalance, useConnectionStatus, useContractRead } from "@thirdweb-dev/react";
+import { Card, Statistic } from 'antd';
+import { BigNumber } from "ethers";
+import { showOnlyTwoDecimals, calculateTLV, nativeAddress } from "./utils";
+import { useContext, useEffect, useState } from "react";
 
 import ChainContext from "../context/chain";
 

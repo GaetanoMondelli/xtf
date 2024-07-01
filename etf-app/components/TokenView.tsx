@@ -33,9 +33,7 @@ export default function TokenView({ address, className, etfAddress }: { address:
             <Web3Button
                 className={style.web3Button}
                 contractAddress={address}
-                // Calls the "setName" function on your smart contract with "My Name" as the first argument
                 action={() => approve({
-                    // 10 tokens considering 18 decimals
                     args: [etfAddress,
                         BigNumber.from(10).mul(BigNumber.from(10).pow(18))
                     ]

@@ -23,9 +23,13 @@ async function main() {
     const WMATIC = "0x9c3c9283d3e44854697cd22d3faa240cfb032889";
     const nativeWrapperAddressMumbai = WMATIC;
     const primaryChainSelectorIdSepolia = BigNumber.from("16015286601757825753");
-    const chainIdSelectorIdMumbai = BigNumber.from("12532609583862916517");
-    const routerAddressMumbai = "0x70499c328e1e2a3c41108bd3730f6670a44595d1";
-    const linkAddressMumbai = "0x326c977e6efc84e512bb9c30f76e30c160ed06fb";
+    // https://amoy.polygonscan.com/
+    // const chainIdSelectorIdMumbai = BigNumber.from("12532609583862916517");
+    const chainIdAmoy = BigNumber.from("80002");
+    const chainIdSelectorAmoy  = BigNumber.from("16281711391670634445");
+    const routerAddressAmoy = "0xC22a79eBA640940ABB6dF0f7982cc119578E11De";
+    // https://docs.chain.link/resources/link-token-contracts
+    const linkAddressAmoy = "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904";
 
     contracts[fungibleTokenName] = [{
         address: preDeployedSNXContractOnMumbai
@@ -35,18 +39,18 @@ async function main() {
         (owner: any, nativeTokenWrapper = nativeWrapperAddressMumbai,
             tokenAmounts = [
                 {
-                    chainIdSelector: chainIdSelectorIdMumbai,
+                    chainIdSelector: chainIdSelectorAmoy,
                     assetContract: preDeployedSNXContractOnMumbai,
                     amount: amountSNX,
-                    oracleAddress: linkAddressMumbai, // not used
+                    oracleAddress: linkAddressAmoy, // not used
                 },
             ]
         ) => [sideChainContractName,
                 primaryChainSelectorIdSepolia,
-                chainIdSelectorIdMumbai,
+                chainIdSelectorAmoy,
                 primaryETFContractAddress,
-                routerAddressMumbai,
-                linkAddressMumbai,
+                routerAddressAmoy,
+                linkAddressAmoy,
                 nativeTokenWrapper,
                 tokenAmounts,
             ]

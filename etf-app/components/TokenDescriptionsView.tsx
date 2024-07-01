@@ -102,13 +102,15 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
             {isOnExternalChain && <Descriptions.Item label="Open Side Chain">
                 <Button type="primary" size="small" onClick={() => {
                     // setModalVisible(true);
-                    setSelectedChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
+                    // setSelectedChain(SelectorIdToChainId[getRequiredAsset(address)?.chainSelector.toString()]);
+                    setSelectedChain(SelectorIdToChainId["80002"]);
+                    
                 }}
                 >Open Side Chain
                 </Button>
             </Descriptions.Item>
             }
-            {isOnExternalChain && <><Descriptions.Item span={2} label="Quantity Locked on Side Chain"><></>
+            {isOnExternalChain && <><Descriptions.Item span={2} label="Quantity Locked on Side Chain To be tracked"><></>
             </Descriptions.Item>
                 <Descriptions.Item span={2} >
                     <br></br>
@@ -203,7 +205,7 @@ export default function TokenDescriptions({ bundleId, address, etfAddress, bundl
             }
 
 
-            {!isOnExternalChain && <Descriptions.Item label="Quantity to Deposit">
+            {isOnExternalChain && <Descriptions.Item label="Quantity to Deposit">
                 <InputNumber
                     style={{
                         marginLeft: 20
