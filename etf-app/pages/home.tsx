@@ -74,7 +74,7 @@ const LandingPage: React.FC = () => {
 
                             <p>
 
-                            With XTF, you don't have to rely on big project to handle your investment. We split it into many small parts, called 'vaults'. Each vault holds a mix of different investments. This way, it's safer, and you can easily become a part-owner of these vaults by getting special tokens.
+                            With XTF, you don&apos;t have to rely on big project to handle your investment. We split it into many small parts, called &apos;vaults&apos;. Each vault holds a mix of different investments. This way, it&apos;s safer, and you can easily become a part-owner of these vaults by getting special tokens.
 
                             Our logo, a cake with many layers, shows how we bring different investments together. Just like getting a slice of cake, you get a share of all these mixed investments.
 
